@@ -1,9 +1,5 @@
 
 <div align="center">
-   <img src="https://github.com/Ebullioscopic/DynamicIsland/blob/main/DynamicIslandSamples/dynamicislandscreenrecord.gif" alt="DynamicIsland Demo" width="700"/>
-</div>
-
-<div align="center">
    <img src="https://github.com/Ebullioscopic/DynamicIsland/blob/main/DynamicIslandSamples/logo.png" alt="DynamicIsland Logo" width="120"/>
 </div>
 
@@ -51,6 +47,7 @@
 
 <div align="center">
    <img src="https://github.com/Ebullioscopic/DynamicIsland/blob/main/DynamicIslandSamples/statsmonitor.png" alt="Stats Monitor" width="350"/>
+   <br>
    <img src="https://github.com/Ebullioscopic/DynamicIsland/blob/main/DynamicIslandSamples/media.png" alt="Media Controls" width="350"/>
 </div>
 
@@ -70,8 +67,10 @@
 ### 🎨 ColorPicker (NEW!)
 <div align="center">
    <img src="https://github.com/Ebullioscopic/DynamicIsland/blob/main/DynamicIslandSamples/colorpickerpanel.png" alt="ColorPicker Panel" width="350"/>
+   <br>
    <img src="https://github.com/Ebullioscopic/DynamicIsland/blob/main/DynamicIslandSamples/colorpickerpopover.png" alt="ColorPicker Popover" width="350"/>
 </div>
+
 - **Screen Color Picking**: Raycast-inspired panel, real-time magnification
 - **Multiple Formats**: HEX, RGB, HSL, SwiftUI, UIColor, and more
 - **History & Quick Copy**: Recent colors, hover info, click to copy
@@ -99,8 +98,10 @@
 ### 🗂️ Widgets & Panels
 <div align="center">
    <img src="https://github.com/Ebullioscopic/DynamicIsland/blob/main/DynamicIslandSamples/clipboardpanel.png" alt="Clipboard Panel" width="350"/>
+   <br>
    <img src="https://github.com/Ebullioscopic/DynamicIsland/blob/main/DynamicIslandSamples/clipboardpopover.png" alt="Clipboard Popover" width="350"/>
 </div>
+
 - **Clipboard Manager**: Quick access to recent clipboard items
 - **Weather Widget**: Displays current weather (location access required)
 - **App Switcher**: Swipe gestures for fast app switching
