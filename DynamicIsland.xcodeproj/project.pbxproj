@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		7E25ECA12E6C6C3800700E72 /* CoreBrightness.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7E25ECA02E6C6C3800700E72 /* CoreBrightness.framework */; };
+		7E25ECA32E6C6E2600700E72 /* OSD.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7E25ECA22E6C6E2600700E72 /* OSD.framework */; };
+		7E25ECA52E6C6E7800700E72 /* DisplayServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7E25ECA42E6C6E7800700E72 /* DisplayServices.framework */; };
 		7E6118142E24071E0050006C /* LaunchAtLogin in Frameworks */ = {isa = PBXBuildFile; productRef = 14D032192C68F32E0096E6A1 /* LaunchAtLogin */; };
 		7E6118152E24071E0050006C /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = 14D0321C2C68F3350096E6A1 /* Sparkle */; };
 		7E6118162E24071E0050006C /* KeyboardShortcuts in Frameworks */ = {isa = PBXBuildFile; productRef = B18654382C6F4990000B926A /* KeyboardShortcuts */; };
@@ -39,6 +42,9 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		7E25ECA02E6C6C3800700E72 /* CoreBrightness.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreBrightness.framework; path = /System/Library/PrivateFrameworks/CoreBrightness.framework; sourceTree = "<absolute>"; };
+		7E25ECA22E6C6E2600700E72 /* OSD.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = OSD.framework; path = /System/Library/PrivateFrameworks/OSD.framework; sourceTree = "<absolute>"; };
+		7E25ECA42E6C6E7800700E72 /* DisplayServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = DisplayServices.framework; path = /System/Library/PrivateFrameworks/DisplayServices.framework; sourceTree = "<absolute>"; };
 		7E81303D2E3FB40500E08F3F /* mediaremote-adapter.pl */ = {isa = PBXFileReference; lastKnownFileType = text.script.perl; path = "mediaremote-adapter.pl"; sourceTree = "<group>"; };
 		7E81303E2E3FB40500E08F3F /* NowPlayingTestClient */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.executable"; path = NowPlayingTestClient; sourceTree = "<group>"; };
 		7EE1D73C2E6B1E0B00997219 /* ApplicationServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ApplicationServices.framework; path = System/Library/Frameworks/ApplicationServices.framework; sourceTree = SDKROOT; };
@@ -60,12 +66,15 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				7E25ECA12E6C6C3800700E72 /* CoreBrightness.framework in Frameworks */,
 				7EE1D73F2E6B1E1200997219 /* IOKit.framework in Frameworks */,
 				7EE1D73D2E6B1E0B00997219 /* ApplicationServices.framework in Frameworks */,
 				BA90505C953246D0AB206451 /* MediaRemoteAdapter.framework in Frameworks */,
 				7E61181C2E24071E0050006C /* MacroVisionKit in Frameworks */,
 				7E61181B2E24071E0050006C /* LottieUI in Frameworks */,
 				7E61181A2E24071E0050006C /* SwiftUIIntrospect in Frameworks */,
+				7E25ECA32E6C6E2600700E72 /* OSD.framework in Frameworks */,
+				7E25ECA52E6C6E7800700E72 /* DisplayServices.framework in Frameworks */,
 				7E6118192E24071E0050006C /* Defaults in Frameworks */,
 				7E6118182E24071E0050006C /* TheBoringWorkerNotifier in Frameworks */,
 				7E6118172E24071E0050006C /* Collections in Frameworks */,
@@ -91,6 +100,9 @@
 		7E81304F2E3FB42700E08F3F /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				7E25ECA02E6C6C3800700E72 /* CoreBrightness.framework */,
+				7E25ECA42E6C6E7800700E72 /* DisplayServices.framework */,
+				7E25ECA22E6C6E2600700E72 /* OSD.framework */,
 				7EE1D73E2E6B1E1200997219 /* IOKit.framework */,
 				7EE1D73C2E6B1E0B00997219 /* ApplicationServices.framework */,
 			);
@@ -371,6 +383,10 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
+				SYSTEM_FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(SYSTEM_LIBRARY_DIR)/PrivateFrameworks",
+				);
 			};
 			name = Debug;
 		};
@@ -408,6 +424,10 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
+				SYSTEM_FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(SYSTEM_LIBRARY_DIR)/PrivateFrameworks",
+				);
 			};
 			name = Release;
 		};

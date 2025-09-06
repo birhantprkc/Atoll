@@ -111,6 +111,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationWillTerminate(_ notification: Notification) {
         // Cancel any pending window size updates
         windowSizeUpdateWorkItem?.cancel()
+        
+        // Re-enable system HUD on app termination
+        SystemOSDManager.enableSystemHUD()
+        
         NotificationCenter.default.removeObserver(self)
     }
     
@@ -289,6 +293,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
 
         coordinator.setupWorkersNotificationObservers()
+        
+        // Setup SystemHUD Manager
+        SystemHUDManager.shared.setup(coordinator: coordinator)
         
         // Observe tab changes - use debounced updates
         coordinator.$currentView.sink { [weak self] newView in
