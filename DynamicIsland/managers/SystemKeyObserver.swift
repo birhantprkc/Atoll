@@ -5,6 +5,10 @@
 //  Adapted from TheBoringWorker-HUD KeyPressObserver.swift
 //  Created by GitHub Copilot on 06/09/25.
 //
+//  ⚠️ DEPRECATED: This class is non-functional as it extends NSApplication
+//  but is never used as the main app class. Event monitoring has been moved
+//  to SystemChangesObserver using NSEvent.addGlobalMonitorForEvents.
+//
 
 import Cocoa
 

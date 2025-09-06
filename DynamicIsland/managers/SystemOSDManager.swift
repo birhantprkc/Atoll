@@ -13,6 +13,12 @@ class SystemOSDManager {
 
     /// Re-enables the system HUD by restarting OSDUIHelper
     public static func enableSystemHUD() {
+        Task.detached(priority: .background) {
+            await enableSystemHUDAsync()
+        }
+    }
+    
+    private static func enableSystemHUDAsync() async {
         do {
             // First, stop any existing OSDUIHelper process
             let stopTask = Process()
@@ -22,7 +28,7 @@ class SystemOSDManager {
             stopTask.waitUntilExit()
             
             // Small delay to ensure process is fully stopped
-            usleep(200000) // 200ms
+            try await Task.sleep(nanoseconds: 200_000_000) // 200ms
             
             // Then kickstart it again to ensure it's running properly
             let kickstart = Process()
@@ -32,11 +38,15 @@ class SystemOSDManager {
             kickstart.waitUntilExit()
             
             // Additional delay to ensure service is fully started
-            usleep(300000) // 300ms
+            try await Task.sleep(nanoseconds: 300_000_000) // 300ms
             
-            print("✅ System HUD re-enabled")
+            await MainActor.run {
+                print("✅ System HUD re-enabled")
+            }
         } catch {
-            NSLog("❌ Error while trying to re-enable OSDUIHelper: \(error)")
+            await MainActor.run {
+                NSLog("❌ Error while trying to re-enable OSDUIHelper: \(error)")
+            }
             
             // Fallback: Try to restart the service using launchctl load
             do {
@@ -45,15 +55,26 @@ class SystemOSDManager {
                 fallbackTask.arguments = ["load", "-w", "/System/Library/LaunchAgents/com.apple.OSDUIHelper.plist"]
                 try fallbackTask.run()
                 fallbackTask.waitUntilExit()
-                print("✅ System HUD re-enabled via fallback method")
+                
+                await MainActor.run {
+                    print("✅ System HUD re-enabled via fallback method")
+                }
             } catch {
-                NSLog("❌ Fallback method also failed: \(error)")
+                await MainActor.run {
+                    NSLog("❌ Fallback method also failed: \(error)")
+                }
             }
         }
     }
 
     /// Disables the system HUD by stopping OSDUIHelper
     public static func disableSystemHUD() {
+        Task.detached(priority: .background) {
+            await disableSystemHUDAsync()
+        }
+    }
+    
+    private static func disableSystemHUDAsync() async {
         do {
             let kickstart = Process()
             kickstart.executableURL = URL(fileURLWithPath: "/bin/launchctl")
@@ -61,7 +82,8 @@ class SystemOSDManager {
             kickstart.arguments = ["kickstart", "gui/\(getuid())/com.apple.OSDUIHelper"]
             try kickstart.run()
             kickstart.waitUntilExit()
-            usleep(500000) // Make sure it started
+            
+            try await Task.sleep(nanoseconds: 500_000_000) // 500ms - async wait instead of usleep
             
             let task = Process()
             task.executableURL = URL(fileURLWithPath: "/usr/bin/killall")
@@ -69,9 +91,13 @@ class SystemOSDManager {
             try task.run()
             task.waitUntilExit()
             
-            print("✅ System HUD disabled")
+            await MainActor.run {
+                print("✅ System HUD disabled")
+            }
         } catch {
-            NSLog("❌ Error while trying to hide OSDUIHelper: \(error)")
+            await MainActor.run {
+                NSLog("❌ Error while trying to hide OSDUIHelper: \(error)")
+            }
         }
     }
     
@@ -94,6 +120,16 @@ class SystemOSDManager {
             return task.terminationStatus == 0 && !output!.isEmpty
         } catch {
             return false
+        }
+    }
+    
+    /// Async version of status checking to avoid main thread blocking
+    public static func isOSDUIHelperRunningAsync() async -> Bool {
+        return await withCheckedContinuation { continuation in
+            Task.detached(priority: .background) {
+                let result = isOSDUIHelperRunning()
+                continuation.resume(returning: result)
+            }
         }
     }
 }

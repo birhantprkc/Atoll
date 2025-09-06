@@ -32,7 +32,10 @@ class DynamicIslandExtensionManager: ObservableObject {
     
     @Published var installedExtensions: [Extension] = [] {
         didSet {
-            print("Extensions installed: \(installedExtensions)")
+            // Only log when there's an actual change in content, not just initialization
+            if oldValue != installedExtensions {
+                print("📦 Extensions installed: \(installedExtensions.map { $0.name })")
+            }
         }
     }
     
