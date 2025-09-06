@@ -43,7 +43,7 @@ class SystemChangesObserver {
     private func startMinimalBackupTimer() {
         // More frequent backup check (every 300ms) for better responsiveness
         // This is a reasonable compromise between the original 200ms and the previous 5s
-        backupTimer = Timer.scheduledTimer(withTimeInterval: 0.3, repeats: true) { [weak self] _ in
+        backupTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
             guard Defaults[.enableSystemHUD] else { return }
             self?.performBackupCheck()
         }
