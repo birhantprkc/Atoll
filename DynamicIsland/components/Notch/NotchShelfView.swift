@@ -3,7 +3,7 @@ import SwiftUI
 
 struct NotchShelfView: View {
     @EnvironmentObject var vm: DynamicIslandViewModel
-    @StateObject var tvm = TrayDrop.shared
+    @ObservedObject var tvm = TrayDrop.shared
 
     var body: some View {
         HStack {

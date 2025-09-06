@@ -14,7 +14,7 @@ struct DynamicIslandHeader: View {
     @ObservedObject var batteryModel = BatteryStatusViewModel.shared
     @ObservedObject var coordinator = DynamicIslandViewCoordinator.shared
     @ObservedObject var clipboardManager = ClipboardManager.shared
-    @StateObject var tvm = TrayDrop.shared
+    @ObservedObject var tvm = TrayDrop.shared
     @State private var showClipboardPopover = false
     @State private var showColorPickerPopover = false
     

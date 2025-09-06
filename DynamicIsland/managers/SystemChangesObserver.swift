@@ -10,16 +10,13 @@ import Cocoa
 import Foundation
 import Defaults
 
-class SystemChangesObserver: ObservableObject {
+class SystemChangesObserver {
     private var oldVolume: Float
     private var oldMuted: Bool
     private var oldBrightness: Float = 0
     
     private weak var coordinator: DynamicIslandViewCoordinator?
-    
-    @Default(.enableSystemHUD) var enableSystemHUD
-    @Default(.enableVolumeHUD) var enableVolumeHUD
-    @Default(.enableBrightnessHUD) var enableBrightnessHUD
+    private var timer: Timer?
 
     init(coordinator: DynamicIslandViewCoordinator) {
         self.coordinator = coordinator
@@ -34,18 +31,18 @@ class SystemChangesObserver: ObservableObject {
     }
 
     func startObserving() {
-        guard enableSystemHUD else { return }
+        guard Defaults[.enableSystemHUD] else { return }
         
         createObservers()
         createTimerForContinuousChangesCheck(with: 0.2)
     }
 
     private func createTimerForContinuousChangesCheck(with seconds: TimeInterval) {
-        let timer = Timer(
+        timer = Timer(
             timeInterval: seconds, target: self, selector: #selector(checkChanges), userInfo: nil,
             repeats: true)
         let mainLoop = RunLoop.main
-        mainLoop.add(timer, forMode: .common)
+        mainLoop.add(timer!, forMode: .common)
     }
 
     private func createObservers() {
@@ -63,7 +60,7 @@ class SystemChangesObserver: ObservableObject {
     }
 
     @objc func showVolumeHUD() {
-        guard enableSystemHUD && enableVolumeHUD else { return }
+        guard Defaults[.enableSystemHUD] && Defaults[.enableVolumeHUD] else { return }
         
         if oldVolume == 0.0 || oldVolume == 1.0 {
             sendVolumeNotification(value: oldVolume)
@@ -72,7 +69,7 @@ class SystemChangesObserver: ObservableObject {
     }
     
     @objc func showBrightnessHUD() {
-        guard enableSystemHUD && enableBrightnessHUD else { return }
+        guard Defaults[.enableSystemHUD] && Defaults[.enableBrightnessHUD] else { return }
         
         if oldBrightness == 0.0 || oldBrightness == 1.0 {
             sendBrightnessNotification(value: oldBrightness)
@@ -81,7 +78,7 @@ class SystemChangesObserver: ObservableObject {
     }
 
     @objc func checkChanges() {
-        guard enableSystemHUD else { return }
+        guard Defaults[.enableSystemHUD] else { return }
         
         checkBrightnessChanges()
         checkVolumeChanges()
@@ -93,7 +90,7 @@ class SystemChangesObserver: ObservableObject {
     }
 
     private func checkVolumeChanges() {
-        guard enableVolumeHUD else { return }
+        guard Defaults[.enableVolumeHUD] else { return }
         
         let newVolume = SystemVolumeManager.getOutputVolume()
         let newMuted = SystemVolumeManager.isMuted()
@@ -110,7 +107,7 @@ class SystemChangesObserver: ObservableObject {
     }
 
     private func checkBrightnessChanges() {
-        guard enableBrightnessHUD else { return }
+        guard Defaults[.enableBrightnessHUD] else { return }
         
         if NSScreen.screens.count == 0 {
             return
@@ -148,6 +145,12 @@ class SystemChangesObserver: ObservableObject {
     }
     
     deinit {
+        stopObserving()
+    }
+    
+    func stopObserving() {
+        timer?.invalidate()
+        timer = nil
         NotificationCenter.default.removeObserver(self)
     }
 }

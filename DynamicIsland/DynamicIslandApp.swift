@@ -112,8 +112,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // Cancel any pending window size updates
         windowSizeUpdateWorkItem?.cancel()
         
+        print("🚪 Application terminating - ensuring system HUD is restored...")
+        
         // Re-enable system HUD on app termination
         SystemOSDManager.enableSystemHUD()
+        
+        // Give it time to complete
+        usleep(500000) // 500ms
         
         NotificationCenter.default.removeObserver(self)
     }

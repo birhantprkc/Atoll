@@ -13,7 +13,7 @@ struct DropItemView: View {
     let item: TrayDrop.DropItem
     @EnvironmentObject var vm: DynamicIslandViewModel
     @ObservedObject var coordinator = DynamicIslandViewCoordinator.shared
-    @StateObject var tvm = TrayDrop.shared
+    @ObservedObject var tvm = TrayDrop.shared
 
     @State var hover = false
 
