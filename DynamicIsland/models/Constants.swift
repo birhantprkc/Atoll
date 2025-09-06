@@ -221,6 +221,13 @@ extension Defaults.Keys {
     // MARK: Keyboard Shortcuts
     static let enableShortcuts = Key<Bool>("enableShortcuts", default: true)
     
+    // MARK: System HUD Feature
+    static let enableSystemHUD = Key<Bool>("enableSystemHUD", default: false)
+    static let enableVolumeHUD = Key<Bool>("enableVolumeHUD", default: true)
+    static let enableBrightnessHUD = Key<Bool>("enableBrightnessHUD", default: true)
+    static let enableKeyboardBacklightHUD = Key<Bool>("enableKeyboardBacklightHUD", default: true)
+    static let systemHUDSensitivity = Key<Int>("systemHUDSensitivity", default: 5)
+    
     // Helper to determine the default media controller based on macOS version
     static var defaultMediaController: MediaControllerType {
         if #available(macOS 15.4, *) {

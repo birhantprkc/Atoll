@@ -41,11 +41,8 @@ struct SettingsView: View {
                 NavigationLink(value: "Calendar") {
                     Label("Calendar", systemImage: "calendar")
                 }
-                if extensionManager.installedExtensions
-                    .contains(where: { $0.bundleIdentifier == hudExtension }) {
-                    NavigationLink(value: "HUD") {
-                        Label("HUDs", systemImage: "dial.medium.fill")
-                    }
+                NavigationLink(value: "HUD") {
+                    Label("HUDs", systemImage: "dial.medium.fill")
                 }
                 NavigationLink(value: "Battery") {
                     Label("Battery", systemImage: "battery.100.bolt")
@@ -423,14 +420,66 @@ struct HUD: View {
     @EnvironmentObject var vm: DynamicIslandViewModel
     @Default(.inlineHUD) var inlineHUD
     @Default(.enableGradient) var enableGradient
+    @Default(.enableSystemHUD) var enableSystemHUD
+    @Default(.enableVolumeHUD) var enableVolumeHUD
+    @Default(.enableBrightnessHUD) var enableBrightnessHUD
+    @Default(.enableKeyboardBacklightHUD) var enableKeyboardBacklightHUD
+    @Default(.systemHUDSensitivity) var systemHUDSensitivity
     @ObservedObject var coordinator = DynamicIslandViewCoordinator.shared
+    
     var body: some View {
         Form {
             Section {
                 Toggle("Enable HUD replacement", isOn: $coordinator.hudReplacement)
             } header: {
                 Text("General")
+            } footer: {
+                Text("Replaces system HUD notifications with Dynamic Island displays.")
+                    .foregroundStyle(.secondary)
+                    .font(.caption)
             }
+            
+            Section {
+                Toggle("Enable Built-in System HUD", isOn: $enableSystemHUD)
+                    .onChange(of: enableSystemHUD) { _ in
+                        // SystemHUDManager will automatically handle start/stop via its @Default observer
+                    }
+                
+                if enableSystemHUD {
+                    Toggle("Volume HUD", isOn: $enableVolumeHUD)
+                    Toggle("Brightness HUD", isOn: $enableBrightnessHUD)
+                    Toggle("Keyboard Backlight HUD", isOn: $enableKeyboardBacklightHUD)
+                    
+                    HStack {
+                        Text("Sensitivity")
+                        Spacer()
+                        Slider(value: Binding(
+                            get: { Double(systemHUDSensitivity) },
+                            set: { systemHUDSensitivity = Int($0) }
+                        ), in: 1...10, step: 1) {
+                            Text("Sensitivity")
+                        }
+                        .frame(width: 120)
+                        Text("\(systemHUDSensitivity)")
+                            .foregroundStyle(.secondary)
+                            .font(.caption)
+                            .frame(width: 20)
+                    }
+                }
+            } header: {
+                Text("Built-in System Monitoring")
+            } footer: {
+                if enableSystemHUD {
+                    Text("Built-in system monitoring detects volume, brightness, and keyboard backlight changes directly without requiring external apps.")
+                        .foregroundStyle(.secondary)
+                        .font(.caption)
+                } else {
+                    Text("Enable built-in system monitoring to replace macOS HUD notifications with Dynamic Island displays.")
+                        .foregroundStyle(.secondary)
+                        .font(.caption)
+                }
+            }
+            
             Section {
                 Picker("HUD style", selection: $inlineHUD) {
                     Text("Default")

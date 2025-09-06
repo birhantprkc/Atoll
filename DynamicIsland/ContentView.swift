@@ -193,6 +193,16 @@ struct ContentView: View {
                         }
                     }
                 }
+                .onChange(of: coordinator.sneakPeek.show) { _, sneakPeekShowing in
+                    // When sneak peek finishes, check if user is still hovering and open notch if needed
+                    if !sneakPeekShowing {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                            if isHovering && vm.notchState == .closed {
+                                doOpen()
+                            }
+                        }
+                    }
+                }
                 .sensoryFeedback(.alignment, trigger: haptics)
                 .contextMenu {
                     SettingsLink(label: {
@@ -507,15 +517,23 @@ struct ContentView: View {
                 haptics.toggle()
             }
             
-            // Don't open notch if there's a sneak peek showing
-            if coordinator.sneakPeek.show {
-                return
-            }
-            
             // Delay opening the notch
             let task = DispatchWorkItem {
                 // ContentView is a struct, so we don't use weak self here
                 guard vm.notchState == .closed, isHovering else { return }
+                
+                // Additional check: don't open if a sneak peek just started showing
+                // to avoid conflicts during system HUD display
+                if coordinator.sneakPeek.show {
+                    // Schedule a retry after the sneak peek should be gone (default duration + small buffer)
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.8) {
+                        if isHovering && vm.notchState == .closed && !coordinator.sneakPeek.show {
+                            doOpen()
+                        }
+                    }
+                    return
+                }
+                
                 doOpen()
             }
             

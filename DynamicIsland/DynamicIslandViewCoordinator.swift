@@ -49,7 +49,7 @@ struct ExpandedItem {
 
 class DynamicIslandViewCoordinator: ObservableObject {
     static let shared = DynamicIslandViewCoordinator()
-    var notifier: TheBoringWorkerNotifier = .init()
+    var notifier: TheBoringWorkerNotifier
     
     @Published var currentView: NotchViews = .home
     
@@ -97,8 +97,8 @@ class DynamicIslandViewCoordinator: ObservableObject {
     @Published var optionKeyPressed: Bool = true
     
     private init() {
-        selectedScreen = preferredScreen
         notifier = TheBoringWorkerNotifier()
+        selectedScreen = preferredScreen
     }
     
     func setupWorkersNotificationObservers() {
@@ -171,7 +171,8 @@ class DynamicIslandViewCoordinator: ObservableObject {
             guard let self = self, !Task.isCancelled else { return }
             await MainActor.run {
                 withAnimation {
-                    self.toggleSneakPeek(status: false, type: .music)
+                    // Hide the sneak peek with the correct type that was showing
+                    self.toggleSneakPeek(status: false, type: self.sneakPeek.type)
                     self.sneakPeekDuration = 1.5
                 }
             }

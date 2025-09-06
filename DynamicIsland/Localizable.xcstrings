@@ -203,6 +203,15 @@
         }
       }
     },
+    "Brightness HUD" : {
+
+    },
+    "Built-in System Monitoring" : {
+
+    },
+    "Built-in system monitoring detects volume, brightness, and keyboard backlight changes directly without requiring external apps." : {
+
+    },
     "Buy us a coffee" : {
 
     },
@@ -468,6 +477,12 @@
     "Email address" : {
 
     },
+    "Enable Built-in System HUD" : {
+
+    },
+    "Enable built-in system monitoring to replace macOS HUD notifications with Dynamic Island displays." : {
+
+    },
     "Enable colored spectrograms" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -637,6 +652,9 @@
       }
     },
     "Installed extensions" : {
+
+    },
+    "Keyboard Backlight HUD" : {
 
     },
     "Keyboard shortcuts are disabled" : {
@@ -1028,6 +1046,9 @@
     "Remember last tab" : {
 
     },
+    "Replaces system HUD notifications with Dynamic Island displays." : {
+
+    },
     "Reset to Default" : {
 
     },
@@ -1079,6 +1100,9 @@
 
     },
     "Selected animation" : {
+
+    },
+    "Sensitivity" : {
 
     },
     "Set a custom duration for the timer. This will be used when you press the 'Custom' button in the timer interface." : {
@@ -1336,6 +1360,9 @@
       }
     },
     "View on GitHub: th-ch/youtube-music" : {
+
+    },
+    "Volume HUD" : {
 
     },
     "Welcome" : {
