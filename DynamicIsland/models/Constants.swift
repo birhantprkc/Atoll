@@ -97,6 +97,14 @@ enum SneakPeekStyle: String, CaseIterable, Identifiable, Defaults.Serializable {
     var id: String { self.rawValue }
 }
 
+enum ProgressBarStyle: String, CaseIterable, Identifiable, Defaults.Serializable {
+    case hierarchical = "Hierarchical"
+    case gradient = "Gradient"
+    case segmented = "Segmented"
+    
+    var id: String { self.rawValue }
+}
+
 extension Defaults.Keys {
         // MARK: General
     static let menubarIcon = Key<Bool>("menubarIcon", default: true)
@@ -171,6 +179,8 @@ extension Defaults.Keys {
     
         // MARK: HUD
     static let inlineHUD = Key<Bool>("inlineHUD", default: false)
+    static let progressBarStyle = Key<ProgressBarStyle>("progressBarStyle", default: .hierarchical)
+    // Legacy support - keeping for backward compatibility
     static let enableGradient = Key<Bool>("enableGradient", default: false)
     static let systemEventIndicatorShadow = Key<Bool>("systemEventIndicatorShadow", default: false)
     static let systemEventIndicatorUseAccent = Key<Bool>("systemEventIndicatorUseAccent", default: false)
@@ -234,6 +244,17 @@ extension Defaults.Keys {
             return .appleMusic
         } else {
             return .nowPlaying
+        }
+    }
+    
+    // Migration helper to convert from legacy enableGradient Boolean to new ProgressBarStyle enum
+    static func migrateProgressBarStyle() {
+        // Check if migration is needed by seeing if the old Boolean was set to gradient
+        let wasGradientEnabled = Defaults[.enableGradient]
+        
+        // Only migrate if we're still using the default hierarchical value but gradient was enabled
+        if wasGradientEnabled && Defaults[.progressBarStyle] == .hierarchical {
+            Defaults[.progressBarStyle] = .gradient
         }
     }
 }

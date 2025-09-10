@@ -102,16 +102,19 @@ struct DraggableProgressBar: View {
                     Capsule()
                         .fill(.tertiary)
                     Group {
-                        if Defaults[.enableGradient] {
+                        switch Defaults[.progressBarStyle] {
+                        case .gradient:
                             Capsule()
                                 .fill(LinearGradient(colors: Defaults[.systemEventIndicatorUseAccent] ? [Defaults[.accentColor], Defaults[.accentColor].ensureMinimumBrightness(factor: 0.2)] : [.white, .white.opacity(0.2)], startPoint: .trailing, endPoint: .leading))
                                 .frame(width: max(0, min(geo.size.width * value, geo.size.width)))
                                 .shadow(color: Defaults[.systemEventIndicatorShadow] ? Defaults[.systemEventIndicatorUseAccent] ? Defaults[.accentColor].ensureMinimumBrightness(factor: 0.7) : .white : .clear, radius: 8, x: 3)
-                        } else {
+                        case .hierarchical:
                             Capsule()
                                 .fill(Defaults[.systemEventIndicatorUseAccent] ? Defaults[.accentColor] : .white)
                                 .frame(width: max(0, min(geo.size.width * value, geo.size.width)))
                                 .shadow(color: Defaults[.systemEventIndicatorShadow] ? Defaults[.systemEventIndicatorUseAccent] ? Defaults[.accentColor].ensureMinimumBrightness(factor: 0.7) : .white : .clear, radius: 8, x: 3)
+                        case .segmented:
+                            SegmentedProgressContent(value: value, geometry: geo)
                         }
                     }
                     .opacity(value.isZero ? 0 : 1)
@@ -140,5 +143,32 @@ struct DraggableProgressBar: View {
         let newValue = dragPosition / geometry.size.width
         
         value = max(0, min(newValue, 1))
+    }
+}
+
+struct SegmentedProgressContent: View {
+    let value: CGFloat
+    let geometry: GeometryProxy
+    
+    private let segmentCount = 20
+    
+    var body: some View {
+        HStack(spacing: 1) {
+            ForEach(0..<segmentCount, id: \.self) { index in
+                let segmentValue = CGFloat(index + 1) / CGFloat(segmentCount)
+                let isActive = value >= segmentValue
+                
+                RoundedRectangle(cornerRadius: 1)
+                    .fill(isActive ? 
+                          (Defaults[.systemEventIndicatorUseAccent] ? Defaults[.accentColor] : .white) : 
+                          .clear)
+                    .frame(width: max(1, (geometry.size.width - CGFloat(segmentCount - 1) * 1) / CGFloat(segmentCount)))
+                    .shadow(color: isActive && Defaults[.systemEventIndicatorShadow] ? 
+                           (Defaults[.systemEventIndicatorUseAccent] ? Defaults[.accentColor].ensureMinimumBrightness(factor: 0.7) : .white) : 
+                           .clear, radius: 4, x: 1)
+                    .opacity(value.isZero ? 0 : (isActive ? 1 : 0.3))
+            }
+        }
+        .frame(width: geometry.size.width)
     }
 }

@@ -378,6 +378,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         coordinator.setupWorkersNotificationObservers()
         
+        // Migrate legacy progress bar settings
+        Defaults.Keys.migrateProgressBarStyle()
+        
         // Setup SystemHUD Manager
         SystemHUDManager.shared.setup(coordinator: coordinator)
         

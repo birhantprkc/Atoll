@@ -1,0 +1,173 @@
+import SwiftUI
+import Defaults
+
+struct SegmentedHUD: View {
+    @EnvironmentObject var vm: BoringViewModel
+    @Binding var type: SneakContentType
+    @Binding var value: CGFloat // 0...1
+    @Binding var icon: String
+
+    private let segmentCount: Int = 40
+    @State private var glowIndex: Int? = nil
+    @State private var lastValue: CGFloat = 0
+
+    var body: some View {
+        HStack(spacing: 16) {
+            // Icona a sinistra
+            hudIcon
+                .frame(width: 25, height: 20)
+                .offset(x:0, y: 10)
+            
+            // Contenuto centrale: percentuale + segmenti
+            VStack(spacing: 6) {
+                Text("\(Int(value * 100))%")
+                    .font(.system(size: 14, weight: .medium, design: .rounded))
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .offset(x:182, y:20)
+                segments
+                    .frame(height: vm.notchState == .open ? 10 : 14)
+            }
+            .frame(maxWidth: .infinity)
+            
+            // Spacer per bilanciare il layout (stesso width dell'icona)
+            Spacer()
+                .frame(width: 20)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .frame(maxWidth: .infinity)
+        .frame(height: vm.notchState == .open ? vm.closedNotchSize.height + 8 : 70)
+        .onChange(of: value) { old, newVal in
+            handleGlow(oldValue: old, newValue: newVal)
+        }
+    }
+
+    @ViewBuilder
+    private var hudIcon: some View {
+        Group {
+            switch type {
+            case .volume:
+                if icon.isEmpty {
+                    Image(systemName: speakerSymbol(value))
+                        .symbolVariant(value > 0 ? .none : .slash)
+                } else {
+                    Image(systemName: icon)
+                        .opacity(value.isZero ? 0.6 : 1)
+                        .scaleEffect(value.isZero ? 0.85 : 1)
+                }
+            case .brightness:
+                Image(systemName: "sun.max.fill")
+            case .backlight:
+                Image(systemName: "keyboard")
+            case .mic:
+                Image(systemName: "mic")
+            default:
+                EmptyView()
+            }
+        }
+        .foregroundStyle(.white)
+    }
+
+    // Il resto del codice rimane uguale...
+    private var segments: some View {
+        GeometryReader { geo in
+            let width = geo.size.width
+            let spacing: CGFloat = vm.notchState == .open ? 2.5 : 3.5 // Aumentato spacing
+            let computed = (width - CGFloat(segmentCount - 1) * spacing) / CGFloat(segmentCount)
+            let barWidth = max(2.5, min(4.5, computed)) // Aumentata larghezza segmenti
+            let activeCount = Int(round(value * CGFloat(segmentCount)))
+            
+            HStack(spacing: spacing) {
+                ForEach(0..<segmentCount, id: \.self) { index in
+                    RoundedRectangle(cornerRadius: 3)
+                        .fill(segmentColor(isActive: index < activeCount))
+                        .shadow(
+                            color: Defaults[.systemEventIndicatorShadow]
+                                ? glowShadowColor(for: index < activeCount, index: index)
+                                : .clear,
+                            radius: Defaults[.systemEventIndicatorShadow]
+                                ? (glowIndex == index ? 18 : (index < activeCount ? 6 : 0))
+                                : 0,
+                            x: 0, y: 0
+                        )
+                        .frame(width: barWidth)
+                        .animation(.spring(response: 0.3, dampingFraction: 0.8), value: activeCount)
+                        .scaleEffect(glowIndex == index ? 1.08 : 1.0)
+                        .animation(.spring(response: 0.2, dampingFraction: 0.6), value: glowIndex == index)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .center)
+        }
+    }
+
+    private func segmentColor(isActive: Bool) -> AnyShapeStyle {
+        if isActive {
+            if Defaults[.systemEventIndicatorUseAccent] {
+                return AnyShapeStyle(Color.accentColor)
+            }
+            return AnyShapeStyle(Color.white)
+        } else {
+            return AnyShapeStyle(Color.white.opacity(0.2))
+        }
+    }
+
+    private func glowShadowColor(for isActive: Bool, index: Int) -> Color {
+        if isActive {
+            if let glowIndex = glowIndex, index == glowIndex {
+                return Defaults[.systemEventIndicatorUseAccent]
+                    ? Color.accentColor.ensureMinimumBrightness(factor: 0.8)
+                    : Color.white
+            } else {
+                return Defaults[.systemEventIndicatorUseAccent]
+                    ? Color.accentColor.ensureMinimumBrightness(factor: 0.7)
+                    : Color.white
+            }
+        }
+        return .clear
+    }
+
+    private func handleGlow(oldValue: CGFloat, newValue: CGFloat) {
+        defer { lastValue = newValue }
+        let oldIndex = Int(round(oldValue * CGFloat(segmentCount)))
+        let newIndex = Int(round(newValue * CGFloat(segmentCount)))
+        guard oldIndex != newIndex else { return }
+
+        if newIndex > oldIndex {
+            animateWave(from: oldIndex, to: newIndex, step: 1)
+        } else {
+            animateWave(from: oldIndex - 1, to: newIndex - 1, step: -1)
+        }
+    }
+
+    private func animateWave(from start: Int, to end: Int, step: Int) {
+        let clampedStart = max(0, min(segmentCount - 1, start))
+        let clampedEnd = max(-1, min(segmentCount - 1, end))
+        let range = stride(from: clampedStart, through: clampedEnd, by: step)
+        var delay: Double = 0
+        for i in range {
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+                withAnimation(.spring(response: 0.2, dampingFraction: 0.7)) {
+                    glowIndex = i
+                }
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay + 0.25) {
+                if glowIndex == i {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                        glowIndex = nil
+                    }
+                }
+            }
+            delay += 0.02
+        }
+    }
+
+    private func speakerSymbol(_ value: CGFloat) -> String {
+        switch value {
+        case 0: return "speaker"
+        case 0...0.3: return "speaker.wave.1"
+        case 0.3...0.8: return "speaker.wave.2"
+        default: return "speaker.wave.3"
+        }
+    }
+}

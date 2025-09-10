@@ -419,7 +419,7 @@ struct Downloads: View {
 struct HUD: View {
     @EnvironmentObject var vm: DynamicIslandViewModel
     @Default(.inlineHUD) var inlineHUD
-    @Default(.enableGradient) var enableGradient
+    @Default(.progressBarStyle) var progressBarStyle
     @Default(.enableSystemHUD) var enableSystemHUD
     @Default(.enableVolumeHUD) var enableVolumeHUD
     @Default(.enableBrightnessHUD) var enableBrightnessHUD
@@ -491,15 +491,17 @@ struct HUD: View {
                     if Defaults[.inlineHUD] {
                         withAnimation {
                             Defaults[.systemEventIndicatorShadow] = false
-                            Defaults[.enableGradient] = false
+                            Defaults[.progressBarStyle] = .hierarchical
                         }
                     }
                 }
-                Picker("Progressbar style", selection: $enableGradient) {
+                Picker("Progressbar style", selection: $progressBarStyle) {
                     Text("Hierarchical")
-                        .tag(false)
+                        .tag(ProgressBarStyle.hierarchical)
                     Text("Gradient")
-                        .tag(true)
+                        .tag(ProgressBarStyle.gradient)
+                    Text("Segmented")
+                        .tag(ProgressBarStyle.segmented)
                 }
                 Defaults.Toggle("Enable glowing effect", key: .systemEventIndicatorShadow)
                 Defaults.Toggle("Use accent color", key: .systemEventIndicatorUseAccent)
