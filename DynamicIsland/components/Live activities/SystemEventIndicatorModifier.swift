@@ -98,26 +98,34 @@ struct DraggableProgressBar: View {
     var body: some View {
         VStack {
             GeometryReader { geo in
-                ZStack(alignment: .leading) {
-                    Capsule()
-                        .fill(.tertiary)
-                    Group {
-                        switch Defaults[.progressBarStyle] {
-                        case .gradient:
+                Group {
+                    if Defaults[.progressBarStyle] == .segmented {
+                        // Segmented progress bar - completely different layout
+                        SegmentedProgressContent(value: value, geometry: geo)
+                    } else {
+                        // Traditional capsule-based progress bar
+                        ZStack(alignment: .leading) {
                             Capsule()
-                                .fill(LinearGradient(colors: Defaults[.systemEventIndicatorUseAccent] ? [Defaults[.accentColor], Defaults[.accentColor].ensureMinimumBrightness(factor: 0.2)] : [.white, .white.opacity(0.2)], startPoint: .trailing, endPoint: .leading))
-                                .frame(width: max(0, min(geo.size.width * value, geo.size.width)))
-                                .shadow(color: Defaults[.systemEventIndicatorShadow] ? Defaults[.systemEventIndicatorUseAccent] ? Defaults[.accentColor].ensureMinimumBrightness(factor: 0.7) : .white : .clear, radius: 8, x: 3)
-                        case .hierarchical:
-                            Capsule()
-                                .fill(Defaults[.systemEventIndicatorUseAccent] ? Defaults[.accentColor] : .white)
-                                .frame(width: max(0, min(geo.size.width * value, geo.size.width)))
-                                .shadow(color: Defaults[.systemEventIndicatorShadow] ? Defaults[.systemEventIndicatorUseAccent] ? Defaults[.accentColor].ensureMinimumBrightness(factor: 0.7) : .white : .clear, radius: 8, x: 3)
-                        case .segmented:
-                            SegmentedProgressContent(value: value, geometry: geo)
+                                .fill(.tertiary)
+                            Group {
+                                switch Defaults[.progressBarStyle] {
+                                case .gradient:
+                                    Capsule()
+                                        .fill(LinearGradient(colors: Defaults[.systemEventIndicatorUseAccent] ? [Defaults[.accentColor], Defaults[.accentColor].ensureMinimumBrightness(factor: 0.2)] : [.white, .white.opacity(0.2)], startPoint: .trailing, endPoint: .leading))
+                                        .frame(width: max(0, min(geo.size.width * value, geo.size.width)))
+                                        .shadow(color: Defaults[.systemEventIndicatorShadow] ? Defaults[.systemEventIndicatorUseAccent] ? Defaults[.accentColor].ensureMinimumBrightness(factor: 0.7) : .white : .clear, radius: 8, x: 3)
+                                case .hierarchical:
+                                    Capsule()
+                                        .fill(Defaults[.systemEventIndicatorUseAccent] ? Defaults[.accentColor] : .white)
+                                        .frame(width: max(0, min(geo.size.width * value, geo.size.width)))
+                                        .shadow(color: Defaults[.systemEventIndicatorShadow] ? Defaults[.systemEventIndicatorUseAccent] ? Defaults[.accentColor].ensureMinimumBrightness(factor: 0.7) : .white : .clear, radius: 8, x: 3)
+                                case .segmented:
+                                    EmptyView() // This case won't be reached due to the outer if condition
+                                }
+                            }
+                            .opacity(value.isZero ? 0 : 1)
                         }
                     }
-                    .opacity(value.isZero ? 0 : 1)
                 }
                 .gesture(
                     DragGesture(minimumDistance: 0)
@@ -150,25 +158,100 @@ struct SegmentedProgressContent: View {
     let value: CGFloat
     let geometry: GeometryProxy
     
-    private let segmentCount = 20
+    private let segmentCount = 16
+    @State private var glowIndex: Int? = nil
+    @State private var lastValue: CGFloat = 0
     
     var body: some View {
-        HStack(spacing: 1) {
+        let spacing: CGFloat = 1.5
+        let computed = (geometry.size.width - CGFloat(segmentCount - 1) * spacing) / CGFloat(segmentCount)
+        let barWidth = max(3.0, min(6.0, computed))
+        let activeCount = Int(round(value * CGFloat(segmentCount)))
+        
+        HStack(spacing: spacing) {
             ForEach(0..<segmentCount, id: \.self) { index in
-                let segmentValue = CGFloat(index + 1) / CGFloat(segmentCount)
-                let isActive = value >= segmentValue
-                
-                RoundedRectangle(cornerRadius: 1)
-                    .fill(isActive ? 
-                          (Defaults[.systemEventIndicatorUseAccent] ? Defaults[.accentColor] : .white) : 
-                          .clear)
-                    .frame(width: max(1, (geometry.size.width - CGFloat(segmentCount - 1) * 1) / CGFloat(segmentCount)))
-                    .shadow(color: isActive && Defaults[.systemEventIndicatorShadow] ? 
-                           (Defaults[.systemEventIndicatorUseAccent] ? Defaults[.accentColor].ensureMinimumBrightness(factor: 0.7) : .white) : 
-                           .clear, radius: 4, x: 1)
-                    .opacity(value.isZero ? 0 : (isActive ? 1 : 0.3))
+                RoundedRectangle(cornerRadius: 2)
+                    .fill(segmentColor(isActive: index < activeCount))
+                    .shadow(
+                        color: Defaults[.systemEventIndicatorShadow]
+                            ? glowShadowColor(for: index < activeCount, index: index)
+                            : .clear,
+                        radius: Defaults[.systemEventIndicatorShadow]
+                            ? (glowIndex == index ? 12 : (index < activeCount ? 4 : 0))
+                            : 0,
+                        x: 0, y: 0
+                    )
+                    .frame(width: barWidth)
+                    .animation(.spring(response: 0.3, dampingFraction: 0.8), value: activeCount)
+                    .scaleEffect(glowIndex == index ? 1.15 : 1.0)
+                    .animation(.spring(response: 0.2, dampingFraction: 0.6), value: glowIndex == index)
             }
         }
-        .frame(width: geometry.size.width)
+        .frame(maxWidth: .infinity, alignment: .center)
+        .opacity(value.isZero ? 0 : 1)
+        .onChange(of: value) { old, newVal in
+            handleGlow(oldValue: old, newValue: newVal)
+        }
+    }
+    
+    private func segmentColor(isActive: Bool) -> Color {
+        if isActive {
+            if Defaults[.systemEventIndicatorUseAccent] {
+                return Defaults[.accentColor]
+            }
+            return .white
+        } else {
+            return .white.opacity(0.15)
+        }
+    }
+    
+    private func glowShadowColor(for isActive: Bool, index: Int) -> Color {
+        if isActive {
+            if let glowIndex = glowIndex, index == glowIndex {
+                return Defaults[.systemEventIndicatorUseAccent]
+                    ? Defaults[.accentColor].ensureMinimumBrightness(factor: 0.8)
+                    : .white
+            } else {
+                return Defaults[.systemEventIndicatorUseAccent]
+                    ? Defaults[.accentColor].ensureMinimumBrightness(factor: 0.7)
+                    : .white
+            }
+        }
+        return .clear
+    }
+    
+    private func handleGlow(oldValue: CGFloat, newValue: CGFloat) {
+        defer { lastValue = newValue }
+        let oldIndex = Int(round(oldValue * CGFloat(segmentCount)))
+        let newIndex = Int(round(newValue * CGFloat(segmentCount)))
+        guard oldIndex != newIndex else { return }
+
+        if newIndex > oldIndex {
+            animateWave(from: oldIndex, to: newIndex, step: 1)
+        } else {
+            animateWave(from: oldIndex - 1, to: newIndex - 1, step: -1)
+        }
+    }
+    
+    private func animateWave(from start: Int, to end: Int, step: Int) {
+        let clampedStart = max(0, min(segmentCount - 1, start))
+        let clampedEnd = max(-1, min(segmentCount - 1, end))
+        let range = stride(from: clampedStart, through: clampedEnd, by: step)
+        var delay: Double = 0
+        for i in range {
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+                withAnimation(.spring(response: 0.2, dampingFraction: 0.7)) {
+                    glowIndex = i
+                }
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay + 0.2) {
+                if glowIndex == i {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                        glowIndex = nil
+                    }
+                }
+            }
+            delay += 0.015
+        }
     }
 }
