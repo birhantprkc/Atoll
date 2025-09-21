@@ -7,6 +7,7 @@
 
 import AppKit
 import SwiftUI
+import Defaults
 
 class ClipboardPanel: NSPanel {
     
@@ -50,6 +51,10 @@ class ClipboardPanel: NSPanel {
             .stationary,
             .fullScreenAuxiliary  // Float above full-screen apps
         ]
+        
+        // Apply screenshot protection
+        updateScreenshotProtection()
+        setupScreenshotProtectionObserver()
         
         // Accept mouse moved events for proper hover behavior
         acceptsMouseMovedEvents = true
@@ -133,6 +138,29 @@ class ClipboardPanel: NSPanel {
         yPosition = max(screenFrame.minY + 10, min(yPosition, screenFrame.maxY - panelFrame.height - 10))
         
         setFrameOrigin(NSPoint(x: xPosition, y: yPosition))
+    }
+    
+    private func setupScreenshotProtectionObserver() {
+        // Observe changes to hidePanelsFromScreenCapture setting
+        Defaults.observe(.hidePanelsFromScreenCapture) { [weak self] change in
+            DispatchQueue.main.async {
+                self?.updateScreenshotProtection()
+            }
+        }
+    }
+    
+    private func updateScreenshotProtection() {
+        let shouldHide = Defaults[.hidePanelsFromScreenCapture]
+        
+        if shouldHide {
+            // Exclude from screenshots and screen recordings
+            self.sharingType = .none
+            print("🙈 ClipboardPanel: Protected from screenshots and screen recordings")
+        } else {
+            // Allow normal screenshot inclusion
+            self.sharingType = .readOnly
+            print("👁️ ClipboardPanel: Visible in screenshots and screen recordings")
+        }
     }
 }
 

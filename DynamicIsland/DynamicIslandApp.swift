@@ -2,7 +2,7 @@
 //  DynamicIslandApp.swift
 //  DynamicIslandApp
 //
-//  Created by Harsh Vardhan  Goswami  on 02/08/24.
+//  Modified by Hariharan Mudaliar  on 20/09/25.
 //
 
 import AVFoundation
@@ -579,6 +579,36 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             
             // Toggle color picker panel
             ColorPickerPanelManager.shared.toggleColorPickerPanel()
+        }
+        
+        KeyboardShortcuts.onKeyDown(for: .screenAssistantPanel) { [weak self] in
+            guard let self = self else { return }
+            
+            // Only execute if shortcuts are enabled
+            guard Defaults[.enableShortcuts] else { return }
+            
+            // Only open screen assistant if the feature is enabled
+            guard Defaults[.enableScreenAssistant] else { return }
+            
+            // Handle keyboard shortcut based on display mode
+            switch Defaults[.screenAssistantDisplayMode] {
+            case .panel:
+                ScreenAssistantPanelManager.shared.toggleScreenAssistantPanel()
+            case .popover:
+                // For popover mode, first ensure notch is open, then toggle popover
+                
+                // If notch is closed, open it first
+                if self.vm.notchState == .closed {
+                    self.vm.open()
+                    // Wait a moment for the notch to open, then show popover
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        NotificationCenter.default.post(name: NSNotification.Name("ToggleScreenAssistantPopover"), object: nil)
+                    }
+                } else {
+                    // Notch is already open, toggle popover immediately
+                    NotificationCenter.default.post(name: NSNotification.Name("ToggleScreenAssistantPopover"), object: nil)
+                }
+            }
         }
         
         KeyboardShortcuts.onKeyDown(for: .statsPanel) { [weak self] in

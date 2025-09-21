@@ -93,6 +93,10 @@ class ColorPickerPanel: NSPanel {
             .fullScreenAuxiliary  // Float above full-screen apps
         ]
         
+        // Apply screen capture hiding setting
+        updateScreenCaptureVisibility()
+        setupScreenCaptureObserver()
+        
         // Accept mouse moved events for proper hover behavior
         acceptsMouseMovedEvents = true
         
@@ -155,6 +159,29 @@ class ColorPickerPanel: NSPanel {
         super.setFrameOrigin(point)
         // Save position whenever it changes (user dragging)
         saveCurrentPosition()
+    }
+    
+    private func setupScreenCaptureObserver() {
+        // Observe changes to hidePanelsFromScreenCapture setting
+        Defaults.observe(.hidePanelsFromScreenCapture) { [weak self] change in
+            DispatchQueue.main.async {
+                self?.updateScreenCaptureVisibility()
+            }
+        }
+    }
+    
+    private func updateScreenCaptureVisibility() {
+        let shouldHide = Defaults[.hidePanelsFromScreenCapture]
+        
+        if shouldHide {
+            // Hide from screen capture and recording
+            self.sharingType = .none
+            print("🙈 ColorPickerPanel: Hidden from screen capture and recordings")
+        } else {
+            // Allow normal screen capture
+            self.sharingType = .readOnly
+            print("👁️ ColorPickerPanel: Visible in screen capture and recordings")
+        }
     }
 }
 

@@ -64,6 +64,10 @@ class SettingsWindowController: NSWindowController {
         
         // Handle window closing
         window.delegate = self
+        
+        // Apply screen capture hiding setting
+        updateScreenCaptureVisibility()
+        setupScreenCaptureObserver()
     }
     
     func showWindow() {
@@ -109,6 +113,29 @@ class SettingsWindowController: NSWindowController {
         
         // Set app back to accessory mode immediately
         NSApp.setActivationPolicy(.accessory)
+    }
+    
+    private func setupScreenCaptureObserver() {
+        // Observe changes to hidePanelsFromScreenCapture setting
+        Defaults.observe(.hidePanelsFromScreenCapture) { [weak self] change in
+            DispatchQueue.main.async {
+                self?.updateScreenCaptureVisibility()
+            }
+        }
+    }
+    
+    private func updateScreenCaptureVisibility() {
+        let shouldHide = Defaults[.hidePanelsFromScreenCapture]
+        
+        if shouldHide {
+            // Hide from screen capture and recording
+            window?.sharingType = .none
+            print("🙈 SettingsWindow: Hidden from screen capture and recordings")
+        } else {
+            // Allow normal screen capture
+            window?.sharingType = .readOnly
+            print("👁️ SettingsWindow: Visible in screen capture and recordings")
+        }
     }
 }
 
