@@ -370,6 +370,7 @@
 					"$(PROJECT_DIR)/mediaremote-adapter",
 				);
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = DynamicIsland/Info.plist;
 				INFOPLIST_KEY_NSAppleEventsUsageDescription = "Need for Spotify and Apple Music";
 				INFOPLIST_KEY_NSCalendarsUsageDescription = "Need for Calendar Mode";
 				INFOPLIST_KEY_NSCameraUsageDescription = "We need your camera for Mirror mode";
@@ -411,6 +412,7 @@
 					"$(PROJECT_DIR)/mediaremote-adapter",
 				);
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = DynamicIsland/Info.plist;
 				INFOPLIST_KEY_NSAppleEventsUsageDescription = "Need for Spotify and Apple Music";
 				INFOPLIST_KEY_NSCalendarsUsageDescription = "Need for Calendar Mode";
 				INFOPLIST_KEY_NSCameraUsageDescription = "We need your camera for Mirror mode";

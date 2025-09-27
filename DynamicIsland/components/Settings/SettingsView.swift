@@ -56,6 +56,9 @@ struct SettingsView: View {
                 NavigationLink(value: "Clipboard") {
                     Label("Clipboard", systemImage: "clipboard")
                 }
+                NavigationLink(value: "ScreenAssistant") {
+                    Label("Screen Assistant", systemImage: "brain.head.profile")
+                }
                 NavigationLink(value: "ColorPicker") {
                     Label("Color Picker", systemImage: "eyedropper")
                 }
@@ -102,6 +105,8 @@ struct SettingsView: View {
                     StatsSettings()
                 case "Clipboard":
                     ClipboardSettings()
+                case "ScreenAssistant":
+                    ScreenAssistantSettings()
                 case "ColorPicker":
                     ColorPickerSettings()
                 case "Downloads":
@@ -183,6 +188,7 @@ struct GeneralSettings: View {
                     NotificationCenter.default.post(name: Notification.Name.automaticallySwitchDisplayChanged, object: nil)
                 }
                 .disabled(showOnAllDisplays)
+                Defaults.Toggle("Hide panels from screenshots & screen recordings", key: .hidePanelsFromScreenCapture)
             } header: {
                 Text("System features")
             }
@@ -1263,6 +1269,29 @@ struct Shortcuts: View {
                 Section {
                     HStack {
                         VStack(alignment: .leading) {
+                            KeyboardShortcuts.Recorder("Screen Assistant:", name: .screenAssistantPanel)
+                                .disabled(!enableShortcuts || !Defaults[.enableScreenAssistant])
+                            if !Defaults[.enableScreenAssistant] {
+                                Text("Screen Assistant feature is disabled")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                    .padding(.top, 2)
+                            }
+                        }
+                        Spacer()
+                    }
+                } header: {
+                    Text("AI Assistant")
+                } footer: {
+                    Text("Opens the AI assistant panel for file analysis and conversation. Default is Cmd+Shift+A. Only works when screen assistant feature is enabled.")
+                        .multilineTextAlignment(.trailing)
+                        .foregroundStyle(.secondary)
+                        .font(.caption)
+                }
+                
+                Section {
+                    HStack {
+                        VStack(alignment: .leading) {
                             KeyboardShortcuts.Recorder("Stats Panel:", name: .statsPanel)
                                 .disabled(!enableShortcuts || !enableStatsFeature || !Defaults[.showStatsPanel])
                             if !enableStatsFeature {
@@ -1857,6 +1886,176 @@ struct ClipboardSettings: View {
                 clipboardManager.startMonitoring()
             }
         }
+    }
+    
+    private func timeAgoString(from date: Date) -> String {
+        let interval = Date().timeIntervalSince(date)
+        
+        if interval < 60 {
+            return "Just now"
+        } else if interval < 3600 {
+            let minutes = Int(interval / 60)
+            return "\(minutes)m ago"
+        } else if interval < 86400 {
+            let hours = Int(interval / 3600)
+            return "\(hours)h ago"
+        } else {
+            let days = Int(interval / 86400)
+            return "\(days)d ago"
+        }
+    }
+}
+
+struct ScreenAssistantSettings: View {
+    @ObservedObject var screenAssistantManager = ScreenAssistantManager.shared
+    @Default(.enableScreenAssistant) var enableScreenAssistant
+    @Default(.screenAssistantDisplayMode) var screenAssistantDisplayMode
+    @Default(.geminiApiKey) var geminiApiKey
+    @State private var apiKeyText = ""
+    @State private var showingApiKey = false
+    
+    var body: some View {
+        Form {
+            Section {
+                Defaults.Toggle("Enable Screen Assistant", key: .enableScreenAssistant)
+            } header: {
+                Text("AI Assistant")
+            } footer: {
+                Text("AI-powered assistant that can analyze files, images, and provide conversational help. Use Cmd+Shift+A to quickly access the assistant.")
+            }
+            
+            if enableScreenAssistant {
+                Section {
+                    HStack {
+                        Text("Gemini API Key")
+                        Spacer()
+                        if geminiApiKey.isEmpty {
+                            Text("Not Set")
+                                .foregroundColor(.red)
+                        } else {
+                            Text("••••••••")
+                                .foregroundColor(.green)
+                        }
+                        
+                        Button(showingApiKey ? "Hide" : (geminiApiKey.isEmpty ? "Set" : "Change")) {
+                            if showingApiKey {
+                                showingApiKey = false
+                                if !apiKeyText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                                    Defaults[.geminiApiKey] = apiKeyText
+                                }
+                                apiKeyText = ""
+                            } else {
+                                showingApiKey = true
+                                apiKeyText = geminiApiKey
+                            }
+                        }
+                    }
+                    
+                    if showingApiKey {
+                        VStack(alignment: .leading, spacing: 8) {
+                            SecureField("Enter your Gemini API Key", text: $apiKeyText)
+                                .textFieldStyle(.roundedBorder)
+                            
+                            Text("Get your free API key from Google AI Studio")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                            
+                            HStack {
+                                Button("Open Google AI Studio") {
+                                    NSWorkspace.shared.open(URL(string: "https://aistudio.google.com/app/apikey")!)
+                                }
+                                .buttonStyle(.link)
+                                
+                                Spacer()
+                                
+                                Button("Save") {
+                                    Defaults[.geminiApiKey] = apiKeyText
+                                    showingApiKey = false
+                                    apiKeyText = ""
+                                }
+                                .disabled(apiKeyText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                            }
+                        }
+                    }
+                    
+                    HStack {
+                        Text("Display Mode")
+                        Spacer()
+                        Picker("Display Mode", selection: $screenAssistantDisplayMode) {
+                            ForEach(ScreenAssistantDisplayMode.allCases, id: \.self) { mode in
+                                Text(mode.displayName).tag(mode)
+                            }
+                        }
+                        .pickerStyle(.menu)
+                        .frame(width: 100)
+                    }
+                    
+                    HStack {
+                        Text("Attached Files")
+                        Spacer()
+                        Text("\(screenAssistantManager.attachedFiles.count)")
+                            .foregroundColor(.secondary)
+                    }
+                    
+                    HStack {
+                        Text("Recording Status")
+                        Spacer()
+                        Text(screenAssistantManager.isRecording ? "Recording" : "Ready")
+                            .foregroundColor(screenAssistantManager.isRecording ? .red : .secondary)
+                    }
+                } header: {
+                    Text("Configuration")
+                } footer: {
+                    switch screenAssistantDisplayMode {
+                    case .popover:
+                        Text("Popover mode shows the assistant as a dropdown attached to the AI button. Panel mode shows the assistant in a floating window near the notch.")
+                    case .panel:
+                        Text("Panel mode shows the assistant in a floating window near the notch. Popover mode shows the assistant as a dropdown attached to the AI button.")
+                    }
+                }
+                
+                Section {
+                    Button("Clear All Files") {
+                        screenAssistantManager.clearAllFiles()
+                    }
+                    .foregroundColor(.red)
+                    .disabled(screenAssistantManager.attachedFiles.isEmpty)
+                } header: {
+                    Text("Actions")
+                } footer: {
+                    Text("Clear all files removes all attached files and audio recordings. This action is permanent.")
+                }
+                
+                if !screenAssistantManager.attachedFiles.isEmpty {
+                    Section {
+                        ForEach(screenAssistantManager.attachedFiles) { file in
+                            VStack(alignment: .leading, spacing: 4) {
+                                HStack {
+                                    Image(systemName: file.type.iconName)
+                                        .foregroundColor(.blue)
+                                        .frame(width: 16)
+                                    Text(file.type.displayName)
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                    Spacer()
+                                    Text(timeAgoString(from: file.timestamp))
+                                        .font(.caption2)
+                                        .foregroundColor(.secondary)
+                                }
+                                Text(file.name)
+                                    .font(.system(.body, design: .monospaced))
+                                    .lineLimit(2)
+                            }
+                            .padding(.vertical, 2)
+                        }
+                    } header: {
+                        Text("Attached Files")
+                    }
+                }
+            }
+        }
+        .formStyle(.grouped)
+        .navigationTitle("Screen Assistant")
     }
     
     private func timeAgoString(from date: Date) -> String {

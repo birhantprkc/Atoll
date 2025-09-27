@@ -7,6 +7,7 @@
 
 import AppKit
 import SwiftUI
+import Defaults
 
 class StatsPanel: NSPanel {
     
@@ -50,6 +51,10 @@ class StatsPanel: NSPanel {
             .stationary,
             .fullScreenAuxiliary  // Float above full-screen apps
         ]
+        
+        // Apply screen capture hiding setting
+        updateScreenCaptureVisibility()
+        setupScreenCaptureObserver()
         
         // Accept mouse moved events for proper hover behavior
         acceptsMouseMovedEvents = true
@@ -98,5 +103,28 @@ class StatsPanel: NSPanel {
         yPosition = max(screenFrame.minY + 10, min(yPosition, screenFrame.maxY - panelFrame.height - 10))
         
         setFrameOrigin(NSPoint(x: xPosition, y: yPosition))
+    }
+    
+    private func setupScreenCaptureObserver() {
+        // Observe changes to hidePanelsFromScreenCapture setting
+        Defaults.observe(.hidePanelsFromScreenCapture) { [weak self] change in
+            DispatchQueue.main.async {
+                self?.updateScreenCaptureVisibility()
+            }
+        }
+    }
+    
+    private func updateScreenCaptureVisibility() {
+        let shouldHide = Defaults[.hidePanelsFromScreenCapture]
+        
+        if shouldHide {
+            // Hide from screen capture and recording
+            self.sharingType = .none
+            print("🙈 StatsPanel: Hidden from screen capture and recordings")
+        } else {
+            // Allow normal screen capture
+            self.sharingType = .readOnly
+            print("👁️ StatsPanel: Visible in screen capture and recordings")
+        }
     }
 }
