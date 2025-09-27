@@ -31,104 +31,209 @@ struct SingleGraphData: GraphData {
     let type: GraphType = .single
 }
 
+// Dual value graph data (for network/disk)
+struct DualGraphData: GraphData {
+    let title: String
+    let positiveValue: String
+    let negativeValue: String
+    let positiveData: [Double]
+    let negativeData: [Double]
+    let positiveColor: Color
+    let negativeColor: Color
+    let color: Color // Primary color for the component
+    let icon: String
+    let type: GraphType = .dual
+}
+
 struct NotchStatsView: View {
     @ObservedObject var statsManager = StatsManager.shared
     @Default(.enableStatsFeature) var enableStatsFeature
+    @Default(.showCpuGraph) var showCpuGraph
+    @Default(.showMemoryGraph) var showMemoryGraph
+    @Default(.showGpuGraph) var showGpuGraph
+    @Default(.showNetworkGraph) var showNetworkGraph
+    @Default(.showDiskGraph) var showDiskGraph
     @State private var showingCPUPopover = false
     @State private var showingMemoryPopover = false
     @State private var showingGPUPopover = false
     @State private var isHoveringCPUPopover = false
     @State private var isHoveringMemoryPopover = false
     @State private var isHoveringGPUPopover = false
+    @State private var isResizingForStats = false
     @EnvironmentObject var vm: DynamicIslandViewModel
     
     var availableGraphs: [GraphData] {
         var graphs: [GraphData] = []
         
-        // Only CPU, Memory, and GPU as in boring.notch - no network/disk
-        graphs.append(SingleGraphData(
-            title: "CPU",
-            value: statsManager.cpuUsageString,
-            data: statsManager.cpuHistory,
-            color: .blue,
-            icon: "cpu"
-        ))
+        if showCpuGraph {
+            graphs.append(SingleGraphData(
+                title: "CPU",
+                value: statsManager.cpuUsageString,
+                data: statsManager.cpuHistory,
+                color: .blue,
+                icon: "cpu"
+            ))
+        }
         
-        graphs.append(SingleGraphData(
-            title: "Memory",
-            value: statsManager.memoryUsageString,
-            data: statsManager.memoryHistory,
-            color: .green,
-            icon: "memorychip"
-        ))
+        if showMemoryGraph {
+            graphs.append(SingleGraphData(
+                title: "Memory",
+                value: statsManager.memoryUsageString,
+                data: statsManager.memoryHistory,
+                color: .green,
+                icon: "memorychip"
+            ))
+        }
         
-        graphs.append(SingleGraphData(
-            title: "GPU",
-            value: statsManager.gpuUsageString,
-            data: statsManager.gpuHistory,
-            color: .purple,
-            icon: "display"
-        ))
+        if showGpuGraph {
+            graphs.append(SingleGraphData(
+                title: "GPU",
+                value: statsManager.gpuUsageString,
+                data: statsManager.gpuHistory,
+                color: .purple,
+                icon: "display"
+            ))
+        }
+        
+        if showNetworkGraph {
+            graphs.append(DualGraphData(
+                title: "Network",
+                positiveValue: "↓" + statsManager.networkDownloadString,
+                negativeValue: "↑" + statsManager.networkUploadString,
+                positiveData: statsManager.networkDownloadHistory,
+                negativeData: statsManager.networkUploadHistory,
+                positiveColor: .orange,
+                negativeColor: .red,
+                color: .orange,
+                icon: "network"
+            ))
+        }
+        
+        if showDiskGraph {
+            graphs.append(DualGraphData(
+                title: "Disk",
+                positiveValue: "R " + statsManager.diskReadString,
+                negativeValue: "W " + statsManager.diskWriteString,
+                positiveData: statsManager.diskReadHistory,
+                negativeData: statsManager.diskWriteHistory,
+                positiveColor: .cyan,
+                negativeColor: .yellow,
+                color: .cyan,
+                icon: "internaldrive"
+            ))
+        }
         
         return graphs
     }
     
-    // Restored original 3-graph layout from boring.notch
+    // Smart grid layout system for different graph counts
     @ViewBuilder
     var statsGridLayout: some View {
-        // 3 graphs: Single row with proper spacing - matches boring.notch exactly
-        LazyVGrid(
-            columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 3),
-            spacing: 8
-        ) {
-            ForEach(0..<availableGraphs.count, id: \.self) { index in
-                let graphData = availableGraphs[index]
-                
-                Button(action: {
-                    handleGraphClick(for: graphData)
-                }) {
-                    UnifiedStatsCard(graphData: graphData)
+        let graphCount = availableGraphs.count
+        
+        if graphCount <= 3 {
+            // 1-3 graphs: Single row with equal spacing
+            LazyVGrid(
+                columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: graphCount),
+                spacing: 12
+            ) {
+                ForEach(0..<graphCount, id: \.self) { index in
+                    graphViewForIndex(index)
                 }
-                .buttonStyle(PlainButtonStyle())
-                .popover(isPresented: bindingForGraph(graphData)) {
-                    RankedProcessPopover(
-                        rankingType: rankingTypeForGraph(graphData),
-                        onHoverChange: { hovering in
-                            switch graphData.title {
-                            case "CPU":
-                                isHoveringCPUPopover = hovering
-                            case "Memory":
-                                isHoveringMemoryPopover = hovering
-                            case "GPU":
-                                isHoveringGPUPopover = hovering
-                            default:
-                                break
-                            }
-                        }
-                    )
-                    .onDisappear {
-                        // Reset hover states when popover disappears
+            }
+        } else if graphCount == 4 {
+            // 4 graphs: 2x2 grid
+            LazyVGrid(
+                columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 2),
+                spacing: 12
+            ) {
+                ForEach(0..<graphCount, id: \.self) { index in
+                    graphViewForIndex(index)
+                }
+            }
+        } else {
+            // 5 graphs: First row 3 graphs, second row 2 graphs (half-width each)
+            VStack(spacing: 12) {
+                // First row: 3 graphs
+                LazyVGrid(
+                    columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 3),
+                    spacing: 8
+                ) {
+                    ForEach(0..<3, id: \.self) { index in
+                        graphViewForIndex(index)
+                    }
+                }
+                
+                // Second row: 2 graphs (half-width each)
+                LazyVGrid(
+                    columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 2),
+                    spacing: 8
+                ) {
+                    ForEach(3..<graphCount, id: \.self) { index in
+                        graphViewForIndex(index)
+                    }
+                }
+            }
+        }
+    }
+    
+    @ViewBuilder
+    private func graphViewForIndex(_ index: Int) -> some View {
+        let graphData = availableGraphs[index]
+        
+        // Only make CPU, Memory, GPU clickable for process popovers
+        if graphData.title == "CPU" || graphData.title == "Memory" || graphData.title == "GPU" {
+            Button(action: {
+                handleGraphClick(for: graphData)
+            }) {
+                UnifiedStatsCard(graphData: graphData)
+            }
+            .buttonStyle(PlainButtonStyle())
+            .popover(isPresented: bindingForGraph(graphData)) {
+                RankedProcessPopover(
+                    rankingType: rankingTypeForGraph(graphData),
+                    onHoverChange: { hovering in
                         switch graphData.title {
                         case "CPU":
-                            isHoveringCPUPopover = false
+                            isHoveringCPUPopover = hovering
                         case "Memory":
-                            isHoveringMemoryPopover = false
+                            isHoveringMemoryPopover = hovering
                         case "GPU":
-                            isHoveringGPUPopover = false
+                            isHoveringGPUPopover = hovering
                         default:
                             break
                         }
-                        // Ensure popover state is updated when popover disappears
-                        DispatchQueue.main.async {
-                            updateStatsPopoverState()
-                        }
+                    }
+                )
+                .onDisappear {
+                    // Reset hover states when popover disappears
+                    switch graphData.title {
+                    case "CPU":
+                        isHoveringCPUPopover = false
+                    case "Memory":
+                        isHoveringMemoryPopover = false
+                    case "GPU":
+                        isHoveringGPUPopover = false
+                    default:
+                        break
+                    }
+                    // Ensure popover state is updated when popover disappears
+                    DispatchQueue.main.async {
+                        updateStatsPopoverState()
                     }
                 }
+            }
+            .transition(.asymmetric(
+                insertion: .scale.combined(with: .opacity).animation(.easeInOut(duration: 0.4)),
+                removal: .scale.combined(with: .opacity).animation(.easeInOut(duration: 0.4))
+            ))
+        } else {
+            // Network and Disk graphs are not clickable
+            UnifiedStatsCard(graphData: graphData)
                 .transition(.asymmetric(
                     insertion: .scale.combined(with: .opacity).animation(.easeInOut(duration: 0.4)),
                     removal: .scale.combined(with: .opacity).animation(.easeInOut(duration: 0.4))
                 ))
-            }
         }
     }
     
@@ -198,8 +303,27 @@ struct NotchStatsView: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .padding()
+            } else if availableGraphs.isEmpty {
+                // No graphs enabled state
+                VStack(spacing: 12) {
+                    Image(systemName: "chart.xyaxis.line")
+                        .font(.system(size: 40))
+                        .foregroundColor(.secondary)
+                    
+                    Text("No Graphs Enabled")
+                        .font(.headline)
+                        .foregroundColor(.primary)
+                    
+                    Text("Enable graph visibility in Settings → Stats to view performance data.")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .padding()
             } else {
-                // Stats content - restored to original boring.notch 3-graph layout
+                // Stats content with smart grid layout
                 VStack(spacing: 8) {
                     statsGridLayout
                 }
@@ -222,6 +346,13 @@ struct NotchStatsView: View {
         }
         .animation(.easeInOut(duration: 0.4), value: enableStatsFeature)
         .animation(.easeInOut(duration: 0.4), value: availableGraphs.count)
+        .onChange(of: availableGraphs.count) { _, newCount in
+            // Protect against hover interference during dynamic sizing
+            isResizingForStats = true
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+                isResizingForStats = false
+            }
+        }
         .onChange(of: showingCPUPopover) { _, _ in
             updateStatsPopoverState()
         }
@@ -244,9 +375,11 @@ struct NotchStatsView: View {
     
     private func updateStatsPopoverState() {
         // Use the same logic as battery popover: active only when shown AND hovered
+        // Also consider resize protection to prevent closing during layout changes
         let newState = (showingCPUPopover && isHoveringCPUPopover) || 
                        (showingMemoryPopover && isHoveringMemoryPopover) || 
-                       (showingGPUPopover && isHoveringGPUPopover)
+                       (showingGPUPopover && isHoveringGPUPopover) ||
+                       isResizingForStats
         if vm.isStatsPopoverActive != newState {
             vm.isStatsPopoverActive = newState
             #if DEBUG
@@ -254,62 +387,89 @@ struct NotchStatsView: View {
             print("   CPU: shown=\(showingCPUPopover), hovering=\(isHoveringCPUPopover)")
             print("   Memory: shown=\(showingMemoryPopover), hovering=\(isHoveringMemoryPopover)")
             print("   GPU: shown=\(showingGPUPopover), hovering=\(isHoveringGPUPopover)")
+            print("   Resizing: \(isResizingForStats)")
             #endif
         }
     }
 }
 
-// Unified Stats Card Component - now clickable for popovers, matches boring.notch sizing
+// Unified Stats Card Component - handles both single and dual data types, matches boring.notch sizing
 struct UnifiedStatsCard: View {
     let graphData: GraphData
     @State private var isHovered = false
     
     var body: some View {
-        VStack(spacing: 3) {
-            // Header with title on left and percentage on right - matches boring.notch layout
+        VStack(spacing: 3) { // Match boring.notch spacing
+            // Header - consistent across all card types
             HStack(spacing: 4) {
-                // Title and icon on left
-                HStack(spacing: 3) {
-                    Image(systemName: graphData.icon)
-                        .foregroundColor(graphData.color)
-                        .font(.caption)
-                    
-                    Text(graphData.title)
-                        .font(.caption)
-                        .fontWeight(.medium)
-                        .foregroundColor(.secondary)
-                }
+                Image(systemName: graphData.icon)
+                    .foregroundColor(graphData.color)
+                    .font(.caption) // Match boring.notch font size
+                
+                Text(graphData.title)
+                    .font(.caption) // Match boring.notch font size
+                    .fontWeight(.medium)
+                    .foregroundColor(.secondary)
                 
                 Spacer()
                 
-                // Percentage value on right
+                // Show value on right for single graphs like boring.notch
                 if let singleData = graphData as? SingleGraphData {
                     Text(singleData.value)
-                        .font(.caption)
+                        .font(.caption) // Match boring.notch font size
                         .fontWeight(.bold)
                         .foregroundColor(.primary)
                 }
             }
             
-            // Graph section - full height since no separate value section, matches boring.notch
+            // Values section for dual graphs only
+            if let dualData = graphData as? DualGraphData {
+                HStack(spacing: 6) {
+                    Text(dualData.positiveValue)
+                        .font(.caption)
+                        .fontWeight(.semibold)
+                        .foregroundColor(dualData.positiveColor)
+                    
+                    Text("•")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                    
+                    Text(dualData.negativeValue)
+                        .font(.caption)
+                        .fontWeight(.semibold)
+                        .foregroundColor(dualData.negativeColor)
+                }
+                .frame(height: 18) // Smaller for dual graphs
+            }
+            
+            // Graph section - adapts based on graph type
             Group {
                 if let singleData = graphData as? SingleGraphData {
                     MiniGraph(data: singleData.data, color: singleData.color)
+                } else if let dualData = graphData as? DualGraphData {
+                    DualQuadrantGraph(
+                        positiveData: dualData.positiveData,
+                        negativeData: dualData.negativeData,
+                        positiveColor: dualData.positiveColor,
+                        negativeColor: dualData.negativeColor
+                    )
                 }
             }
-            .frame(height: 36) // Matches boring.notch exactly - reduced from 50px
+            .frame(height: 36) // Match boring.notch exactly - reduced from 50
             
-            // Click hint
-            Text("Click for details")
-                .font(.caption2)
-                .foregroundColor(.secondary)
-                .opacity(isHovered ? 1.0 : 0.0)
-                .animation(.easeInOut(duration: 0.2), value: isHovered)
+            // Click hint - only for CPU, Memory, GPU
+            if graphData.title == "CPU" || graphData.title == "Memory" || graphData.title == "GPU" {
+                Text("Click for details")
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+                    .opacity(isHovered ? 1.0 : 0.0)
+                    .animation(.easeInOut(duration: 0.2), value: isHovered)
+            }
         }
-        .padding(8) // Reduced padding to match boring.notch
+        .padding(8) // Match boring.notch padding - reduced from 10
         .background(
             RoundedRectangle(cornerRadius: 8)
-                .fill(Color(NSColor.controlBackgroundColor).opacity(0.7))
+                .fill(Color(NSColor.controlBackgroundColor).opacity(0.7)) // Match boring.notch opacity
                 .overlay(
                     RoundedRectangle(cornerRadius: 8)
                         .stroke(graphData.color.opacity(isHovered ? 0.5 : 0.2), lineWidth: 1)
@@ -380,6 +540,123 @@ struct MiniGraph: View {
 }
 
 
+
+struct DualQuadrantGraph: View {
+    let positiveData: [Double]
+    let negativeData: [Double]
+    let positiveColor: Color
+    let negativeColor: Color
+    
+    var body: some View {
+        GeometryReader { geometry in
+            let maxPositive = positiveData.max() ?? 1.0
+            let maxNegative = negativeData.max() ?? 1.0
+            let maxValue = max(maxPositive, maxNegative)
+            
+            let normalizedPositive = maxValue > 0 ? positiveData.map { $0 / maxValue } : positiveData
+            let normalizedNegative = maxValue > 0 ? negativeData.map { $0 / maxValue } : negativeData
+            
+            let centerY = geometry.size.height / 2
+            
+            ZStack {
+                // Center dividing line
+                Path { path in
+                    path.move(to: CGPoint(x: 0, y: centerY))
+                    path.addLine(to: CGPoint(x: geometry.size.width, y: centerY))
+                }
+                .stroke(Color.secondary.opacity(0.3), lineWidth: 1)
+                
+                // Positive quadrant (upper half)
+                Path { path in
+                    guard !normalizedPositive.isEmpty else { return }
+                    
+                    let stepX = geometry.size.width / CGFloat(normalizedPositive.count - 1)
+                    
+                    for (index, value) in normalizedPositive.enumerated() {
+                        let x = CGFloat(index) * stepX
+                        let y = centerY - (centerY * CGFloat(value)) // Above center
+                        
+                        if index == 0 {
+                            path.move(to: CGPoint(x: x, y: y))
+                        } else {
+                            path.addLine(to: CGPoint(x: x, y: y))
+                        }
+                    }
+                }
+                .stroke(positiveColor, lineWidth: 2)
+                
+                // Positive fill
+                Path { path in
+                    guard !normalizedPositive.isEmpty else { return }
+                    
+                    let stepX = geometry.size.width / CGFloat(normalizedPositive.count - 1)
+                    
+                    path.move(to: CGPoint(x: 0, y: centerY))
+                    
+                    for (index, value) in normalizedPositive.enumerated() {
+                        let x = CGFloat(index) * stepX
+                        let y = centerY - (centerY * CGFloat(value))
+                        path.addLine(to: CGPoint(x: x, y: y))
+                    }
+                    
+                    path.addLine(to: CGPoint(x: geometry.size.width, y: centerY))
+                    path.closeSubpath()
+                }
+                .fill(
+                    LinearGradient(
+                        gradient: Gradient(colors: [positiveColor.opacity(0.3), positiveColor.opacity(0.1)]),
+                        startPoint: .top,
+                        endPoint: .center
+                    )
+                )
+                
+                // Negative quadrant (lower half)
+                Path { path in
+                    guard !normalizedNegative.isEmpty else { return }
+                    
+                    let stepX = geometry.size.width / CGFloat(normalizedNegative.count - 1)
+                    
+                    for (index, value) in normalizedNegative.enumerated() {
+                        let x = CGFloat(index) * stepX
+                        let y = centerY + (centerY * CGFloat(value)) // Below center
+                        
+                        if index == 0 {
+                            path.move(to: CGPoint(x: x, y: y))
+                        } else {
+                            path.addLine(to: CGPoint(x: x, y: y))
+                        }
+                    }
+                }
+                .stroke(negativeColor, lineWidth: 2)
+                
+                // Negative fill
+                Path { path in
+                    guard !normalizedNegative.isEmpty else { return }
+                    
+                    let stepX = geometry.size.width / CGFloat(normalizedNegative.count - 1)
+                    
+                    path.move(to: CGPoint(x: 0, y: centerY))
+                    
+                    for (index, value) in normalizedNegative.enumerated() {
+                        let x = CGFloat(index) * stepX
+                        let y = centerY + (centerY * CGFloat(value))
+                        path.addLine(to: CGPoint(x: x, y: y))
+                    }
+                    
+                    path.addLine(to: CGPoint(x: geometry.size.width, y: centerY))
+                    path.closeSubpath()
+                }
+                .fill(
+                    LinearGradient(
+                        gradient: Gradient(colors: [negativeColor.opacity(0.3), negativeColor.opacity(0.1)]),
+                        startPoint: .bottom,
+                        endPoint: .center
+                    )
+                )
+            }
+        }
+    }
+}
 
 #Preview {
     NotchStatsView()
