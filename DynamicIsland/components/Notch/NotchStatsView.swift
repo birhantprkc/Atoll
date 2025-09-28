@@ -340,6 +340,11 @@ struct NotchStatsView: View {
             if enableStatsFeature && Defaults[.autoStartStatsMonitoring] && !statsManager.isMonitoring {
                 statsManager.startMonitoring()
             }
+            // Protect against hover interference during view transition
+            isResizingForStats = true
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+                isResizingForStats = false
+            }
         }
         .onDisappear {
             // Keep monitoring running when tab is not visible
@@ -349,7 +354,7 @@ struct NotchStatsView: View {
         .onChange(of: availableGraphs.count) { _, newCount in
             // Protect against hover interference during dynamic sizing
             isResizingForStats = true
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
                 isResizingForStats = false
             }
         }
