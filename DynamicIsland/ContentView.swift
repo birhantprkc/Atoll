@@ -22,6 +22,7 @@ struct ContentView: View {
     @ObservedObject var timerManager = TimerManager.shared
     @ObservedObject var batteryModel = BatteryStatusViewModel.shared
     @ObservedObject var statsManager = StatsManager.shared
+    @ObservedObject var recordingManager = ScreenRecordingManager.shared
     
     @Default(.enableStatsFeature) var enableStatsFeature
     @Default(.showCpuGraph) var showCpuGraph
@@ -75,6 +76,7 @@ struct ContentView: View {
     @State private var lastHapticTime: Date = Date()
 
     @State private var gestureProgress: CGFloat = .zero
+    @State private var isPulsing: Bool = false
 
     @State private var haptics: Bool = false
 
@@ -402,6 +404,8 @@ struct ContentView: View {
                           MusicLiveActivity()
                       } else if (!coordinator.expandingView.show || coordinator.expandingView.type == .timer) && vm.notchState == .closed && timerManager.isTimerActive && coordinator.timerLiveActivityEnabled && !vm.hideOnClosed {
                           TimerLiveActivity()
+                      } else if (!coordinator.expandingView.show || coordinator.expandingView.type == .recording) && vm.notchState == .closed && (recordingManager.isRecording || !recordingManager.isRecorderIdle) && Defaults[.enableScreenRecordingDetection] && !vm.hideOnClosed {
+                          RecordingLiveActivity()
                       } else if !coordinator.expandingView.show && vm.notchState == .closed && (!musicManager.isPlaying && musicManager.isPlayerIdle) && Defaults[.showNotHumanFace] && !vm.hideOnClosed  {
                           DynamicIslandFaceAnimation().animation(.interactiveSpring, value: musicManager.isPlayerIdle)
                       } else if vm.notchState == .open {
@@ -558,7 +562,7 @@ struct ContentView: View {
                         }
                     }
                 )
-                .frame(width: (coordinator.expandingView.show && (coordinator.expandingView.type == .music || coordinator.expandingView.type == .timer) && Defaults[.enableSneakPeek] && Defaults[.sneakPeekStyles] == .inline) ? 380 : vm.closedNotchSize.width + (isHovering ? 8 : 0))
+                .frame(width: (coordinator.expandingView.show && (coordinator.expandingView.type == .music || coordinator.expandingView.type == .timer || coordinator.expandingView.type == .recording) && Defaults[.enableSneakPeek] && Defaults[.sneakPeekStyles] == .inline) ? 380 : vm.closedNotchSize.width + (isHovering ? 8 : 0))
             
 
             HStack {
@@ -582,6 +586,51 @@ struct ContentView: View {
                    height: max(0, vm.effectiveClosedNotchHeight - (isHovering ? 0 : 12)), alignment: .center)
         }
         .frame(height: vm.effectiveClosedNotchHeight + (isHovering ? 8 : 0), alignment: .center)
+    }
+    
+    func RecordingLiveActivity() -> some View {
+        HStack {
+            // Left side - Recording icon with record.circle (same pattern as album art)
+            HStack {
+                ZStack {
+                    // Background circle matching notch style
+                    RoundedRectangle(cornerRadius: MusicPlayerImageSizes.cornerRadiusInset.closed)
+                        .fill(Color.red.opacity(0.1))
+                    
+                    // Circle.fill icon with pulsing animation
+                    Image(systemName: "circle.fill")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundColor(.red)
+                        .scaleEffect(isPulsing ? 1.2 : 1.0)
+                        .opacity(isPulsing ? 0.7 : 1.0)
+                }
+                .onAppear {
+                    withAnimation(.easeInOut(duration: 0.8).repeatForever(autoreverses: true)) {
+                        isPulsing = true
+                    }
+                }
+                .onDisappear {
+                    isPulsing = false
+                }
+                .frame(width: max(0, vm.effectiveClosedNotchHeight - 12), height: max(0, vm.effectiveClosedNotchHeight - 12))
+            }
+            .frame(width: max(0, vm.effectiveClosedNotchHeight - (isHovering ? 0 : 12) + gestureProgress / 2), 
+                   height: max(0, vm.effectiveClosedNotchHeight - (isHovering ? 0 : 12)))
+
+            // Center - Recording indicator (no expansion needed since no text)
+            Rectangle()
+                .fill(.black)
+                .frame(width: vm.closedNotchSize.width + (isHovering ? 8 : 0))
+            
+            // Right side - Empty (as requested)
+            HStack {
+                // Empty space
+            }
+            .frame(width: max(0, vm.effectiveClosedNotchHeight - (isHovering ? 0 : 12) + gestureProgress / 2),
+                   height: max(0, vm.effectiveClosedNotchHeight - (isHovering ? 0 : 12)), alignment: .center)
+        }
+        .frame(height: vm.effectiveClosedNotchHeight + (isHovering ? 8 : 0), alignment: .center)
+        .animation(.easeInOut(duration: 0.3), value: isPulsing)
     }
 
     @ViewBuilder
