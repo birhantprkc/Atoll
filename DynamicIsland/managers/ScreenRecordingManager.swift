@@ -141,14 +141,21 @@ class ScreenRecordingManager: ObservableObject {
                     updateIdleState(recording: true)
                     // Trigger expanding view like music activity
                     coordinator.toggleExpandingView(status: true, type: .recording)
+                    withAnimation(.smooth) {
+                        isRecording = confirmedState
+                    }
                 } else if !confirmedState && isRecording {
                     // Stopped recording - let expanding view auto-collapse naturally (like music)
                     lastUpdated = Date()
                     stopDurationTracking()
                     updateIdleState(recording: false)
+                    withAnimation(.smooth) {
+                        isRecording = confirmedState
+                    }
+                } else {
+                    isRecording = confirmedState
                 }
                 
-                isRecording = confirmedState
                 print("ScreenRecordingManager: ✅ Recording state changed to \(confirmedState)")
             } else {
                 print("ScreenRecordingManager: ❌ State not confirmed, keeping \(isRecording)")
