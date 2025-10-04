@@ -13,58 +13,52 @@ struct MinimalisticMusicPlayerView: View {
     let albumArtNamespace: Namespace.ID
 
     var body: some View {
-        VStack(spacing: 6) {
-            // Music banner: Album art + Song info + Visualizer
-            musicBanner
+        VStack(spacing: 0) {
+            // Header area with album art (matching DynamicIslandHeader height of 24pt)
+            HStack(alignment: .bottom, spacing: 10) {
+                MinimalisticAlbumArtView(vm: vm, albumArtNamespace: albumArtNamespace)
+                    .frame(width: 50, height: 50)
+                
+                // Song info aligned to bottom of album art
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(MusicManager.shared.songTitle)
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundColor(.white)
+                        .lineLimit(1)
+                    
+                    Text(MusicManager.shared.artistName)
+                        .font(.system(size: 10, weight: .regular))
+                        .foregroundColor(Defaults[.playerColorTinting] ? Color(nsColor: MusicManager.shared.avgColor).ensureMinimumBrightness(factor: 0.6) : .gray)
+                        .lineLimit(1)
+                }
+                
+                Spacer()
+                
+                // Visualizer aligned to bottom
+                if useMusicVisualizer {
+                    visualizer
+                        .padding(.bottom, 2)
+                }
+            }
+            .frame(height: 50) // Fixed height to accommodate album art
             
-            // Full-width progress bar with time labels
+            // Compact progress bar
             progressBar
+                .padding(.top, 4)
             
-            // Larger playback controls
+            // Compact playback controls
             playbackControls
+                .padding(.top, 4)
         }
-        .padding(.horizontal, 16)
-        .padding(.top, 4)
+        .padding(.horizontal, 12)
+        .padding(.top, 0)
         .padding(.bottom, 4)
         .frame(maxWidth: .infinity)
     }
     
-    // MARK: - Music Banner (Compact)
+    // MARK: - Visualizer
     
     @Default(.useMusicVisualizer) var useMusicVisualizer
-    
-    private var musicBanner: some View {
-        HStack(spacing: 10) {
-            // Album Art - Smaller
-            MinimalisticAlbumArtView(vm: vm, albumArtNamespace: albumArtNamespace)
-                .frame(width: 50, height: 50)
-            
-            // Song Title and Artist
-            songInfo
-            
-            Spacer()
-            
-            // Visualizer from live activity (only if enabled)
-            if useMusicVisualizer {
-                visualizer
-            }
-        }
-        .frame(height: 50)
-    }
-    
-    private var songInfo: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(MusicManager.shared.songTitle)
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundColor(.white)
-                .lineLimit(1)
-            
-            Text(MusicManager.shared.artistName)
-                .font(.system(size: 12, weight: .regular))
-                .foregroundColor(Defaults[.playerColorTinting] ? Color(nsColor: MusicManager.shared.avgColor).ensureMinimumBrightness(factor: 0.6) : .gray)
-                .lineLimit(1)
-        }
-    }
     
     private var visualizer: some View {
         Rectangle()
@@ -234,6 +228,31 @@ struct MinimalisticAlbumArtView: View {
     let albumArtNamespace: Namespace.ID
 
     var body: some View {
+        ZStack(alignment: .bottomTrailing) {
+            if Defaults[.lightingEffect] {
+                albumArtBackground
+            }
+            albumArtButton
+        }
+    }
+    
+    private var albumArtBackground: some View {
+        Color.clear
+            .aspectRatio(1, contentMode: .fit)
+            .background(
+                Image(nsImage: musicManager.albumArt)
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+            )
+            .clipped()
+            .clipShape(RoundedRectangle(cornerRadius: 10))
+            .scaleEffect(x: 1.3, y: 1.4)
+            .rotationEffect(.degrees(92))
+            .blur(radius: 35)
+            .opacity(min(0.6, 1 - max(musicManager.albumArt.getBrightness(), 0.3)))
+    }
+    
+    private var albumArtButton: some View {
         Button {
             musicManager.openMusicApp()
         } label: {
@@ -243,6 +262,7 @@ struct MinimalisticAlbumArtView: View {
                     Image(nsImage: musicManager.albumArt)
                         .resizable()
                         .aspectRatio(contentMode: .fill)
+                        .animation(.spring(response: 0.4, dampingFraction: 0.8), value: musicManager.isFlipping)
                 )
                 .clipped()
                 .clipShape(RoundedRectangle(cornerRadius: 10))
@@ -250,5 +270,6 @@ struct MinimalisticAlbumArtView: View {
         }
         .buttonStyle(PlainButtonStyle())
         .opacity(musicManager.isPlaying ? 1 : 0.4)
+        .scaleEffect(musicManager.isPlaying ? 1 : 0.85)
     }
 }
