@@ -135,7 +135,7 @@ struct MinimalisticMusicPlayerView: View {
         
         // Update slider value based on playback
         if musicManager.isPlaying {
-            let timeSinceLastUpdate = date.timeIntervalSince(musicManager.lastUpdated)
+            let timeSinceLastUpdate = date.timeIntervalSince(musicManager.timestampDate)
             let estimatedElapsed = musicManager.elapsedTime + (timeSinceLastUpdate * musicManager.playbackRate)
             return min(estimatedElapsed, musicManager.songDuration)
         }

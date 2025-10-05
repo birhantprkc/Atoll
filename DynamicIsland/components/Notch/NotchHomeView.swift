@@ -156,8 +156,6 @@ struct MusicControlsView: View {
                 color: musicManager.avgColor,
                 dragging: $dragging,
                 currentDate: timeline.date,
-                lastUpdated: musicManager.lastUpdated,
-                ignoreLastUpdated: musicManager.ignoreLastUpdated,
                 timestampDate: musicManager.timestampDate,
                 elapsedTime: musicManager.elapsedTime,
                 playbackRate: musicManager.playbackRate,
@@ -285,8 +283,6 @@ struct MusicSliderView: View {
     var color: NSColor
     @Binding var dragging: Bool
     let currentDate: Date
-    let lastUpdated: Date
-    let ignoreLastUpdated: Bool
     let timestampDate: Date
     let elapsedTime: Double
     let playbackRate: Double

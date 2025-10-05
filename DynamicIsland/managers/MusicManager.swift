@@ -34,8 +34,6 @@ class MusicManager: ObservableObject {
     @Published var albumArt: NSImage = defaultImage
     @Published var isPlaying = false
     @Published var album: String = "Self Love"
-    @Published var lastUpdated: Date = .distantPast
-    @Published var ignoreLastUpdated = true
     @Published var isPlayerIdle: Bool = true
     @Published var animations: DynamicIslandAnimations = .init()
     @Published var avgColor: NSColor = .white
@@ -48,8 +46,14 @@ class MusicManager: ObservableObject {
     @Published var repeatMode: RepeatMode = .off
     @ObservedObject var coordinator = DynamicIslandViewCoordinator.shared
     @Published var usingAppIconForArtwork: Bool = false
-    
+
     private var artworkData: Data? = nil
+
+    // Store last values at the time artwork was changed
+    private var lastArtworkTitle: String = "I'm Handsome"
+    private var lastArtworkArtist: String = "Me"
+    private var lastArtworkAlbum: String = "Self Love"
+    private var lastArtworkBundleIdentifier: String? = nil
 
     @Published var isFlipping: Bool = false
     private var flipWorkItem: DispatchWorkItem?
@@ -82,12 +86,16 @@ class MusicManager: ObservableObject {
     }
 
     deinit {
+        destroy()
+    }
+    
+    public func destroy() {
         debounceIdleTask?.cancel()
         cancellables.removeAll()
         controllerCancellables.removeAll()
         flipWorkItem?.cancel()
         transitionWorkItem?.cancel()
-        
+
         // Release active controller
         activeController = nil
     }
@@ -106,35 +114,22 @@ class MusicManager: ObservableObject {
         case .nowPlaying:
             // Only create NowPlayingController if not deprecated on this macOS version
             if !self.isNowPlayingDeprecated {
-                ignoreLastUpdated = false
-                if let controller = NowPlayingController() {
-                    // Check if the controller can actually work
-                    if controller.isWorking {
-                        newController = controller
-                    } else {
-                        print("⚠️ NowPlayingController created but resources unavailable, falling back to default")
-                        return nil
-                    }
-                } else {
-                    return nil
-                }
+                newController = NowPlayingController()
             } else {
                 return nil
             }
         case .appleMusic:
-            ignoreLastUpdated = true
             newController = AppleMusicController()
         case .spotify:
-            ignoreLastUpdated = true
             newController = SpotifyController()
         case .youtubeMusic:
-            ignoreLastUpdated = true
             newController = YouTubeMusicController()
         }
         
         // Set up state observation for the new controller
         if let controller = newController {
             controller.playbackStatePublisher
+                .receive(on: DispatchQueue.main)
                 .sink { [weak self] state in
                     guard let self = self,
                           self.activeController === controller else { return }
@@ -164,19 +159,8 @@ class MusicManager: ObservableObject {
     }
     
     private func setActiveController(_ controller: any MediaControllerProtocol) {
-        // Transition animation when changing controllers
-        transitionWorkItem?.cancel()
-        let workItem = DispatchWorkItem { [weak self] in
-            self?.isTransitioning = true
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                self?.isTransitioning = false
-            }
-        }
-        transitionWorkItem = workItem
-        DispatchQueue.main.async(execute: workItem)
-        
-        // Set new active controller
-        activeController = controller
+        // Set the active controller
+        self.activeController = controller
         
         // Get current state from active controller
         if let state = Mirror(reflecting: controller).children.first(where: { $0.label == "playbackState" })?.value as? PlaybackState {
@@ -192,7 +176,6 @@ class MusicManager: ObservableObject {
             
             // Check for playback state changes (playing/paused)
             if state.isPlaying != self.isPlaying {
-                self.lastUpdated = Date()
                 withAnimation(.smooth) {
                     self.isPlaying = state.isPlaying
                     self.updateIdleState(state: state.isPlaying)
@@ -218,7 +201,7 @@ class MusicManager: ObservableObject {
                 
                 if artworkChanged, let artwork = state.artwork {
                     self.updateArtwork(artwork)
-                } else if hasContentChange && state.artwork == nil {
+                } else if state.artwork == nil {
                     // Try to use app icon if no artwork but track changed
                     if let appIconImage = AppIconAsNSImage(for: state.bundleIdentifier) {
                         self.usingAppIconForArtwork = true
@@ -226,6 +209,14 @@ class MusicManager: ObservableObject {
                     }
                 }
                 self.artworkData = state.artwork
+                
+                if artworkChanged || state.artwork == nil {
+                    // Update last artwork change values
+                    self.lastArtworkTitle = state.title
+                    self.lastArtworkArtist = state.artist
+                    self.lastArtworkAlbum = state.album
+                    self.lastArtworkBundleIdentifier = state.bundleIdentifier
+                }
                 
                 // Only update sneak peek if there's actual content and something changed
                 if !state.title.isEmpty && !state.artist.isEmpty && state.isPlaying {
@@ -236,16 +227,18 @@ class MusicManager: ObservableObject {
             let timeChanged = state.currentTime != self.elapsedTime
             let durationChanged = state.duration != self.songDuration
             let playbackRateChanged = state.playbackRate != self.playbackRate
+            let shuffleChanged = state.isShuffled != self.isShuffled
+            let repeatModeChanged = state.repeatMode != self.repeatMode
             
-            if titleChanged {
+            if state.title != self.songTitle {
                 self.songTitle = state.title
             }
             
-            if artistChanged {
+            if state.artist != self.artistName {
                 self.artistName = state.artist
             }
             
-            if albumChanged {
+            if state.album != self.album {
                 self.album = state.album
             }
             
@@ -261,30 +254,19 @@ class MusicManager: ObservableObject {
                 self.playbackRate = state.playbackRate
             }
             
+            if shuffleChanged {
+                self.isShuffled = state.isShuffled
+            }
+            
             if state.bundleIdentifier != self.bundleIdentifier {
                 self.bundleIdentifier = state.bundleIdentifier
             }
             
-            // Update shuffle and repeat state from controller
-            if state.isShuffled != self.isShuffled {
-                self.isShuffled = state.isShuffled
-            }
-            
-            if state.repeatMode != self.repeatMode {
+            if repeatModeChanged {
                 self.repeatMode = state.repeatMode
             }
             
-            // Update timestamp - use current time if state doesn't provide recent timestamp
-            let stateTimestamp = state.lastUpdated
-            let now = Date()
-            
-            // If the state timestamp is very recent (within 1 second), use it
-            // Otherwise, use current time for better real-time calculation
-            if abs(stateTimestamp.timeIntervalSince(now)) < 1.0 {
-                self.timestampDate = stateTimestamp
-            } else {
-                self.timestampDate = now
-            }
+            self.timestampDate = state.lastUpdated
         }
         
         // Execute the batch update on the main thread
@@ -312,9 +294,9 @@ class MusicManager: ObservableObject {
             guard let self = self else { return }
 
             if let artworkImage = NSImage(data: artworkData) {
-                DispatchQueue.main.async {
-                    self.usingAppIconForArtwork = false
-                    self.updateAlbumArt(newAlbumArt: artworkImage)
+                DispatchQueue.main.async { [weak self] in
+                    self?.usingAppIconForArtwork = false
+                    self?.updateAlbumArt(newAlbumArt: artworkImage)
                 }
             }
         }
@@ -327,14 +309,10 @@ class MusicManager: ObservableObject {
         } else {
             debounceIdleTask?.cancel()
             debounceIdleTask = Task { [weak self] in
+                guard let self = self else { return }
                 try? await Task.sleep(for: .seconds(Defaults[.waitInterval]))
-                guard let self = self, !Task.isCancelled else { return }
-                await MainActor.run {
-                    if self.lastUpdated.timeIntervalSinceNow < -Defaults[.waitInterval] {
-                        withAnimation {
-                            self.isPlayerIdle = !self.isPlaying
-                        }
-                    }
+                withAnimation {
+                    self.isPlayerIdle = !self.isPlaying
                 }
             }
         }
