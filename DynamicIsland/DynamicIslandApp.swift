@@ -447,7 +447,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             if change.newValue == true && Defaults[.sneakPeekStyles] != .standard {
                 Defaults[.sneakPeekStyles] = .standard
             }
-            self?.debouncedUpdateWindowSize()
+            // Update window size IMMEDIATELY (no debouncing) to prevent position shift
+            self?.updateWindowSizeIfNeeded()
         }.store(in: &cancellables)
         
         // Observe screen recording settings changes
