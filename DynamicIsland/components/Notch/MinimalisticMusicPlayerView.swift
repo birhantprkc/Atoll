@@ -15,7 +15,7 @@ struct MinimalisticMusicPlayerView: View {
     var body: some View {
         VStack(spacing: 0) {
             // Header area with album art (matching DynamicIslandHeader height of 24pt)
-            HStack(alignment: .bottom, spacing: 10) {
+            HStack(alignment: .center, spacing: 10) {
                 MinimalisticAlbumArtView(vm: vm, albumArtNamespace: albumArtNamespace)
                     .frame(width: 50, height: 50)
                 
@@ -37,7 +37,6 @@ struct MinimalisticMusicPlayerView: View {
                 // Visualizer aligned to bottom
                 if useMusicVisualizer {
                     visualizer
-                        .padding(.bottom, 2)
                 }
             }
             .frame(height: 50) // Fixed height to accommodate album art
@@ -51,8 +50,8 @@ struct MinimalisticMusicPlayerView: View {
                 .padding(.top, 4)
         }
         .padding(.horizontal, 12)
-        .padding(.top, 0)
-        .padding(.bottom, 4)
+        .padding(.top, -20)
+        .padding(.bottom, 3)
         .frame(maxWidth: .infinity)
     }
     
