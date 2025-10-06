@@ -23,16 +23,16 @@ class SystemChangesObserver {
     private var currentPollingInterval: TimeInterval = 2.0
     
     // Polling intervals
-    private let rapidPollingInterval: TimeInterval = 0.05 // Burst mode for 5 seconds after key press
-    private let fastPollingInterval: TimeInterval = 0.3   // Fast mode when headphones connected
+    private let rapidPollingInterval: TimeInterval = 0.05 // Burst mode for active changes
     private let normalPollingInterval: TimeInterval = 2.0 // Normal mode when idle
     
     // Activity tracking
     private var lastBrightnessChangeTime: Date = Date.distantPast
     private var lastVolumeChangeTime: Date = Date.distantPast
     private var lastVolumeCheckTime: Date = Date.distantPast
+    private var lastExternalChangeTime: Date = Date.distantPast // Track external volume changes
     
-    // Headphone detection
+    // Headphone detection (for info only, doesn't affect polling)
     private var hasHeadphonesConnected: Bool = false
 
     init(coordinator: DynamicIslandViewCoordinator) {
@@ -63,18 +63,20 @@ class SystemChangesObserver {
     private func determinePollingInterval() -> TimeInterval {
         let now = Date()
         
-        // Burst mode: Rapid polling within 5 seconds of any key press
-        if now.timeIntervalSince(lastVolumeChangeTime) < 5.0 ||
-           now.timeIntervalSince(lastBrightnessChangeTime) < 5.0 {
+        // Burst mode: Rapid polling within 5 seconds of any activity
+        // Activity = key press OR external change detected
+        let timeSinceKeyPress = min(
+            now.timeIntervalSince(lastVolumeChangeTime),
+            now.timeIntervalSince(lastBrightnessChangeTime)
+        )
+        let timeSinceExternalChange = now.timeIntervalSince(lastExternalChangeTime)
+        
+        // Use burst mode if there's been recent activity (within 5 seconds)
+        if timeSinceKeyPress < 5.0 || timeSinceExternalChange < 5.0 {
             return rapidPollingInterval
         }
         
-        // Fast mode: When headphones are connected
-        if hasHeadphonesConnected {
-            return fastPollingInterval
-        }
-        
-        // Normal mode: Idle state
+        // Normal mode: Idle state (regardless of headphones)
         return normalPollingInterval
     }
     
@@ -106,9 +108,8 @@ class SystemChangesObserver {
             }
         }
         
-        let mode = interval == rapidPollingInterval ? "BURST (50ms)" :
-                   interval == fastPollingInterval ? "FAST (300ms)" : "NORMAL (2s)"
-        print("✅ Polling started: \(mode) mode")
+        let mode = interval == rapidPollingInterval ? "BURST (50ms)" : "NORMAL (2s)"
+        print("✅ Polling started: \(mode) mode\(hasHeadphonesConnected ? " [🎧 Headphones connected]" : "")")
     }
     
     // MARK: - Headphone Detection
@@ -185,8 +186,8 @@ class SystemChangesObserver {
                                  transportType != kAudioDeviceTransportTypeBuiltIn
         
         if wasConnected != hasHeadphonesConnected {
-            print(hasHeadphonesConnected ? "🎧 Headphones connected - switching to FAST polling" : 
-                                          "🔊 Headphones disconnected - switching to NORMAL polling")
+            print(hasHeadphonesConnected ? "🎧 Headphones connected (will use burst mode on change detection)" : 
+                                          "🔊 Headphones disconnected")
         }
     }
     
@@ -280,19 +281,33 @@ class SystemChangesObserver {
         let muteChanged = newMuted != oldMuted
         
         if volumeChanged || muteChanged {
-            // Don't show HUD if change was just triggered by key press (within 0.1s in burst mode, 0.3s otherwise)
-            let debounceWindow = currentPollingInterval == rapidPollingInterval ? 0.1 : 0.3
+            // Check if this is an external change (not from key press)
+            let debounceWindow = currentPollingInterval == rapidPollingInterval ? 0.1 : 0.5
             let timeSinceKeyPress = now.timeIntervalSince(lastVolumeChangeTime)
             
+            // External change detected!
             if timeSinceKeyPress > debounceWindow {
-                let mode = currentPollingInterval == rapidPollingInterval ? "[BURST]" : "[EXTERNAL]"
+                // Mark it and trigger burst mode
+                lastExternalChangeTime = now
+                
+                let mode = currentPollingInterval == rapidPollingInterval ? "[BURST]" : "[EXTERNAL→BURST]"
                 print("🔊 Volume change detected \(mode): \(oldVolume) → \(newVolume), muted: \(oldMuted) → \(newMuted)")
                 
+                // Show HUD immediately
                 if newMuted {
                     sendVolumeNotification(value: 0.0)
                 } else {
                     sendVolumeNotification(value: newVolume)
                 }
+                
+                // Switch to burst mode immediately if we're in normal mode
+                if currentPollingInterval == normalPollingInterval {
+                    print("⚡ Switching from NORMAL to BURST mode due to external change")
+                    startPollingTimer(interval: rapidPollingInterval)
+                }
+            } else {
+                // Within debounce window of key press - still update values but don't show HUD
+                print("🔇 Volume change within debounce window (\(timeSinceKeyPress)s) - skipping HUD")
             }
             
             oldVolume = newVolume
@@ -319,10 +334,9 @@ class SystemChangesObserver {
     }
     
     private func isAlmost(firstNumber: Float, secondNumber: Float) -> Bool {
-        // Convert sensitivity setting to a more responsive threshold
-        // Sensitivity 1-10 scale maps to 0.01-0.10 threshold range
-        let marginValue = Float(Defaults[.systemHUDSensitivity]) / 100.0
-        let threshold = max(0.01, marginValue) // Minimum threshold for responsiveness
+        // Use a fixed sensitive threshold for volume changes
+        // 0.015 = 1.5% change required (sensitive enough for headphone increments)
+        let threshold: Float = 0.015
         return abs(firstNumber - secondNumber) <= threshold
     }
     
