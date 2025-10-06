@@ -8,6 +8,7 @@
 import Foundation
 import Defaults
 import Combine
+import AppKit
 
 class SystemHUDManager {
     static let shared = SystemHUDManager()
@@ -60,7 +61,6 @@ class SystemHUDManager {
     }
     
     private var cancellables = Set<AnyCancellable>()
-    private var osdMonitorTimer: Timer?
     
     /// Public property to check if system operations are in progress
     var isOperationInProgress: Bool {
@@ -93,7 +93,7 @@ class SystemHUDManager {
         // Disable system HUD if possible
         disableSystemHUD()
         
-        // Start periodic monitoring to ensure OSD stays disabled
+        // Start event-driven OSD monitoring
         startOSDMonitoring()
         
         print("System HUD replacement started")
@@ -151,38 +151,63 @@ class SystemHUDManager {
     
     // MARK: - OSD Monitoring
     
-    /// Start periodic monitoring to ensure OSD stays disabled
+    /// Start event-driven monitoring for OSDUIHelper process launches
     @MainActor
     private func startOSDMonitoring() {
-        stopOSDMonitoring() // Stop any existing timer
+        stopOSDMonitoring() // Stop any existing observer
         
-        osdMonitorTimer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) { [weak self] _ in
-            guard let self = self else { return }
-            
-            // Check if any HUD is enabled
-            let anyHUDEnabled = Defaults[.enableVolumeHUD] || Defaults[.enableBrightnessHUD]
-            guard anyHUDEnabled else { return }
-            
-            // Check if OSD is running when it shouldn't be
-            Task.detached(priority: .background) {
-                let isRunning = await SystemOSDManager.isOSDUIHelperRunningAsync()
-                if isRunning {
-                    await MainActor.run {
-                        print("⚠️ OSDUIHelper detected running while HUDs are enabled - re-disabling")
+        // Listen for process launch notifications
+        NSWorkspace.shared.notificationCenter.publisher(for: NSWorkspace.didLaunchApplicationNotification)
+            .compactMap { notification -> NSRunningApplication? in
+                notification.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication
+            }
+            .filter { app in
+                // Check if OSDUIHelper was launched
+                app.bundleIdentifier == "com.apple.OSDUIHelper" ||
+                app.localizedName?.contains("OSDUIHelper") == true
+            }
+            .sink { [weak self] _ in
+                guard let self = self else { return }
+                
+                // Check if any HUD is enabled
+                let anyHUDEnabled = Defaults[.enableVolumeHUD] || Defaults[.enableBrightnessHUD]
+                guard anyHUDEnabled else { return }
+                
+                Task { @MainActor in
+                    print("⚠️ OSDUIHelper launched - re-disabling")
+                    self.disableSystemHUD()
+                }
+            }
+            .store(in: &cancellables)
+        
+        // Also listen for screen wake events (OSDUIHelper often restarts after wake)
+        NSWorkspace.shared.notificationCenter.publisher(for: NSWorkspace.screensDidWakeNotification)
+            .sink { [weak self] _ in
+                guard let self = self else { return }
+                
+                let anyHUDEnabled = Defaults[.enableVolumeHUD] || Defaults[.enableBrightnessHUD]
+                guard anyHUDEnabled else { return }
+                
+                // Check after a short delay to ensure system is ready
+                Task { @MainActor in
+                    try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
+                    
+                    let isRunning = await SystemOSDManager.isOSDUIHelperRunningAsync()
+                    if isRunning {
+                        print("⚠️ OSDUIHelper detected running after wake - re-disabling")
                         self.disableSystemHUD()
                     }
                 }
             }
-        }
+            .store(in: &cancellables)
         
-        print("✅ OSD monitoring started (checks every 5 seconds)")
+        print("✅ OSD monitoring started (event-driven)")
     }
     
     /// Stop OSD monitoring
     @MainActor
     private func stopOSDMonitoring() {
-        osdMonitorTimer?.invalidate()
-        osdMonitorTimer = nil
+        // Cancellables are automatically cleaned up
         print("🛑 OSD monitoring stopped")
     }
     
