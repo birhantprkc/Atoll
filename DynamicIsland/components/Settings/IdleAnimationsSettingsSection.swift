@@ -123,19 +123,20 @@ struct IdleAnimationsSettingsSection: View {
                     animation: $editedAnimation,
                     existingAnimation: editingExistingAnimation
                 )
-                .frame(minWidth: 800, minHeight: 600)
+                .interactiveDismissDisabled(false)
                 .onChange(of: editedAnimation) { oldValue, newValue in
                     if let animation = newValue {
                         // Animation was successfully imported/edited via editor
                         if let existingAnim = editingExistingAnimation {
                             // Editing existing animation - update it
-                            if var animations = customIdleAnimations as? [CustomIdleAnimation],
-                               let index = animations.firstIndex(where: { $0.id == existingAnim.id }) {
+                            var animations = Defaults[.customIdleAnimations]
+                            if let index = animations.firstIndex(where: { $0.id == existingAnim.id }) {
                                 animations[index] = animation
-                                customIdleAnimations = animations
+                                Defaults[.customIdleAnimations] = animations
+                                
                                 // Update selection if this was the selected animation
                                 if selectedIdleAnimation?.id == existingAnim.id {
-                                    selectedIdleAnimation = animation
+                                    Defaults[.selectedIdleAnimation] = animation
                                 }
                             }
                         } else {
@@ -183,6 +184,7 @@ struct IdleAnimationsSettingsSection: View {
             editorSourceURL = url
             editorIsRemote = false
             editedAnimation = nil
+            editingExistingAnimation = nil  // Reset to nil for new imports
             showingEditor = true
             
         case .failure(let error):
@@ -202,6 +204,7 @@ struct IdleAnimationsSettingsSection: View {
         editorSourceURL = url
         editorIsRemote = true
         editedAnimation = nil
+        editingExistingAnimation = nil  // Reset to nil for new imports
         showingURLSheet = false
         showingEditor = true
     }

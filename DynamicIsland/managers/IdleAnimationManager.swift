@@ -47,29 +47,29 @@ class IdleAnimationManager {
             animations.append(contentsOf: bundledAnimations)
         }
         
-        // Load previously imported user animations from storage
-        if let userAnimations = loadStoredUserAnimations() {
-            animations.append(contentsOf: userAnimations)
-        }
+        // Get existing animations
+        var existing = Defaults[.customIdleAnimations]
         
-        // Only set if empty (first launch)
-        if Defaults[.customIdleAnimations].isEmpty {
+        if existing.isEmpty {
+            // First launch - set everything
             Defaults[.customIdleAnimations] = animations
-            Defaults[.selectedIdleAnimation] = builtInFace  // Default to built-in face
-            print("✅ [IdleAnimationManager] Initialized with \(animations.count) animations")
+            Defaults[.selectedIdleAnimation] = builtInFace
+            print("✅ [IdleAnimationManager] First launch: Initialized with \(animations.count) animations")
         } else {
-            // Merge: add any new bundled animations that aren't already in the list
-            var existing = Defaults[.customIdleAnimations]
-            let existingNames = Set(existing.map { $0.name })
+            // Subsequent launch - ensure all bundled animations are present
+            let existingIDs = Set(existing.map { $0.id })
+            let existingNames = Set(existing.filter { $0.isBuiltIn }.map { $0.name })
             
-            for newAnim in animations where newAnim.isBuiltIn {
-                if !existingNames.contains(newAnim.name) {
-                    existing.append(newAnim)
+            // Add any missing bundled animations
+            for bundledAnim in animations where bundledAnim.isBuiltIn {
+                if !existingNames.contains(bundledAnim.name) {
+                    existing.insert(bundledAnim, at: existing.firstIndex(where: { !$0.isBuiltIn }) ?? existing.count)
+                    print("➕ [IdleAnimationManager] Added missing bundled animation: \(bundledAnim.name)")
                 }
             }
             
             Defaults[.customIdleAnimations] = existing
-            print("✅ [IdleAnimationManager] Updated with \(existing.count) animations")
+            print("✅ [IdleAnimationManager] Subsequent launch: \(existing.count) total animations (\(animations.count - 1) bundled + built-in face)")
         }
     }
     

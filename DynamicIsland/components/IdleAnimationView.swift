@@ -18,6 +18,7 @@ struct IdleAnimationView: View {
         Group {
             if let animation = selectedAnimation {
                 AnimationContentView(animation: animation)
+                    .id("\(animation.id)-\(animation.hashValue)")  // Force complete recreation when ANY property changes
             } else {
                 // Fallback to original face if nothing selected
                 MinimalFaceFeatures(height: 20, width: 30)
@@ -38,8 +39,9 @@ private struct AnimationContentView: View {
             LottieView(state: LUStateData(
                 type: .loadedFrom(url),
                 speed: animation.speed,
-                loopMode: .loop
+                loopMode: config.loopMode.lottieLoopMode
             ))
+            .id(animation.id)  // Force reload when animation changes
             .frame(
                 width: config.cropWidth * config.scale,
                 height: config.cropHeight * config.scale
@@ -55,8 +57,9 @@ private struct AnimationContentView: View {
             LottieView(state: LUStateData(
                 type: .loadedFrom(url),
                 speed: animation.speed,
-                loopMode: .loop
+                loopMode: config.loopMode.lottieLoopMode
             ))
+            .id(animation.id)  // Force reload when animation changes
             .frame(
                 width: config.cropWidth * config.scale,
                 height: config.cropHeight * config.scale

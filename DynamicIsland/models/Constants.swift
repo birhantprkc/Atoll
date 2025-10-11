@@ -7,6 +7,7 @@
 
 import SwiftUI
 import Defaults
+import Lottie
 
 private let availableDirectories = FileManager
     .default
@@ -54,8 +55,23 @@ struct AnimationTransformConfig: Codable, Hashable, Equatable {
     var opacity: CGFloat = 1.0
     var paddingBottom: CGFloat = 0  // Allow adjustment to fill notch from bottom
     var expandWithAnimation: Bool = false  // Whether notch should expand horizontally with animation
+    var loopMode: AnimationLoopMode = .loop  // Loop mode for animation
     
     static let `default` = AnimationTransformConfig()
+}
+
+enum AnimationLoopMode: String, Codable, CaseIterable {
+    case loop = "Loop"
+    case playOnce = "Play Once"
+    case autoReverse = "Auto Reverse"
+    
+    var lottieLoopMode: LottieLoopMode {
+        switch self {
+        case .loop: return .loop
+        case .playOnce: return .playOnce
+        case .autoReverse: return .autoReverse
+        }
+    }
 }
 
 enum AnimationSource: Codable, Hashable, Equatable {

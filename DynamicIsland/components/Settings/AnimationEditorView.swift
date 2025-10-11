@@ -29,6 +29,7 @@ struct AnimationEditorView: View {
     @State private var opacity: CGFloat = 1.0
     @State private var paddingBottom: CGFloat = 0
     @State private var expandWithAnimation: Bool = false
+    @State private var loopMode: AnimationLoopMode = .loop
     
     @State private var showingError = false
     @State private var errorMessage = ""
@@ -57,6 +58,7 @@ struct AnimationEditorView: View {
             _opacity = State(initialValue: config.opacity)
             _paddingBottom = State(initialValue: config.paddingBottom)
             _expandWithAnimation = State(initialValue: config.expandWithAnimation)
+            _loopMode = State(initialValue: config.loopMode)
         } else {
             let fileName = sourceURL.deletingPathExtension().lastPathComponent
             _name = State(initialValue: fileName)
@@ -107,7 +109,7 @@ struct AnimationEditorView: View {
                         LottieView(state: LUStateData(
                             type: .loadedFrom(sourceURL),
                             speed: speed,
-                            loopMode: .loop
+                            loopMode: loopMode.lottieLoopMode
                         ))
                         .frame(width: cropWidth * scale * previewScale, height: cropHeight * scale * previewScale)
                         .offset(x: offsetX * previewScale, y: offsetY * previewScale)
@@ -313,6 +315,18 @@ struct AnimationEditorView: View {
                                 .buttonStyle(.bordered)
                                 .controlSize(.small)
                             }
+                            
+                            // Loop Mode
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("Loop Mode:")
+                                    .font(.subheadline)
+                                Picker("Loop Mode", selection: $loopMode) {
+                                    ForEach(AnimationLoopMode.allCases, id: \.self) { mode in
+                                        Text(mode.rawValue).tag(mode)
+                                    }
+                                }
+                                .pickerStyle(.segmented)
+                            }
                         }
                         
                         Divider()
@@ -430,7 +444,9 @@ struct AnimationEditorView: View {
             }
             .padding()
         }
+        .frame(idealWidth: 900, idealHeight: 650)
         .frame(minWidth: 800, minHeight: 600)
+        .fixedSize()
         .alert("Import Error", isPresented: $showingError) {
             Button("OK") { }
         } message: {
@@ -455,15 +471,21 @@ struct AnimationEditorView: View {
             rotation: rotation,
             opacity: opacity,
             paddingBottom: paddingBottom,
-            expandWithAnimation: expandWithAnimation
+            expandWithAnimation: expandWithAnimation,
+            loopMode: loopMode
         )
         
-        // If editing existing animation, update it directly
+        // If editing existing animation, create a NEW animation object with updated values
         if let existing = existingAnimation {
-            var updatedAnimation = existing
-            updatedAnimation.name = name
-            updatedAnimation.speed = speed
-            updatedAnimation.transformConfig = config
+            // Create completely new animation to force view refresh
+            let updatedAnimation = CustomIdleAnimation(
+                id: existing.id,  // Keep same ID so it replaces the right one
+                name: name,
+                source: existing.source,
+                speed: speed,
+                isBuiltIn: existing.isBuiltIn,
+                transformConfig: config
+            )
             animation = updatedAnimation
             dismiss()
             return
