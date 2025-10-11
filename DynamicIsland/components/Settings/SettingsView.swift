@@ -1227,6 +1227,9 @@ struct Appearance: View {
                     Text("Additional features")
                 }
             }
+            
+            // MARK: - Custom Idle Animations Section
+            IdleAnimationsSettingsSection()
 
             Section {
                 HStack {

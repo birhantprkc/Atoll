@@ -25,6 +25,51 @@ struct CustomVisualizer: Codable, Hashable, Equatable, Defaults.Serializable {
     var speed: CGFloat = 1.0
 }
 
+// MARK: - Custom Idle Animation Models
+struct CustomIdleAnimation: Codable, Hashable, Equatable, Defaults.Serializable, Identifiable {
+    let id: UUID
+    var name: String
+    var source: AnimationSource
+    var speed: CGFloat = 1.0
+    var isBuiltIn: Bool = false  // Track if it's bundled vs user-added
+    var transformConfig: AnimationTransformConfig = .default  // Transform settings
+    
+    init(id: UUID = UUID(), name: String, source: AnimationSource, speed: CGFloat = 1.0, isBuiltIn: Bool = false, transformConfig: AnimationTransformConfig = .default) {
+        self.id = id
+        self.name = name
+        self.source = source
+        self.speed = speed
+        self.isBuiltIn = isBuiltIn
+        self.transformConfig = transformConfig
+    }
+}
+
+struct AnimationTransformConfig: Codable, Hashable, Equatable {
+    var scale: CGFloat = 1.0
+    var offsetX: CGFloat = 0
+    var offsetY: CGFloat = 0
+    var cropWidth: CGFloat = 30
+    var cropHeight: CGFloat = 20
+    var rotation: CGFloat = 0
+    var opacity: CGFloat = 1.0
+    
+    static let `default` = AnimationTransformConfig()
+}
+
+enum AnimationSource: Codable, Hashable, Equatable {
+    case lottieFile(URL)        // Local file (in app support or bundle)
+    case lottieURL(URL)         // Remote URL
+    case builtInFace            // Original MinimalFaceFeatures
+    
+    var displayType: String {
+        switch self {
+        case .lottieFile: return "Local"
+        case .lottieURL: return "Remote"
+        case .builtInFace: return "Built-in"
+        }
+    }
+}
+
 enum CalendarSelectionState: Codable, Defaults.Serializable {
     case all
     case selected(Set<String>)
@@ -234,6 +279,8 @@ extension Defaults.Keys {
     static let cornerRadiusScaling = Key<Bool>("cornerRadiusScaling", default: true)
     static let useModernCloseAnimation = Key<Bool>("useModernCloseAnimation", default: true)
     static let showNotHumanFace = Key<Bool>("showNotHumanFace", default: false)
+    static let customIdleAnimations = Key<[CustomIdleAnimation]>("customIdleAnimations", default: [])
+    static let selectedIdleAnimation = Key<CustomIdleAnimation?>("selectedIdleAnimation", default: nil)
     static let tileShowLabels = Key<Bool>("tileShowLabels", default: false)
     static let showCalendar = Key<Bool>("showCalendar", default: false)
     static let hideCompletedReminders = Key<Bool>("hideCompletedReminders", default: true)
