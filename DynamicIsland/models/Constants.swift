@@ -52,6 +52,8 @@ struct AnimationTransformConfig: Codable, Hashable, Equatable {
     var cropHeight: CGFloat = 20
     var rotation: CGFloat = 0
     var opacity: CGFloat = 1.0
+    var paddingBottom: CGFloat = 0  // Allow adjustment to fill notch from bottom
+    var expandWithAnimation: Bool = false  // Whether notch should expand horizontally with animation
     
     static let `default` = AnimationTransformConfig()
 }

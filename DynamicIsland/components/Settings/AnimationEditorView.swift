@@ -16,6 +16,7 @@ struct AnimationEditorView: View {
     let sourceURL: URL
     let isRemoteURL: Bool
     @Binding var animation: CustomIdleAnimation?
+    let existingAnimation: CustomIdleAnimation?
     
     @State private var name: String
     @State private var speed: CGFloat = 1.0
@@ -26,6 +27,8 @@ struct AnimationEditorView: View {
     @State private var cropHeight: CGFloat = 20
     @State private var rotation: CGFloat = 0
     @State private var opacity: CGFloat = 1.0
+    @State private var paddingBottom: CGFloat = 0
+    @State private var expandWithAnimation: Bool = false
     
     @State private var showingError = false
     @State private var errorMessage = ""
@@ -34,21 +37,37 @@ struct AnimationEditorView: View {
     // Preview state
     @State private var previewScale: CGFloat = 1.0
     
-    init(sourceURL: URL, isRemoteURL: Bool, animation: Binding<CustomIdleAnimation?>) {
+    init(sourceURL: URL, isRemoteURL: Bool, animation: Binding<CustomIdleAnimation?>, existingAnimation: CustomIdleAnimation? = nil) {
         self.sourceURL = sourceURL
         self.isRemoteURL = isRemoteURL
         self._animation = animation
+        self.existingAnimation = existingAnimation
         
-        // Initialize name from URL
-        let fileName = sourceURL.deletingPathExtension().lastPathComponent
-        _name = State(initialValue: fileName)
+        // Initialize from existing animation if editing, otherwise from URL
+        if let existing = existingAnimation {
+            _name = State(initialValue: existing.name)
+            _speed = State(initialValue: existing.speed)
+            let config = existing.transformConfig
+            _scale = State(initialValue: config.scale)
+            _offsetX = State(initialValue: config.offsetX)
+            _offsetY = State(initialValue: config.offsetY)
+            _cropWidth = State(initialValue: config.cropWidth)
+            _cropHeight = State(initialValue: config.cropHeight)
+            _rotation = State(initialValue: config.rotation)
+            _opacity = State(initialValue: config.opacity)
+            _paddingBottom = State(initialValue: config.paddingBottom)
+            _expandWithAnimation = State(initialValue: config.expandWithAnimation)
+        } else {
+            let fileName = sourceURL.deletingPathExtension().lastPathComponent
+            _name = State(initialValue: fileName)
+        }
     }
     
     var body: some View {
         VStack(spacing: 0) {
             // Header
             HStack {
-                Text("Customize Animation")
+                Text(existingAnimation != nil ? "Edit Animation" : "Customize Animation")
                     .font(.title2)
                     .fontWeight(.semibold)
                 
@@ -94,6 +113,7 @@ struct AnimationEditorView: View {
                         .offset(x: offsetX * previewScale, y: offsetY * previewScale)
                         .rotationEffect(.degrees(rotation))
                         .opacity(opacity)
+                        .padding(.bottom, paddingBottom * previewScale)
                         .clipped()
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -218,6 +238,21 @@ struct AnimationEditorView: View {
                                 .buttonStyle(.bordered)
                                 .controlSize(.small)
                             }
+                            
+                            // Padding Bottom
+                            HStack {
+                                Text("Bottom Pad:")
+                                    .frame(width: 80, alignment: .leading)
+                                Slider(value: $paddingBottom, in: -20...20)
+                                Text(String(format: "%.1f", paddingBottom))
+                                    .frame(width: 50, alignment: .trailing)
+                                    .foregroundStyle(.secondary)
+                                Button("Reset") {
+                                    withAnimation { paddingBottom = 0 }
+                                }
+                                .buttonStyle(.bordered)
+                                .controlSize(.small)
+                            }
                         }
                         
                         Divider()
@@ -282,6 +317,24 @@ struct AnimationEditorView: View {
                         
                         Divider()
                         
+                        // Display Options
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("Display Options")
+                                .font(.headline)
+                            
+                            Toggle(isOn: $expandWithAnimation) {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("Expand Notch with Animation")
+                                        .font(.body)
+                                    Text("When enabled, the Dynamic Island will expand horizontally to match the animation size")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
+                        }
+                        
+                        Divider()
+                        
                         // Presets
                         VStack(alignment: .leading, spacing: 12) {
                             Text("Quick Presets")
@@ -296,6 +349,8 @@ struct AnimationEditorView: View {
                                         offsetX = 0
                                         offsetY = 0
                                         rotation = 0
+                                        paddingBottom = 0
+                                        expandWithAnimation = false
                                     }
                                 }
                                 .buttonStyle(.bordered)
@@ -307,6 +362,8 @@ struct AnimationEditorView: View {
                                         cropHeight = 20
                                         offsetX = 0
                                         offsetY = 0
+                                        paddingBottom = 0
+                                        expandWithAnimation = false
                                     }
                                 }
                                 .buttonStyle(.bordered)
@@ -314,6 +371,7 @@ struct AnimationEditorView: View {
                                 Button("Scale Up 2x") {
                                     withAnimation {
                                         scale = 2.0
+                                        expandWithAnimation = true
                                     }
                                 }
                                 .buttonStyle(.bordered)
@@ -335,6 +393,8 @@ struct AnimationEditorView: View {
                                         rotation = 0
                                         opacity = 1.0
                                         speed = 1.0
+                                        paddingBottom = 0
+                                        expandWithAnimation = false
                                     }
                                 }
                                 .buttonStyle(.bordered)
@@ -361,7 +421,7 @@ struct AnimationEditorView: View {
                 
                 Spacer()
                 
-                Button("Import") {
+                Button(existingAnimation != nil ? "Save Changes" : "Import") {
                     importAnimation()
                 }
                 .buttonStyle(.borderedProminent)
@@ -393,10 +453,23 @@ struct AnimationEditorView: View {
             cropWidth: cropWidth,
             cropHeight: cropHeight,
             rotation: rotation,
-            opacity: opacity
+            opacity: opacity,
+            paddingBottom: paddingBottom,
+            expandWithAnimation: expandWithAnimation
         )
         
-        // Import with config
+        // If editing existing animation, update it directly
+        if let existing = existingAnimation {
+            var updatedAnimation = existing
+            updatedAnimation.name = name
+            updatedAnimation.speed = speed
+            updatedAnimation.transformConfig = config
+            animation = updatedAnimation
+            dismiss()
+            return
+        }
+        
+        // Import with config (new animation)
         let result = IdleAnimationManager.shared.importLottieFile(
             from: sourceURL,
             name: name,

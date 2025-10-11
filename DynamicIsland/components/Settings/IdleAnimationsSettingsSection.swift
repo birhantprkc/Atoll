@@ -30,6 +30,7 @@ struct IdleAnimationsSettingsSection: View {
     @State private var editorSourceURL: URL?
     @State private var editorIsRemote = false
     @State private var editedAnimation: CustomIdleAnimation?
+    @State private var editingExistingAnimation: CustomIdleAnimation?
     
     var body: some View {
         Section {
@@ -49,6 +50,18 @@ struct IdleAnimationsSettingsSection: View {
                                 onDelete: animation.isBuiltIn ? nil : {
                                     selectedForDeletion = animation
                                     showingDeleteAlert = true
+                                },
+                                onEdit: animation.isBuiltIn ? nil : {
+                                    editingExistingAnimation = animation
+                                    if case .lottieFile(let url) = animation.source {
+                                        editorSourceURL = url
+                                        editorIsRemote = false
+                                        showingEditor = true
+                                    } else if case .lottieURL(let url) = animation.source {
+                                        editorSourceURL = url
+                                        editorIsRemote = true
+                                        showingEditor = true
+                                    }
                                 }
                             )
                         }
@@ -107,19 +120,35 @@ struct IdleAnimationsSettingsSection: View {
                 AnimationEditorView(
                     sourceURL: url,
                     isRemoteURL: editorIsRemote,
-                    animation: $editedAnimation
+                    animation: $editedAnimation,
+                    existingAnimation: editingExistingAnimation
                 )
                 .frame(minWidth: 800, minHeight: 600)
                 .onChange(of: editedAnimation) { oldValue, newValue in
                     if let animation = newValue {
-                        // Animation was successfully imported via editor
-                        withAnimation {
-                            selectedIdleAnimation = animation
+                        // Animation was successfully imported/edited via editor
+                        if let existingAnim = editingExistingAnimation {
+                            // Editing existing animation - update it
+                            if var animations = customIdleAnimations as? [CustomIdleAnimation],
+                               let index = animations.firstIndex(where: { $0.id == existingAnim.id }) {
+                                animations[index] = animation
+                                customIdleAnimations = animations
+                                // Update selection if this was the selected animation
+                                if selectedIdleAnimation?.id == existingAnim.id {
+                                    selectedIdleAnimation = animation
+                                }
+                            }
+                        } else {
+                            // New import - just select it
+                            withAnimation {
+                                selectedIdleAnimation = animation
+                            }
                         }
                         showingEditor = false
                         // Reset editor state
                         editorSourceURL = nil
                         editedAnimation = nil
+                        editingExistingAnimation = nil
                     }
                 }
             }
@@ -184,6 +213,7 @@ struct AnimationPreviewCard: View {
     let isSelected: Bool
     let onSelect: () -> Void
     let onDelete: (() -> Void)?
+    let onEdit: (() -> Void)?
     
     @State private var isHovering = false
     
@@ -261,6 +291,19 @@ struct AnimationPreviewCard: View {
         .contentShape(Rectangle())
         .onTapGesture {
             onSelect()
+        }
+        .contextMenu {
+            if let onEdit = onEdit {
+                Button("Edit Animation") {
+                    onEdit()
+                }
+                Divider()
+            }
+            if let onDelete = onDelete {
+                Button("Delete", role: .destructive) {
+                    onDelete()
+                }
+            }
         }
     }
 }

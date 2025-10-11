@@ -40,11 +40,16 @@ private struct AnimationContentView: View {
                 speed: animation.speed,
                 loopMode: .loop
             ))
-            .frame(width: config.cropWidth * config.scale, 
-                   height: config.cropHeight * config.scale)
+            .frame(
+                width: config.cropWidth * config.scale,
+                height: config.cropHeight * config.scale
+            )
             .offset(x: config.offsetX, y: config.offsetY)
             .rotationEffect(.degrees(config.rotation))
             .opacity(config.opacity)
+            .padding(.bottom, config.paddingBottom)
+            .frame(width: config.expandWithAnimation ? nil : 30, height: 20)
+            .clipped()
             
         case .lottieURL(let url):
             LottieView(state: LUStateData(
@@ -52,11 +57,16 @@ private struct AnimationContentView: View {
                 speed: animation.speed,
                 loopMode: .loop
             ))
-            .frame(width: config.cropWidth * config.scale, 
-                   height: config.cropHeight * config.scale)
+            .frame(
+                width: config.cropWidth * config.scale,
+                height: config.cropHeight * config.scale
+            )
             .offset(x: config.offsetX, y: config.offsetY)
             .rotationEffect(.degrees(config.rotation))
             .opacity(config.opacity)
+            .padding(.bottom, config.paddingBottom)
+            .frame(width: config.expandWithAnimation ? nil : 30, height: 20)
+            .clipped()
             
         case .builtInFace:
             MinimalFaceFeatures(height: 20, width: 30)
