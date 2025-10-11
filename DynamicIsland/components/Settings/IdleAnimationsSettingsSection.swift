@@ -11,6 +11,14 @@ import Defaults
 import LottieUI
 import UniformTypeIdentifiers
 
+// MARK: - Editor State for Sheet Presentation
+private struct EditorState: Identifiable {
+    let id = UUID()
+    let url: URL?
+    let isRemote: Bool
+    let existingAnimation: CustomIdleAnimation?
+}
+
 struct IdleAnimationsSettingsSection: View {
     @Default(.customIdleAnimations) var customIdleAnimations
     @Default(.selectedIdleAnimation) var selectedIdleAnimation
@@ -54,6 +62,8 @@ struct IdleAnimationsSettingsSection: View {
                                 onEdit: {
                                     print("🔧 [Edit] Attempting to edit animation: \(animation.name)")
                                     print("🔧 [Edit] Animation source: \(animation.source)")
+                                    
+                                    // Set state immediately
                                     editingExistingAnimation = animation
                                     
                                     switch animation.source {
@@ -62,20 +72,23 @@ struct IdleAnimationsSettingsSection: View {
                                         print("🔧 [Edit] File exists: \(FileManager.default.fileExists(atPath: url.path))")
                                         editorSourceURL = url
                                         editorIsRemote = false
-                                        showingEditor = true
                                         
                                     case .lottieURL(let url):
                                         print("🔧 [Edit] Lottie URL: \(url)")
                                         editorSourceURL = url
                                         editorIsRemote = true
-                                        showingEditor = true
                                         
                                     case .builtInFace:
                                         print("🔧 [Edit] Built-in face - using dummy URL")
                                         // Use a dummy URL for built-in face (editor only needs URL for preview)
                                         editorSourceURL = URL(string: "builtin://face")!
                                         editorIsRemote = false
+                                    }
+                                    
+                                    // Show editor with slight delay to ensure state is set
+                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
                                         showingEditor = true
+                                        print("🔧 [Edit] Sheet should now be visible")
                                     }
                                 }
                             )
@@ -130,42 +143,50 @@ struct IdleAnimationsSettingsSection: View {
                 onCancel: { showingURLSheet = false }
             )
         }
-        .sheet(isPresented: $showingEditor) {
-            if let url = editorSourceURL {
-                AnimationEditorView(
-                    sourceURL: url,
-                    isRemoteURL: editorIsRemote,
-                    animation: $editedAnimation,
-                    existingAnimation: editingExistingAnimation
-                )
-                .interactiveDismissDisabled(false)
-                .onChange(of: editedAnimation) { oldValue, newValue in
-                    if let animation = newValue {
-                        // Animation was successfully imported/edited via editor
-                        if let existingAnim = editingExistingAnimation {
-                            // Editing existing animation - update it
-                            var animations = Defaults[.customIdleAnimations]
-                            if let index = animations.firstIndex(where: { $0.id == existingAnim.id }) {
-                                animations[index] = animation
-                                Defaults[.customIdleAnimations] = animations
-                                
-                                // Update selection if this was the selected animation
-                                if selectedIdleAnimation?.id == existingAnim.id {
-                                    Defaults[.selectedIdleAnimation] = animation
-                                }
-                            }
-                        } else {
-                            // New import - just select it
-                            withAnimation {
-                                selectedIdleAnimation = animation
+        .sheet(item: Binding(
+            get: { showingEditor ? EditorState(url: editorSourceURL, isRemote: editorIsRemote, existingAnimation: editingExistingAnimation) : nil },
+            set: { newValue in 
+                showingEditor = (newValue != nil)
+                if newValue == nil {
+                    // Clean up when sheet dismisses
+                    editorSourceURL = nil
+                    editingExistingAnimation = nil
+                }
+            }
+        )) { state in
+            AnimationEditorView(
+                sourceURL: state.url ?? URL(string: "builtin://face")!,
+                isRemoteURL: state.isRemote,
+                animation: $editedAnimation,
+                existingAnimation: state.existingAnimation
+            )
+            .interactiveDismissDisabled(false)
+            .onChange(of: editedAnimation) { oldValue, newValue in
+                if let animation = newValue {
+                    // Animation was successfully imported/edited via editor
+                    if let existingAnim = editingExistingAnimation {
+                        // Editing existing animation - update it
+                        var animations = Defaults[.customIdleAnimations]
+                        if let index = animations.firstIndex(where: { $0.id == existingAnim.id }) {
+                            animations[index] = animation
+                            Defaults[.customIdleAnimations] = animations
+                            
+                            // Update selection if this was the selected animation
+                            if selectedIdleAnimation?.id == existingAnim.id {
+                                Defaults[.selectedIdleAnimation] = animation
                             }
                         }
-                        showingEditor = false
-                        // Reset editor state
-                        editorSourceURL = nil
-                        editedAnimation = nil
-                        editingExistingAnimation = nil
+                    } else {
+                        // New import - just select it
+                        withAnimation {
+                            selectedIdleAnimation = animation
+                        }
                     }
+                    showingEditor = false
+                    // Reset editor state
+                    editorSourceURL = nil
+                    editedAnimation = nil
+                    editingExistingAnimation = nil
                 }
             }
         }
@@ -200,7 +221,12 @@ struct IdleAnimationsSettingsSection: View {
             editorIsRemote = false
             editedAnimation = nil
             editingExistingAnimation = nil  // Reset to nil for new imports
-            showingEditor = true
+            
+            // Show editor with slight delay to ensure state is set
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                showingEditor = true
+                print("📥 [Import] Opening editor for new import")
+            }
             
         case .failure(let error):
             importError = error.localizedDescription
@@ -221,7 +247,12 @@ struct IdleAnimationsSettingsSection: View {
         editedAnimation = nil
         editingExistingAnimation = nil  // Reset to nil for new imports
         showingURLSheet = false
-        showingEditor = true
+        
+        // Show editor with slight delay to ensure state is set
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            showingEditor = true
+            print("📥 [Import] Opening editor for URL import")
+        }
     }
 }
 
