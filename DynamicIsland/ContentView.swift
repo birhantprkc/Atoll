@@ -516,7 +516,7 @@ struct ContentView: View {
                 Rectangle()
                     .fill(.black)
                     .frame(width: vm.closedNotchSize.width - 20)
-                MinimalFaceFeatures()
+                IdleAnimationView()
             }
         }.frame(height: vm.effectiveClosedNotchHeight + (isHovering ? 8 : 0), alignment: .center)
     }

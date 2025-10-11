@@ -84,6 +84,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     let webcamManager = WebcamManager.shared
     let dndManager = DoNotDisturbManager.shared  // NEW: DND detection
     let bluetoothAudioManager = BluetoothAudioManager.shared  // NEW: Bluetooth audio detection
+    let idleAnimationManager = IdleAnimationManager.shared  // NEW: Custom idle animations
     var closeNotchWorkItem: DispatchWorkItem?
     private var previousScreens: [NSScreen]?
     private var onboardingWindowController: NSWindowController?
@@ -401,6 +402,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         // Migrate legacy progress bar settings
         Defaults.Keys.migrateProgressBarStyle()
+        
+        // Initialize idle animations (load bundled + built-in face)
+        idleAnimationManager.initializeDefaultAnimations()
         
         // Setup SystemHUD Manager
         SystemHUDManager.shared.setup(coordinator: coordinator)
