@@ -9,6 +9,7 @@
 import Foundation
 import SwiftUI
 import Combine
+import Defaults
 
 // MARK: - Indicator Layout Enum
 enum IndicatorLayout {
@@ -74,6 +75,7 @@ class PrivacyIndicatorManager: ObservableObject {
     @Published var cameraActive: Bool = false
     @Published var microphoneActive: Bool = false
     @Published var screenRecordingActive: Bool = false
+    @Published var isMonitoring: Bool = false
     
     // MARK: - Child Monitors
     private let cameraMonitor = CameraMonitor()
@@ -87,8 +89,9 @@ class PrivacyIndicatorManager: ObservableObject {
     
     /// Current indicator layout based on active states
     var indicatorLayout: IndicatorLayout {
-        let camera = cameraActive
-        let mic = microphoneActive
+        // Respect user settings
+        let camera = cameraActive && Defaults[.enableCameraDetection]
+        let mic = microphoneActive && Defaults[.enableMicrophoneDetection]
         let recording = screenRecordingActive
         
         // 8 possible combinations
@@ -112,9 +115,11 @@ class PrivacyIndicatorManager: ObservableObject {
         }
     }
     
-    /// Check if any indicator is active
+    /// Check if any indicator is active (respecting user settings)
     var hasAnyIndicator: Bool {
-        return cameraActive || microphoneActive || screenRecordingActive
+        let showCamera = cameraActive && Defaults[.enableCameraDetection]
+        let showMic = microphoneActive && Defaults[.enableMicrophoneDetection]
+        return showCamera || showMic || screenRecordingActive
     }
     
     // MARK: - Initialization
@@ -134,7 +139,9 @@ class PrivacyIndicatorManager: ObservableObject {
                 guard let self = self else { return }
                 if self.cameraActive != isActive {
                     print("PrivacyIndicatorManager: 📷 Camera state: \(isActive)")
-                    self.cameraActive = isActive
+                    withAnimation(.smooth) {
+                        self.cameraActive = isActive
+                    }
                     self.logLayoutChange()
                 }
             }
@@ -147,7 +154,9 @@ class PrivacyIndicatorManager: ObservableObject {
                 guard let self = self else { return }
                 if self.microphoneActive != isActive {
                     print("PrivacyIndicatorManager: 🎤 Microphone state: \(isActive)")
-                    self.microphoneActive = isActive
+                    withAnimation(.smooth) {
+                        self.microphoneActive = isActive
+                    }
                     self.logLayoutChange()
                 }
             }
@@ -163,7 +172,9 @@ class PrivacyIndicatorManager: ObservableObject {
                 guard let self = self else { return }
                 if self.screenRecordingActive != isRecording {
                     print("PrivacyIndicatorManager: 📹 Screen recording state: \(isRecording)")
-                    self.screenRecordingActive = isRecording
+                    withAnimation(.smooth) {
+                        self.screenRecordingActive = isRecording
+                    }
                     self.logLayoutChange()
                 }
             }
@@ -181,6 +192,8 @@ class PrivacyIndicatorManager: ObservableObject {
     /// Start monitoring all privacy indicators
     func startMonitoring() {
         print("PrivacyIndicatorManager: 🟢 Starting all monitors...")
+        
+        isMonitoring = true
         
         // Start camera monitoring
         if cameraMonitor.isMonitoringAvailable {
@@ -203,6 +216,8 @@ class PrivacyIndicatorManager: ObservableObject {
     /// Stop monitoring all privacy indicators
     func stopMonitoring() {
         print("PrivacyIndicatorManager: 🛑 Stopping all monitors...")
+        
+        isMonitoring = false
         
         cameraMonitor.stopMonitoring()
         microphoneMonitor.stopMonitoring()
