@@ -58,6 +58,7 @@ class LockScreenLiveActivityWindowManager {
         window.level = NSWindow.Level(rawValue: Int(CGShieldingWindowLevel()))
         window.collectionBehavior = [.canJoinAllSpaces, .stationary, .fullScreenAuxiliary]
         window.alphaValue = 0
+        window.animationBehavior = .none
 
         self.window = window
         self.hasDelegated = false
@@ -82,14 +83,25 @@ class LockScreenLiveActivityWindowManager {
 
         let overlay = LockScreenLiveActivityOverlay(state: state, notchSize: notchSize)
         window.contentView = NSHostingView(rootView: overlay)
+        window.displayIfNeeded()
 
         if !hasDelegated {
             SkyLightOperator.shared.delegateWindow(window)
             hasDelegated = true
         }
 
-        window.alphaValue = 1
-        window.orderFrontRegardless()
+        if !window.isVisible {
+            window.alphaValue = 0
+            window.orderFrontRegardless()
+
+            NSAnimationContext.runAnimationGroup { context in
+                context.duration = 0.12
+                window.animator().alphaValue = 1
+            }
+        } else {
+            window.orderFrontRegardless()
+            window.alphaValue = 1
+        }
     }
 
     func showLocked() {

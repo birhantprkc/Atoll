@@ -45,7 +45,7 @@ struct LockScreenLiveActivityOverlay: View {
     }
 
     var body: some View {
-        HStack(spacing: 0) {
+        HStack(alignment: .top, spacing: 0) {
             Color.clear
                 .background {
                     HStack {
@@ -62,13 +62,13 @@ struct LockScreenLiveActivityOverlay: View {
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
                 }
-                .frame(width: indicatorSize, height: notchSize.height)
+                .frame(width: indicatorSize, height: notchSize.height, alignment: .top)
 
             Color.clear
-                .frame(width: notchSize.width, height: notchSize.height)
+                .frame(width: notchSize.width, height: notchSize.height, alignment: .top)
 
             Color.clear
-                .frame(width: indicatorSize, height: notchSize.height)
+                .frame(width: indicatorSize, height: notchSize.height, alignment: .top)
         }
         .frame(width: baseWidth, height: notchSize.height)
         .padding(.horizontal, horizontalPadding)
