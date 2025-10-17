@@ -24,9 +24,10 @@ struct LockScreenMusicPanel: View {
     @Default(.lockScreenPanelUsesBlur) var enableBlur
     
     private let collapsedPanelCornerRadius: CGFloat = 28
-    private let expandedPanelCornerRadius: CGFloat = 44
+    private let expandedPanelCornerRadius: CGFloat = 52
     private let collapsedAlbumArtCornerRadius: CGFloat = 16
-    private let expandedAlbumArtCornerRadius: CGFloat = 52
+    private let expandedAlbumArtCornerRadius: CGFloat = 60
+    private let expandedContentSpacing: CGFloat = 40
     private let collapseTimeout: TimeInterval = 5
 
     private var currentSize: CGSize {
@@ -108,7 +109,7 @@ struct LockScreenMusicPanel: View {
     }
 
     private var expandedLayout: some View {
-        HStack(alignment: .center, spacing: 32) {
+        HStack(alignment: .center, spacing: expandedContentSpacing) {
             albumArtButton(size: 230, cornerRadius: expandedAlbumArtCornerRadius)
                 .frame(width: 230, height: 230)
 
@@ -172,19 +173,11 @@ struct LockScreenMusicPanel: View {
             ZStack(alignment: .bottomTrailing) {
                 albumArtImage(size: size, cornerRadius: cornerRadius)
                 if showAppIcon, let icon = lockScreenAppIcon {
-                    RoundedRectangle(cornerRadius: appIconCornerRadius, style: .continuous)
-                        .fill(Color.black.opacity(0.45))
+                    icon
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
                         .frame(width: appIconSize, height: appIconSize)
-                        .overlay {
-                            icon
-                                .resizable()
-                                .aspectRatio(contentMode: .fill)
-                                .clipShape(RoundedRectangle(cornerRadius: appIconCornerRadius, style: .continuous))
-                        }
-                        .overlay {
-                            RoundedRectangle(cornerRadius: appIconCornerRadius, style: .continuous)
-                                .stroke(Color.white.opacity(0.4), lineWidth: 1)
-                        }
+                        .clipShape(RoundedRectangle(cornerRadius: appIconCornerRadius, style: .continuous))
                         .shadow(color: Color.black.opacity(0.35), radius: 6, x: 0, y: 4)
                         .offset(x: appIconOffset, y: appIconOffset)
                         .transition(.scale.combined(with: .opacity))
@@ -478,7 +471,7 @@ struct LockScreenMusicPanel: View {
     }
 
     private var appIconSize: CGFloat {
-        isExpanded ? 54 : 32
+        isExpanded ? 58 : 34
     }
 
     private var appIconCornerRadius: CGFloat {
@@ -486,7 +479,7 @@ struct LockScreenMusicPanel: View {
     }
 
     private var appIconOffset: CGFloat {
-        isExpanded ? 16 : 10
+        isExpanded ? 18 : 12
     }
 
     private func logPanelAppearance(event: String = "✅ View appeared") {
