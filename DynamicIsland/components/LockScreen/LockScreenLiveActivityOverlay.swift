@@ -36,31 +36,16 @@ struct LockScreenLiveActivityOverlay: View {
         state == .locked ? "lock.fill" : "lock.open.fill"
     }
 
-    private var iconColor: Color {
-        state == .locked ? .blue : .green
-    }
-
-    private var glowColor: Color {
-        state == .locked ? Color.blue.opacity(0.15) : Color.green.opacity(0.2)
-    }
+    private var iconColor: Color { .white }
 
     var body: some View {
         HStack(alignment: .top, spacing: 0) {
             Color.clear
-                .background {
-                    HStack {
-                        ZStack {
-                            RoundedRectangle(cornerRadius: 6)
-                                .fill(glowColor)
-
-                            Image(systemName: iconName)
-                                .font(.system(size: 12, weight: .semibold))
-                                .foregroundColor(iconColor)
-                                .modifier(LockPulsingModifier(isUnlocking: state == .unlocking))
-                        }
+                .overlay(alignment: .leading) {
+                    Image(systemName: iconName)
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(iconColor)
                         .frame(width: indicatorSize, height: indicatorSize)
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
                 }
                 .frame(width: indicatorSize, height: notchSize.height, alignment: .top)
 

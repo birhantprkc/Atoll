@@ -17,6 +17,7 @@ class LockScreenLiveActivityWindowManager {
     private var window: NSWindow?
     private var hasDelegated = false
     private var hideTask: Task<Void, Never>?
+    private var hostingView: NSHostingView<LockScreenLiveActivityOverlay>?
 
     private init() {}
 
@@ -82,7 +83,21 @@ class LockScreenLiveActivityWindowManager {
         window.setFrame(targetFrame, display: true)
 
         let overlay = LockScreenLiveActivityOverlay(state: state, notchSize: notchSize)
-        window.contentView = NSHostingView(rootView: overlay)
+
+        if let hostingView {
+            hostingView.rootView = overlay
+            hostingView.frame = CGRect(origin: .zero, size: targetFrame.size)
+        } else {
+            let view = NSHostingView(rootView: overlay)
+            view.frame = CGRect(origin: .zero, size: targetFrame.size)
+            hostingView = view
+            window.contentView = view
+        }
+
+        if window.contentView !== hostingView {
+            window.contentView = hostingView
+        }
+
         window.displayIfNeeded()
 
         if !hasDelegated {
@@ -90,17 +105,13 @@ class LockScreenLiveActivityWindowManager {
             hasDelegated = true
         }
 
-        if !window.isVisible {
-            window.alphaValue = 0
-            window.orderFrontRegardless()
+        window.orderFrontRegardless()
 
+        if window.alphaValue < 1 {
             NSAnimationContext.runAnimationGroup { context in
                 context.duration = 0.12
                 window.animator().alphaValue = 1
             }
-        } else {
-            window.orderFrontRegardless()
-            window.alphaValue = 1
         }
     }
 
@@ -130,9 +141,10 @@ class LockScreenLiveActivityWindowManager {
 
         guard let window else { return }
 
-        window.orderOut(nil)
-        window.alphaValue = 0
-        window.contentView = nil
+        NSAnimationContext.runAnimationGroup { context in
+            context.duration = 0.1
+            window.animator().alphaValue = 0
+        }
 
         print("[\(timestamp())] LockScreenLiveActivityWindowManager: HUD hidden")
     }

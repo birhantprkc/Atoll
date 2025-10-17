@@ -21,33 +21,20 @@ struct LockScreenLiveActivity: View {
     }
 
     private var iconColor: Color {
-        lockScreenManager.isLocked ? .blue : .green
-    }
-
-    private var glowColor: Color {
-        lockScreenManager.isLocked ? Color.blue.opacity(0.15) : Color.green.opacity(0.2)
+        .white
     }
     
     var body: some View {
         HStack(spacing: 0) {
             // Left - Lock icon with subtle glow
             Color.clear
-                .background {
+                .overlay(alignment: .leading) {
                     if isExpanded {
-                        HStack {
-                            ZStack {
-                                RoundedRectangle(cornerRadius: 6)
-                                    .fill(glowColor)
-                                
-                                Image(systemName: iconName)
-                                    .font(.system(size: 12, weight: .semibold))
-                                    .foregroundColor(iconColor)
-                                    .modifier(LockPulsingModifier(isUnlocking: !lockScreenManager.isLocked))
-                                    .matchedGeometryEffect(id: "lock-icon", in: lockIconSpace)
-                            }
+                        Image(systemName: iconName)
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(iconColor)
+                            .matchedGeometryEffect(id: "lock-icon", in: lockIconSpace)
                             .frame(width: vm.effectiveClosedNotchHeight - 12, height: vm.effectiveClosedNotchHeight - 12)
-                        }
-                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
                     }
                 }
                 .frame(width: isExpanded ? max(0, vm.effectiveClosedNotchHeight - (isHovering ? 0 : 12) + gestureProgress / 2) : 0, height: vm.effectiveClosedNotchHeight - (isHovering ? 0 : 12))
@@ -85,25 +72,5 @@ struct LockScreenLiveActivity: View {
         }
         .animation(.spring(response: 0.5, dampingFraction: 0.85), value: lockScreenManager.isLocked)
         .animation(.easeOut(duration: 0.25), value: isExpanded)
-    }
-}
-
-// Pulsing animation modifier for lock indicator
-struct LockPulsingModifier: ViewModifier {
-    var isUnlocking: Bool
-    @State private var isPulsing = false
-    
-    func body(content: Content) -> some View {
-        content
-            .scaleEffect(isPulsing ? 1.1 : 1.0)
-            .opacity(isPulsing ? (isUnlocking ? 1.0 : 0.8) : 1.0)
-            .onAppear {
-                withAnimation(.easeInOut(duration: 1.0).repeatForever(autoreverses: true)) {
-                    isPulsing = true
-                }
-            }
-            .onDisappear {
-                isPulsing = false
-            }
     }
 }
