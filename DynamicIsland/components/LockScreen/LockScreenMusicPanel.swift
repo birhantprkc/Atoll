@@ -15,6 +15,10 @@ struct LockScreenMusicPanel: View {
     @State private var lastDragged: Date = .distantPast
     @State private var isActive = true
     
+    private let panelWidth: CGFloat = 460
+    private let panelHeight: CGFloat = 180
+    private let cornerRadius: CGFloat = 28
+    
     var body: some View {
         if isActive {
             panelContent
@@ -23,14 +27,14 @@ struct LockScreenMusicPanel: View {
                 }
         } else {
             Color.clear
-                .frame(width: 420, height: 150)
+                .frame(width: panelWidth, height: panelHeight)
         }
     }
     
     private var panelContent: some View {
-        VStack(spacing: 0) {
+        VStack(spacing: 12) {
             // Header area with album art
-            HStack(alignment: .center, spacing: 10) {
+            HStack(alignment: .center, spacing: 16) {
                 // Album art
                 Button {
                     musicManager.openMusicApp()
@@ -38,8 +42,8 @@ struct LockScreenMusicPanel: View {
                     Image(nsImage: musicManager.albumArt)
                         .resizable()
                         .aspectRatio(contentMode: .fill)
-                        .frame(width: 50, height: 50)
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .frame(width: 60, height: 60)
+                        .clipShape(RoundedRectangle(cornerRadius: 16))
                 }
                 .buttonStyle(PlainButtonStyle())
                 .opacity(musicManager.isPlaying ? 1 : 0.4)
@@ -71,30 +75,30 @@ struct LockScreenMusicPanel: View {
                         .frame(width: 20, height: 16)
                 }
             }
-            .frame(height: 50)
+            .frame(height: 60)
             
             // Progress bar
             progressBar
-                .padding(.top, 6)
+                .padding(.top, 4)
             
             // Playback controls
             playbackControls
                 .padding(.top, 4)
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
-        .frame(width: 420, height: 150)
+        .padding(.horizontal, 20)
+        .padding(.vertical, 16)
+        .frame(width: panelWidth, height: panelHeight)
         .background {
             if #available(macOS 26.0, *) {
-                RoundedRectangle(cornerRadius: 20)
-                    .glassEffect(in: .rect(cornerRadius: 20))
+                RoundedRectangle(cornerRadius: cornerRadius)
+                    .glassEffect(in: .rect(cornerRadius: cornerRadius))
                     .onAppear {
                         let formatter = DateFormatter()
                         formatter.dateFormat = "HH:mm:ss.SSS"
                         print("[\(formatter.string(from: Date()))] LockScreenMusicPanel: ✨ Using macOS 26.0+ Liquid Glass effect")
                     }
             } else {
-                RoundedRectangle(cornerRadius: 20)
+                RoundedRectangle(cornerRadius: cornerRadius)
                     .fill(.ultraThinMaterial)
                     .onAppear {
                         let formatter = DateFormatter()
@@ -102,6 +106,10 @@ struct LockScreenMusicPanel: View {
                         print("[\(formatter.string(from: Date()))] LockScreenMusicPanel: 🪟 Using ultraThinMaterial fallback (macOS < 26.0)")
                     }
             }
+        }
+        .overlay {
+            RoundedRectangle(cornerRadius: cornerRadius)
+                .stroke(Color.white.opacity(0.35), lineWidth: 1.4)
         }
         .shadow(color: Color.black.opacity(0.3), radius: 20, x: 0, y: 10)
         .onAppear {
@@ -233,7 +241,9 @@ struct LockScreenMusicPanel: View {
             Image(systemName: musicManager.isPlaying ? "pause.fill" : "play.fill")
                 .font(.system(size: 24, weight: .semibold))
                 .foregroundColor(.white)
-                .frame(width: 50, height: 50)
+                .frame(width: 54, height: 54)
+                .background(Color.white.opacity(0.15))
+                .clipShape(Circle())
         }
         .buttonStyle(PlainButtonStyle())
     }

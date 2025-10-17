@@ -18,6 +18,7 @@ class LockScreenManager: ObservableObject {
     
     // MARK: - Coordinator
     private let coordinator = DynamicIslandViewCoordinator.shared
+    private weak var viewModel: DynamicIslandViewModel?
     
     // MARK: - Published Properties
     @Published var isLocked: Bool = false
@@ -79,6 +80,17 @@ class LockScreenManager: ObservableObject {
         
         // Set locked state immediately without animation wrapper
         isLocked = true
+
+        viewModel?.closeForLockScreen()
+
+        if coordinator.expandingView.show {
+            let currentType = coordinator.expandingView.type
+            coordinator.toggleExpandingView(status: false, type: currentType)
+        }
+
+        if coordinator.sneakPeek.show {
+            coordinator.toggleSneakPeek(status: false, type: coordinator.sneakPeek.type)
+        }
         
         // Show panel FIRST (creates and shows window on lock screen)
         print("[\(timestamp())] LockScreenManager: 🎵 Showing lock screen panel")
@@ -143,6 +155,10 @@ class LockScreenManager: ObservableObject {
 // MARK: - Extensions
 
 extension LockScreenManager {
+    func configure(viewModel: DynamicIslandViewModel) {
+        self.viewModel = viewModel
+    }
+    
     /// Get current lock status without async
     var currentLockStatus: Bool {
         return isLocked

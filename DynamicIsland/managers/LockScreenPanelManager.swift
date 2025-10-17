@@ -41,11 +41,11 @@ class LockScreenPanelManager {
             return
         }
 
-        let panelWidth: CGFloat = 420
-        let panelHeight: CGFloat = 150
+        let panelWidth: CGFloat = 460
+        let panelHeight: CGFloat = 180
         let screenFrame = screen.frame
         let originX = screenFrame.origin.x + (screenFrame.width / 2) - (panelWidth / 2)
-        let originY = screenFrame.origin.y + (screenFrame.height / 2) - panelHeight - 40
+        let originY = screenFrame.origin.y + (screenFrame.height / 2) - panelHeight - 32
         let targetFrame = NSRect(x: originX, y: originY, width: panelWidth, height: panelHeight)
 
         let window: NSWindow
