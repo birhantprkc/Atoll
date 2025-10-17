@@ -16,6 +16,7 @@ class LockScreenPanelManager {
 
     private var panelWindow: NSWindow?
     private var hasDelegated = false
+    private var collapsedFrame: NSRect?
 
     private init() {
         print("[\(timestamp())] LockScreenPanelManager: initialized")
@@ -41,11 +42,13 @@ class LockScreenPanelManager {
             return
         }
 
-        let panelSize = LockScreenMusicPanel.defaultSize
+        let collapsedSize = LockScreenMusicPanel.collapsedSize
         let screenFrame = screen.frame
-        let originX = screenFrame.origin.x + (screenFrame.width / 2) - (panelSize.width / 2)
-        let originY = screenFrame.origin.y + (screenFrame.height / 2) - panelSize.height - 32
-        let targetFrame = NSRect(x: originX, y: originY, width: panelSize.width, height: panelSize.height)
+        let centerX = screenFrame.origin.x + (screenFrame.width / 2)
+        let originX = centerX - (collapsedSize.width / 2)
+        let originY = screenFrame.origin.y + (screenFrame.height / 2) - collapsedSize.height - 32
+        let targetFrame = NSRect(x: originX, y: originY, width: collapsedSize.width, height: collapsedSize.height)
+        collapsedFrame = targetFrame
 
         let window: NSWindow
 
@@ -84,6 +87,23 @@ class LockScreenPanelManager {
         window.orderFrontRegardless()
 
         print("[\(timestamp())] LockScreenPanelManager: panel visible")
+    }
+
+    func updatePanelSize(expanded: Bool, animated: Bool = true) {
+        guard let window = panelWindow, let baseFrame = collapsedFrame else {
+            return
+        }
+
+        let targetSize = expanded ? LockScreenMusicPanel.expandedSize : LockScreenMusicPanel.collapsedSize
+        let originX = baseFrame.midX - (targetSize.width / 2)
+        let originY = baseFrame.origin.y
+        let targetFrame = NSRect(x: originX, y: originY, width: targetSize.width, height: targetSize.height)
+
+        if animated {
+            window.animator().setFrame(targetFrame, display: true)
+        } else {
+            window.setFrame(targetFrame, display: true)
+        }
     }
 
     func hidePanel() {
