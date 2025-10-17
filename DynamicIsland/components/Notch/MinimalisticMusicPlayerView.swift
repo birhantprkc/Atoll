@@ -268,11 +268,11 @@ struct MinimalisticAlbumArtView: View {
                     Image(nsImage: musicManager.albumArt)
                         .resizable()
                         .aspectRatio(contentMode: .fill)
-                        .animation(.spring(response: 0.4, dampingFraction: 0.8), value: musicManager.isFlipping)
                 )
                 .clipped()
                 .clipShape(RoundedRectangle(cornerRadius: 12))
                 .matchedGeometryEffect(id: "albumArt", in: albumArtNamespace)
+                .albumArtFlip(angle: musicManager.flipAngle)
         }
         .buttonStyle(PlainButtonStyle())
         .opacity(musicManager.isPlaying ? 1 : 0.4)

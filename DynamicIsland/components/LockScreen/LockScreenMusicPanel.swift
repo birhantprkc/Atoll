@@ -183,6 +183,7 @@ struct LockScreenMusicPanel: View {
                         .transition(.scale.combined(with: .opacity))
                 }
             }
+            .albumArtFlip(angle: musicManager.flipAngle)
             .frame(width: size, height: size)
             .background(albumArtBackground(cornerRadius: cornerRadius))
         }
