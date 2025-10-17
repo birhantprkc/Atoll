@@ -7,15 +7,26 @@
 
 import SwiftUI
 import Defaults
-import SkyLightWindow
 
 struct LockScreenLiveActivity: View {
     @EnvironmentObject var vm: DynamicIslandViewModel
-    // Don't observe lockScreenManager - just show static lock icon without state-driven animations
-    // This prevents animation conflicts with panel window teardown
+    @ObservedObject private var lockScreenManager = LockScreenManager.shared
     @State private var isHovering: Bool = false
     @State private var gestureProgress: CGFloat = 0
     @State private var isExpanded: Bool = false
+    @Namespace private var lockIconSpace
+
+    private var iconName: String {
+        lockScreenManager.isLocked ? "lock.fill" : "lock.open.fill"
+    }
+
+    private var iconColor: Color {
+        lockScreenManager.isLocked ? .blue : .green
+    }
+
+    private var glowColor: Color {
+        lockScreenManager.isLocked ? Color.blue.opacity(0.15) : Color.green.opacity(0.2)
+    }
     
     var body: some View {
         HStack(spacing: 0) {
@@ -26,12 +37,13 @@ struct LockScreenLiveActivity: View {
                         HStack {
                             ZStack {
                                 RoundedRectangle(cornerRadius: 6)
-                                    .fill(Color.blue.opacity(0.15))
+                                    .fill(glowColor)
                                 
-                                Image(systemName: "lock.fill")
-                                    .font(.system(size: 12))
-                                    .foregroundColor(.blue)
-                                    .modifier(LockPulsingModifier())
+                                Image(systemName: iconName)
+                                    .font(.system(size: 12, weight: .semibold))
+                                    .foregroundColor(iconColor)
+                                    .modifier(LockPulsingModifier(isUnlocking: !lockScreenManager.isLocked))
+                                    .matchedGeometryEffect(id: "lock-icon", in: lockIconSpace)
                             }
                             .frame(width: vm.effectiveClosedNotchHeight - 12, height: vm.effectiveClosedNotchHeight - 12)
                         }
@@ -52,27 +64,46 @@ struct LockScreenLiveActivity: View {
         .frame(height: vm.effectiveClosedNotchHeight + (isHovering ? 8 : 0))
         .onAppear {
             // Expand immediately without animation to avoid conflicts
-            isExpanded = true
+            withAnimation(.smooth(duration: 0.4)) {
+                isExpanded = true
+            }
         }
         .onDisappear {
             // Collapse immediately when removed from hierarchy
             isExpanded = false
         }
+        .onChange(of: lockScreenManager.isLockIdle) { _, newValue in
+            if newValue {
+                withAnimation(.smooth(duration: 0.4)) {
+                    isExpanded = false
+                }
+            } else {
+                withAnimation(.smooth(duration: 0.4)) {
+                    isExpanded = true
+                }
+            }
+        }
+        .animation(.spring(response: 0.5, dampingFraction: 0.85), value: lockScreenManager.isLocked)
+        .animation(.easeOut(duration: 0.25), value: isExpanded)
     }
 }
 
 // Pulsing animation modifier for lock indicator
 struct LockPulsingModifier: ViewModifier {
+    var isUnlocking: Bool
     @State private var isPulsing = false
     
     func body(content: Content) -> some View {
         content
             .scaleEffect(isPulsing ? 1.1 : 1.0)
-            .opacity(isPulsing ? 0.8 : 1.0)
+            .opacity(isPulsing ? (isUnlocking ? 1.0 : 0.8) : 1.0)
             .onAppear {
                 withAnimation(.easeInOut(duration: 1.0).repeatForever(autoreverses: true)) {
                     isPulsing = true
                 }
+            }
+            .onDisappear {
+                isPulsing = false
             }
     }
 }
