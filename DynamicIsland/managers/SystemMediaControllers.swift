@@ -1,5 +1,6 @@
 import Foundation
 import CoreAudio
+import CoreGraphics
 import IOKit
 
 extension Notification.Name {
@@ -273,6 +274,7 @@ final class SystemBrightnessController {
     private let notificationCenter = NotificationCenter.default
     private var observers: [NSObjectProtocol] = []
     private var notificationsInstalled = false
+    private var displayID: CGDirectDisplayID = CGMainDisplayID()
 
     private init() {
         registerExternalNotifications()
@@ -292,13 +294,24 @@ final class SystemBrightnessController {
 
     func setBrightness(_ value: Float) {
         let clamped = max(0, min(1, value))
+        if setBrightnessViaDisplayServices(clamped) {
+            notifyCurrentBrightness()
+            return
+        }
         guard let service = displayService() else { return }
-        IODisplaySetFloatParameter(service, 0, kIODisplayBrightnessKey as CFString, clamped)
+        let status = IODisplaySetFloatParameter(service, 0, kIODisplayBrightnessKey as CFString, clamped)
         IOObjectRelease(service)
-        notifyCurrentBrightness()
+        if status == kIOReturnSuccess {
+            notifyCurrentBrightness()
+        } else {
+            NSLog("⚠️ Failed to set brightness via IODisplay: \(status)")
+        }
     }
 
     var currentBrightness: Float {
+        if let level = getBrightnessViaDisplayServices() {
+            return level
+        }
         guard let service = displayService() else { return 0.5 }
         var brightness: Float = 0
         let result = IODisplayGetFloatParameter(service, 0, kIODisplayBrightnessKey as CFString, &brightness)
@@ -327,6 +340,36 @@ final class SystemBrightnessController {
         return service
     }
 
+    private func setBrightnessViaDisplayServices(_ value: Float) -> Bool {
+        let status = DisplayServicesSetBrightness(displayID, value)
+        if status == kIOReturnSuccess {
+            return true
+        }
+        // Attempt to refresh display ID in case the main display changed
+        displayID = CGMainDisplayID()
+        let retry = DisplayServicesSetBrightness(displayID, value)
+        if retry != kIOReturnSuccess {
+            NSLog("⚠️ DisplayServicesSetBrightness failed: \(retry)")
+            return false
+        }
+        return true
+    }
+
+    private func getBrightnessViaDisplayServices() -> Float? {
+        var brightness: Float = 0
+        let status = DisplayServicesGetBrightness(displayID, &brightness)
+        if status == kIOReturnSuccess {
+            return brightness
+        }
+        displayID = CGMainDisplayID()
+        let retry = DisplayServicesGetBrightness(displayID, &brightness)
+        if retry == kIOReturnSuccess {
+            return brightness
+        }
+        NSLog("⚠️ DisplayServicesGetBrightness failed: \(retry)")
+        return nil
+    }
+
     private func registerExternalNotifications() {
         guard !notificationsInstalled else { return }
         let names = [
@@ -346,3 +389,9 @@ final class SystemBrightnessController {
         observers.forEach { DistributedNotificationCenter.default().removeObserver($0) }
     }
 }
+
+@_silgen_name("DisplayServicesGetBrightness")
+private func DisplayServicesGetBrightness(_ display: UInt32, _ brightness: UnsafeMutablePointer<Float>) -> Int32
+
+@_silgen_name("DisplayServicesSetBrightness")
+private func DisplayServicesSetBrightness(_ display: UInt32, _ brightness: Float) -> Int32
