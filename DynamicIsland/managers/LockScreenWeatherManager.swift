@@ -1,5 +1,6 @@
 import Foundation
 import Defaults
+import CoreLocation
 
 @MainActor
 final class LockScreenWeatherManager: ObservableObject {
@@ -8,15 +9,22 @@ final class LockScreenWeatherManager: ObservableObject {
     @Published private(set) var snapshot: LockScreenWeatherSnapshot?
 
     private let provider = LockScreenWeatherProvider()
+    private let locationProvider = LockScreenWeatherLocationProvider()
     private var lastFetchDate: Date?
 
     private init() {}
+
+    func prepareLocationAccess() {
+        locationProvider.prepareAuthorization()
+    }
 
     func showWeatherWidget() {
         guard Defaults[.enableLockScreenWeatherWidget] else {
             LockScreenWeatherPanelManager.shared.hide()
             return
         }
+
+        locationProvider.prepareAuthorization()
 
         Task { @MainActor [weak self] in
             guard let self else { return }
@@ -43,7 +51,8 @@ final class LockScreenWeatherManager: ObservableObject {
         }
 
         do {
-            let snapshot = try await provider.fetchSnapshot()
+            let location = await locationProvider.currentLocation()
+            let snapshot = try await provider.fetchSnapshot(location: location)
             self.snapshot = snapshot
             lastFetchDate = Date()
             LockScreenWeatherPanelManager.shared.update(with: snapshot)
@@ -57,6 +66,7 @@ struct LockScreenWeatherSnapshot: Equatable {
     let temperatureText: String
     let symbolName: String
     let description: String
+    let locationName: String?
 }
 
 private actor LockScreenWeatherProvider {
@@ -71,8 +81,19 @@ private actor LockScreenWeatherProvider {
         decoder = JSONDecoder()
     }
 
-    func fetchSnapshot() async throws -> LockScreenWeatherSnapshot {
-        guard let url = URL(string: "https://wttr.in/?format=j1") else {
+    func fetchSnapshot(location: CLLocation?) async throws -> LockScreenWeatherSnapshot {
+        let locationSuffix: String
+        if let coordinate = location?.coordinate {
+            let lat = String(format: "%.4f", coordinate.latitude)
+            let lon = String(format: "%.4f", coordinate.longitude)
+            locationSuffix = "\(lat),\(lon)"
+        } else {
+            locationSuffix = ""
+        }
+
+        let urlString = locationSuffix.isEmpty ? "https://wttr.in/?format=j1" : "https://wttr.in/\(locationSuffix)?format=j1"
+
+        guard let url = URL(string: urlString) else {
             throw WeatherProviderError.invalidURL
         }
 
@@ -94,10 +115,14 @@ private actor LockScreenWeatherProvider {
         let symbol = WeatherSymbolMapper.symbol(for: code)
         let description = condition.localizedDescription
 
+        let nearest = payload.nearestArea.first
+        let locationName = nearest?.preferredName
+
         return LockScreenWeatherSnapshot(
             temperatureText: temperatureText,
             symbolName: symbol,
-            description: description
+            description: description,
+            locationName: locationName
         )
     }
 }
@@ -110,8 +135,10 @@ enum WeatherProviderError: Error {
 
 private struct WTTRResponse: Decodable {
     let current_condition: [WTTRCurrentCondition]
+    let nearest_area: [WTTRNearestArea]?
 
     var currentCondition: [WTTRCurrentCondition] { current_condition }
+    var nearestArea: [WTTRNearestArea] { nearest_area ?? [] }
 }
 
 private struct WTTRCurrentCondition: Decodable {
@@ -144,6 +171,31 @@ private struct WTTRTextValue: Decodable {
     let value: String
 }
 
+private struct WTTRNearestArea: Decodable {
+    let areaName: [WTTRTextValue]?
+    let region: [WTTRTextValue]?
+    let country: [WTTRTextValue]?
+
+    private enum CodingKeys: String, CodingKey {
+        case areaName = "areaName"
+        case region
+        case country
+    }
+
+    var preferredName: String? {
+        if let name = areaName?.first?.value, !name.isEmpty {
+            return name
+        }
+        if let regionName = region?.first?.value, !regionName.isEmpty {
+            return regionName
+        }
+        if let countryName = country?.first?.value, !countryName.isEmpty {
+            return countryName
+        }
+        return nil
+    }
+}
+
 private enum WeatherSymbolMapper {
     static func symbol(for code: Int) -> String {
         switch code {
@@ -166,5 +218,53 @@ private enum WeatherSymbolMapper {
         default:
             return "cloud.sun.fill"
         }
+    }
+}
+
+@MainActor
+private final class LockScreenWeatherLocationProvider: NSObject, CLLocationManagerDelegate {
+    private let manager: CLLocationManager
+    private var continuation: CheckedContinuation<CLLocation?, Never>?
+    private var lastLocation: CLLocation?
+
+    override init() {
+        manager = CLLocationManager()
+        super.init()
+        manager.delegate = self
+        manager.desiredAccuracy = kCLLocationAccuracyHundredMeters
+    }
+
+    func prepareAuthorization() {
+        let status = CLLocationManager.authorizationStatus()
+        if status == .notDetermined {
+            manager.requestWhenInUseAuthorization()
+        }
+    }
+
+    func currentLocation() async -> CLLocation? {
+        let status = CLLocationManager.authorizationStatus()
+        switch status {
+        case .authorizedAlways, .authorizedWhenInUse:
+            if let lastLocation, abs(lastLocation.timestamp.timeIntervalSinceNow) < 1800 {
+                return lastLocation
+            }
+            manager.requestLocation()
+            return await withCheckedContinuation { continuation in
+                self.continuation = continuation
+            }
+        default:
+            return nil
+        }
+    }
+
+    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+        lastLocation = locations.last
+        continuation?.resume(returning: lastLocation)
+        continuation = nil
+    }
+
+    func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
+        continuation?.resume(returning: nil)
+        continuation = nil
     }
 }
