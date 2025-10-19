@@ -88,71 +88,73 @@ struct CPUUsageDashboard: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
 
-        let sensorsSection = CPUSensorGaugeGroup(
+        let primaryGauges = CPUSensorGaugeGroup(
+            breakdown: breakdown,
             temperature: temperature,
             frequency: frequency,
+            systemColor: systemColor,
+            userColor: userColor,
+            idleColor: idleColor,
             usageTint: userColor,
             temperatureTint: Color(red: 0.98, green: 0.53, blue: 0.18)
         )
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity, alignment: .center)
         
         return ViewThatFits(in: .horizontal) {
             VStack(alignment: .leading, spacing: 20) {
-                CPUSegmentDonut(
-                    breakdown: breakdown,
-                    systemColor: systemColor,
-                    userColor: userColor,
-                    idleColor: idleColor
-                )
-                .frame(width: 132, height: 132)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                
-                sensorsSection
+                primaryGauges
                 usageSection
                 Divider().padding(.vertical, 4)
                 systemSection
             }
             HStack(alignment: .top, spacing: 28) {
-                VStack(alignment: .leading, spacing: 18) {
-                    CPUSegmentDonut(
-                        breakdown: breakdown,
-                        systemColor: systemColor,
-                        userColor: userColor,
-                        idleColor: idleColor
-                    )
-                    .frame(width: 132, height: 132)
-
-                    sensorsSection
-                }
+                primaryGauges
+                    .frame(maxWidth: .infinity, alignment: .center)
                 usageSection
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 systemSection
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
     }
 }
 
 private struct CPUSensorGaugeGroup: View {
+    let breakdown: CPULoadBreakdown
     let temperature: CPUTemperatureMetrics
     let frequency: CPUFrequencyMetrics?
+    let systemColor: Color
+    let userColor: Color
+    let idleColor: Color
     let usageTint: Color
     let temperatureTint: Color
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Sensors")
-                .font(.caption)
-                .foregroundColor(.secondary)
-            HStack(spacing: 18) {
-                CPUTemperatureGauge(temperature: temperature.celsius, tint: temperatureTint)
-                CPUFrequencyGauge(frequency: frequency, tint: usageTint)
-            }
+        HStack(alignment: .center, spacing: 18) {
+            CPUTemperatureGauge(temperature: temperature.celsius, tint: temperatureTint, size: 78, lineWidth: 8)
+                .frame(maxWidth: .infinity)
+            CPUSegmentDonut(
+                breakdown: breakdown,
+                systemColor: systemColor,
+                userColor: userColor,
+                idleColor: idleColor,
+                diameter: 118,
+                lineWidth: 13
+            )
+            .frame(width: 118, height: 118)
+            .frame(maxWidth: .infinity)
+            CPUFrequencyGauge(frequency: frequency, tint: usageTint, size: 78, lineWidth: 8)
+                .frame(maxWidth: .infinity)
         }
+        .frame(maxWidth: .infinity, alignment: .center)
     }
 }
 
 private struct CPUTemperatureGauge: View {
     let temperature: Double?
     let tint: Color
+    var size: CGFloat = 84
+    var lineWidth: CGFloat = 9
     private let maxTemperature: Double = 110
 
     var body: some View {
@@ -162,8 +164,8 @@ private struct CPUTemperatureGauge: View {
             tint: tint,
             centerPrimaryText: centerPrimary,
             subtitle: nil,
-            size: 84,
-            lineWidth: 9
+            size: size,
+            lineWidth: lineWidth
         )
     }
 
@@ -181,6 +183,8 @@ private struct CPUTemperatureGauge: View {
 private struct CPUFrequencyGauge: View {
     let frequency: CPUFrequencyMetrics?
     let tint: Color
+    var size: CGFloat = 84
+    var lineWidth: CGFloat = 9
 
     var body: some View {
         CircularGaugeView(
@@ -190,8 +194,8 @@ private struct CPUFrequencyGauge: View {
             centerPrimaryText: centerPrimary,
             centerSecondaryText: frequency != nil ? "GHz" : nil,
             subtitle: subtitle,
-            size: 84,
-            lineWidth: 9
+            size: size,
+            lineWidth: lineWidth
         )
     }
 
@@ -225,17 +229,21 @@ private struct CPUSegmentDonut: View {
     let systemColor: Color
     let userColor: Color
     let idleColor: Color
+    var diameter: CGFloat = 132
+    var lineWidth: CGFloat = 14
     
     var body: some View {
         ZStack {
             Circle()
-                .stroke(idleColor.opacity(0.3), lineWidth: 14)
+                .stroke(idleColor.opacity(0.3), lineWidth: lineWidth)
+                .frame(width: diameter, height: diameter)
             CPUUsageRing(
                 breakdown: breakdown,
                 systemColor: systemColor,
                 userColor: userColor,
-                lineWidth: 14
+                lineWidth: lineWidth
             )
+            .frame(width: diameter, height: diameter)
             VStack(spacing: 4) {
                 Text(StatsFormatting.percentage(breakdown.activeUsage))
                     .font(.system(size: 30, weight: .bold, design: .rounded))

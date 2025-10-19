@@ -85,10 +85,13 @@ private struct GPUUsageDashboard: View {
     }
 
     private var leftColumn: some View {
-        VStack(alignment: .center, spacing: 16) {
-            usageRing
-            GPUEngineGauges(render: renderEngineUtilization, tiler: tilerUtilization, accentColor: accentColor)
-        }
+        GPUEngineGauges(
+            usage: usage,
+            render: renderEngineUtilization,
+            tiler: tilerUtilization,
+            accentColor: accentColor
+        )
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var breakdownAndMeta: some View {
@@ -101,25 +104,6 @@ private struct GPUUsageDashboard: View {
                 breakdownSection
                 Divider().padding(.vertical, 4)
                 metaSection
-            }
-        }
-    }
-
-    private var usageRing: some View {
-        ZStack {
-            Circle()
-                .stroke(accentColor.opacity(0.25), lineWidth: 12)
-                .frame(width: 108, height: 108)
-
-            RingArc(start: 0, end: CGFloat(min(max(usage / 100, 0), 1)), color: accentColor, lineWidth: 12)
-                .frame(width: 108, height: 108)
-
-            VStack(spacing: 4) {
-                Text(StatsFormatting.percentage(usage))
-                    .font(.system(size: 28, weight: .bold, design: .rounded))
-                Text("Active")
-                    .font(.footnote)
-                    .foregroundColor(.secondary)
             }
         }
     }
@@ -164,20 +148,48 @@ private struct GPUUsageDashboard: View {
 }
 
 private struct GPUEngineGauges: View {
+    let usage: Double
     let render: Double?
     let tiler: Double?
     let accentColor: Color
+    private let ringDiameter: CGFloat = 112
+    private let ringLineWidth: CGFloat = 12
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Engines")
+            Text("Engine Utilization")
                 .font(.caption)
                 .foregroundColor(.secondary)
-            HStack(alignment: .center, spacing: 16) {
-                EngineGaugeView(title: "Render", value: render, tint: accentColor)
-                EngineGaugeView(title: "Tiler", value: tiler, tint: accentColor.opacity(0.75))
+            HStack(alignment: .center, spacing: 18) {
+                EngineGaugeView(title: "Render", value: render, tint: accentColor, size: 72)
+                GPUUsageRing(usage: usage, accentColor: accentColor, diameter: ringDiameter, lineWidth: ringLineWidth)
+                EngineGaugeView(title: "Tiler", value: tiler, tint: accentColor.opacity(0.75), size: 72)
+            }
+            .frame(maxWidth: .infinity, alignment: .center)
+        }
+    }
+}
+
+private struct GPUUsageRing: View {
+    let usage: Double
+    let accentColor: Color
+    var diameter: CGFloat = 108
+    var lineWidth: CGFloat = 12
+
+    var body: some View {
+        ZStack {
+            Circle()
+                .stroke(accentColor.opacity(0.25), lineWidth: lineWidth)
+            RingArc(start: 0, end: CGFloat(min(max(usage / 100, 0), 1)), color: accentColor, lineWidth: lineWidth)
+            VStack(spacing: 4) {
+                Text(StatsFormatting.percentage(usage))
+                    .font(.system(size: 26, weight: .bold, design: .rounded))
+                Text("Active")
+                    .font(.footnote)
+                    .foregroundColor(.secondary)
             }
         }
+        .frame(width: diameter, height: diameter)
     }
 }
 
@@ -185,7 +197,7 @@ private struct EngineGaugeView: View {
     let title: String
     let value: Double?
     let tint: Color
-    private let size: CGFloat = 68
+    var size: CGFloat = 68
 
     var body: some View {
         if let value {
