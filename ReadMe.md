@@ -482,6 +482,7 @@ This project is licensed under the **MIT License** — see [LICENSE](LICENSE) fo
 
 - **Apple's Dynamic Island** — inspiration for this project
 - **NotchNook & HiDock** — early notch customization pioneers
+- **Alcove** - minimalistic mode inspiration
 - **SwiftUI, Combine, AVFoundation, IOKit** — technical foundation
 - **Lottie, SF Symbols, Apple Design Resources** — design & animation
 - **Open Source Contributors, Beta Testers, Community**
