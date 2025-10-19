@@ -96,6 +96,7 @@ class LockScreenManager: ObservableObject {
         print("[\(timestamp())] LockScreenManager: 🎵 Showing lock screen panel")
         LockScreenPanelManager.shared.showPanel()
         LockScreenLiveActivityWindowManager.shared.showLocked()
+        LockScreenWeatherManager.shared.showWeatherWidget()
         
         // THEN trigger lock icon in Dynamic Island (only if enabled in settings)
         if Defaults[.enableLockScreenLiveActivity] {
@@ -115,6 +116,7 @@ class LockScreenManager: ObservableObject {
         print("[\(timestamp())] LockScreenManager: 🚪 Hiding panel window")
         LockScreenPanelManager.shared.hidePanel()
         LockScreenLiveActivityWindowManager.shared.showUnlockAndScheduleHide()
+        LockScreenWeatherManager.shared.hideWeatherWidget()
         
         // Update state immediately
         if Defaults[.enableLockScreenLiveActivity] {

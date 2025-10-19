@@ -17,7 +17,7 @@ podfile.lock
 
 # Carthage
 Carthage/Build/
-
+/temp/
 # Swift Package Manager
 .swiftpm/
 .build/
