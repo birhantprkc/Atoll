@@ -62,38 +62,57 @@ struct CPUUsageDashboard: View {
     let idleColor: Color
     
     var body: some View {
-        HStack(alignment: .center, spacing: 28) {
-            CPUSegmentDonut(
-                breakdown: breakdown,
-                systemColor: systemColor,
-                userColor: userColor,
-                idleColor: idleColor
-            )
-            .frame(width: 132, height: 132)
-            
-            VStack(alignment: .leading, spacing: 12) {
-                Text("Usage")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                DetailRow(color: systemColor.opacity(0.95), label: "System", value: StatsFormatting.percentage(breakdown.system))
-                DetailRow(color: userColor.opacity(0.95), label: "User", value: StatsFormatting.percentage(breakdown.user))
-                DetailRow(color: idleColor.opacity(0.7), label: "Idle", value: StatsFormatting.percentage(breakdown.idle))
-                DetailRow(color: nil, label: "Active", value: StatsFormatting.percentage(breakdown.activeUsage))
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            
-            VStack(alignment: .leading, spacing: 10) {
-                Text("System")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                DetailRow(color: nil, label: "Logical cores", value: "\(max(coreCount, 1))")
-                DetailRow(color: nil, label: "Uptime", value: StatsFormatting.abbreviatedDuration(uptime))
+        let usageSection = VStack(alignment: .leading, spacing: 12) {
+            Text("Usage")
+                .font(.caption)
+                .foregroundColor(.secondary)
+            DetailRow(color: systemColor.opacity(0.95), label: "System", value: StatsFormatting.percentage(breakdown.system))
+            DetailRow(color: userColor.opacity(0.95), label: "User", value: StatsFormatting.percentage(breakdown.user))
+            DetailRow(color: idleColor.opacity(0.7), label: "Idle", value: StatsFormatting.percentage(breakdown.idle))
+            DetailRow(color: nil, label: "Active", value: StatsFormatting.percentage(breakdown.activeUsage))
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        
+        let systemSection = VStack(alignment: .leading, spacing: 10) {
+            Text("System")
+                .font(.caption)
+                .foregroundColor(.secondary)
+            DetailRow(color: nil, label: "Logical cores", value: "\(max(coreCount, 1))")
+            DetailRow(color: nil, label: "Uptime", value: StatsFormatting.abbreviatedDuration(uptime))
+            Divider().padding(.vertical, 4)
+            DetailRow(color: nil, label: "Load 1m", value: String(format: "%.2f", loadAverage.oneMinute))
+            DetailRow(color: nil, label: "Load 5m", value: String(format: "%.2f", loadAverage.fiveMinutes))
+            DetailRow(color: nil, label: "Load 15m", value: String(format: "%.2f", loadAverage.fifteenMinutes))
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        
+        return ViewThatFits(in: .horizontal) {
+            VStack(alignment: .leading, spacing: 20) {
+                CPUSegmentDonut(
+                    breakdown: breakdown,
+                    systemColor: systemColor,
+                    userColor: userColor,
+                    idleColor: idleColor
+                )
+                .frame(width: 132, height: 132)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                
+                usageSection
                 Divider().padding(.vertical, 4)
-                DetailRow(color: nil, label: "Load 1m", value: String(format: "%.2f", loadAverage.oneMinute))
-                DetailRow(color: nil, label: "Load 5m", value: String(format: "%.2f", loadAverage.fiveMinutes))
-                DetailRow(color: nil, label: "Load 15m", value: String(format: "%.2f", loadAverage.fifteenMinutes))
+                systemSection
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
+            HStack(alignment: .top, spacing: 28) {
+                CPUSegmentDonut(
+                    breakdown: breakdown,
+                    systemColor: systemColor,
+                    userColor: userColor,
+                    idleColor: idleColor
+                )
+                .frame(width: 132, height: 132)
+                
+                usageSection
+                systemSection
+            }
         }
     }
 }

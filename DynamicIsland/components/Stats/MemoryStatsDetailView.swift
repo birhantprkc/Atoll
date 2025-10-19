@@ -58,42 +58,69 @@ private struct MemoryUsageDashboard: View {
     private let freeColor = Color.gray.opacity(0.28)
     
     var body: some View {
-        HStack(alignment: .center, spacing: 28) {
-            ZStack {
-                Circle()
-                    .stroke(freeColor.opacity(0.35), lineWidth: 14)
-                    .frame(width: 128, height: 128)
-                
-                MemoryUsageRing(breakdown: breakdown, usedColor: accentColor, freeColor: freeColor)
-                    .frame(width: 128, height: 128)
-                
-                VStack(spacing: 4) {
-                    Text(StatsFormatting.percentage(breakdown.usedPercentage))
-                        .font(.system(size: 30, weight: .bold, design: .rounded))
-                    Text("Used")
-                        .font(.footnote)
-                        .foregroundColor(.secondary)
+        let totalsSection = VStack(alignment: .leading, spacing: 12) {
+            DetailRow(color: accentColor.opacity(0.8), label: "Used", value: formattedBytes(breakdown.usedBytes))
+            DetailRow(color: freeColor.opacity(0.9), label: "Free", value: formattedBytes(breakdown.freeBytes))
+            DetailRow(color: nil, label: "Total", value: formattedBytes(breakdown.totalBytes))
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        
+        let breakdownSection = VStack(alignment: .leading, spacing: 8) {
+            Text("Breakdown")
+                .font(.caption)
+                .foregroundColor(.secondary)
+            MemoryBreakdownRow(label: "App", value: breakdown.appBytes, total: breakdown.totalBytes, color: accentColor.opacity(0.85))
+            MemoryBreakdownRow(label: "Cached", value: breakdown.cacheBytes, total: breakdown.totalBytes, color: accentColor.opacity(0.65))
+            MemoryBreakdownRow(label: "Wired", value: breakdown.wiredBytes, total: breakdown.totalBytes, color: accentColor.opacity(0.45))
+            MemoryBreakdownRow(label: "Compressed", value: breakdown.compressedBytes, total: breakdown.totalBytes, color: accentColor.opacity(0.35))
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        
+        return ViewThatFits(in: .horizontal) {
+            VStack(alignment: .leading, spacing: 20) {
+                ZStack {
+                    Circle()
+                        .stroke(freeColor.opacity(0.35), lineWidth: 14)
+                        .frame(width: 128, height: 128)
+                    
+                    MemoryUsageRing(breakdown: breakdown, usedColor: accentColor, freeColor: freeColor)
+                        .frame(width: 128, height: 128)
+                    
+                    VStack(spacing: 4) {
+                        Text(StatsFormatting.percentage(breakdown.usedPercentage))
+                            .font(.system(size: 30, weight: .bold, design: .rounded))
+                        Text("Used")
+                            .font(.footnote)
+                            .foregroundColor(.secondary)
+                    }
                 }
-            }
-            
-            VStack(alignment: .leading, spacing: 12) {
-                DetailRow(color: accentColor.opacity(0.8), label: "Used", value: formattedBytes(breakdown.usedBytes))
-                DetailRow(color: freeColor.opacity(0.9), label: "Free", value: formattedBytes(breakdown.freeBytes))
-                DetailRow(color: nil, label: "Total", value: formattedBytes(breakdown.totalBytes))
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Breakdown")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
                 
-                MemoryBreakdownRow(label: "App", value: breakdown.appBytes, total: breakdown.totalBytes, color: accentColor.opacity(0.85))
-                MemoryBreakdownRow(label: "Cached", value: breakdown.cacheBytes, total: breakdown.totalBytes, color: accentColor.opacity(0.65))
-                MemoryBreakdownRow(label: "Wired", value: breakdown.wiredBytes, total: breakdown.totalBytes, color: accentColor.opacity(0.45))
-                MemoryBreakdownRow(label: "Compressed", value: breakdown.compressedBytes, total: breakdown.totalBytes, color: accentColor.opacity(0.35))
+                totalsSection
+                Divider().padding(.vertical, 4)
+                breakdownSection
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
+            HStack(alignment: .top, spacing: 28) {
+                ZStack {
+                    Circle()
+                        .stroke(freeColor.opacity(0.35), lineWidth: 14)
+                        .frame(width: 128, height: 128)
+                    
+                    MemoryUsageRing(breakdown: breakdown, usedColor: accentColor, freeColor: freeColor)
+                        .frame(width: 128, height: 128)
+                    
+                    VStack(spacing: 4) {
+                        Text(StatsFormatting.percentage(breakdown.usedPercentage))
+                            .font(.system(size: 30, weight: .bold, design: .rounded))
+                        Text("Used")
+                            .font(.footnote)
+                            .foregroundColor(.secondary)
+                    }
+                }
+                
+                totalsSection
+                breakdownSection
+            }
         }
     }
     
