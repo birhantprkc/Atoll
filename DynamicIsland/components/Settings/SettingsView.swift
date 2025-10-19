@@ -322,6 +322,8 @@ struct GeneralSettings: View {
                 Defaults.Toggle("Show media app icon", key: .lockScreenShowAppIcon)
                 Defaults.Toggle("Show panel border", key: .lockScreenPanelShowsBorder)
                 Defaults.Toggle("Enable blur", key: .lockScreenPanelUsesBlur)
+                Defaults.Toggle("Show lock screen media panel", key: .enableLockScreenMediaWidget)
+                Defaults.Toggle("Show lock screen weather", key: .enableLockScreenWeatherWidget)
                 
                 Button("Copy Latest Crash Report") {
                     copyLatestCrashReport()
@@ -329,7 +331,7 @@ struct GeneralSettings: View {
             } header: {
                 Text("Lock Screen")
             } footer: {
-                Text("Shows a lock icon in the Dynamic Island when the screen is locked. The lock screen music panel can be toggled separately in Media settings.")
+                Text("Shows a lock icon in the Dynamic Island when the screen is locked. Use the toggles above to control the lock screen media panel and weather capsule.")
             }
 
             Section {
@@ -780,12 +782,6 @@ struct Media: View {
                     HStack {
                         Text("Show shuffle and repeat buttons")
                         customBadge(text: "Beta")
-                    }
-                }
-                // Enable/disable the lock screen media widget
-                Defaults.Toggle(key: .enableLockScreenMediaWidget) {
-                    HStack {
-                        Text("Enable lock screen media widget")
                     }
                 }
             } header: {
