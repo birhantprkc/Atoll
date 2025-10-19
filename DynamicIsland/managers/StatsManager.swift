@@ -400,6 +400,19 @@ class StatsManager: ObservableObject {
     private var delayedStopTimer: Timer?
     private var delayedStartTimer: Timer?
     private let maxHistoryPoints = 30
+    private let totalPhysicalMemory: UInt64 = {
+        var stats = host_basic_info()
+        var count = mach_msg_type_number_t(MemoryLayout<host_basic_info_data_t>.size / MemoryLayout<integer_t>.size)
+        let result = withUnsafeMutablePointer(to: &stats) {
+            $0.withMemoryRebound(to: integer_t.self, capacity: Int(count)) {
+                host_info(mach_host_self(), HOST_BASIC_INFO, $0, &count)
+            }
+        }
+        if result == KERN_SUCCESS {
+            return UInt64(stats.max_mem)
+        }
+        return UInt64(ProcessInfo.processInfo.physicalMemory)
+    }()
     
     // Smart monitoring state
     private var shouldMonitorForStats: Bool = false
@@ -759,30 +772,32 @@ class StatsManager: ObservableObject {
         }
         
         let pageSize = UInt64(vm_kernel_page_size)
-        let freeCount = UInt64(vmStatistics.free_count) + UInt64(vmStatistics.speculative_count)
-        let activeCount = UInt64(vmStatistics.active_count)
-        let inactiveCount = UInt64(vmStatistics.inactive_count)
-        let wiredCount = UInt64(vmStatistics.wire_count)
-        let compressorCount = UInt64(vmStatistics.compressor_page_count)
+        let freeBytes = UInt64(vmStatistics.free_count) * pageSize
+        let speculativeBytes = UInt64(vmStatistics.speculative_count) * pageSize
+        let activeBytes = UInt64(vmStatistics.active_count) * pageSize
+        let inactiveBytes = UInt64(vmStatistics.inactive_count) * pageSize
+        let wiredBytes = UInt64(vmStatistics.wire_count) * pageSize
+        let compressedBytes = UInt64(vmStatistics.compressor_page_count) * pageSize
+        let purgeableBytes = UInt64(vmStatistics.purgeable_count) * pageSize
+        let externalBytes = UInt64(vmStatistics.external_page_count) * pageSize
         
-        let totalMemory = (freeCount + activeCount + inactiveCount + wiredCount) * pageSize
-        guard totalMemory > 0 else {
+        let totalMemoryBytes: UInt64
+        if totalPhysicalMemory > 0 {
+            totalMemoryBytes = totalPhysicalMemory
+        } else {
+            totalMemoryBytes = freeBytes + speculativeBytes + activeBytes + inactiveBytes + wiredBytes + compressedBytes
+        }
+        guard totalMemoryBytes > 0 else {
             return (0.0, .zero)
         }
         
-        let freeMemory = freeCount * pageSize
-        let speculativeCount = UInt64(vmStatistics.speculative_count)
-        let externalCount = UInt64(vmStatistics.external_page_count)
-        let purgeableCount = UInt64(vmStatistics.purgeable_count)
-        let activeMemory = activeCount * pageSize
-        let inactiveMemory = inactiveCount * pageSize
-        let wiredMemory = wiredCount * pageSize
-        let compressedMemory = compressorCount * pageSize
-        let purgeableMemory = purgeableCount * pageSize
-        let externalMemory = externalCount * pageSize
-        let usedMemory = totalMemory > freeMemory ? totalMemory - freeMemory : 0
-        let appMemory = usedMemory > (wiredMemory + compressedMemory) ? usedMemory - wiredMemory - compressedMemory : 0
-        let cacheMemory = purgeableMemory + externalMemory
+        let usedWithoutCache = activeBytes + inactiveBytes + speculativeBytes + wiredBytes + compressedBytes
+        let cacheBytes = purgeableBytes + externalBytes
+        let usedBytes = usedWithoutCache > cacheBytes ? usedWithoutCache - cacheBytes : 0
+        let clampedUsedBytes = min(usedBytes, totalMemoryBytes)
+        let freeComputedBytes = totalMemoryBytes > clampedUsedBytes ? totalMemoryBytes - clampedUsedBytes : 0
+        let nonAppBytes = wiredBytes + compressedBytes
+        let appBytes = clampedUsedBytes > nonAppBytes ? clampedUsedBytes - nonAppBytes : 0
         
         var pressureLevelRaw: Int32 = 0
         var pressureSize = MemoryLayout<Int32>.size
@@ -807,17 +822,17 @@ class StatsManager: ObservableObject {
             freeBytes: UInt64(swapUsage.xsu_avail)
         )
         
-        let usage = Double(usedMemory) / Double(totalMemory) * 100.0
+        let usage = Double(clampedUsedBytes) / Double(totalMemoryBytes) * 100.0
         let breakdown = MemoryBreakdown(
-            totalBytes: totalMemory,
-            usedBytes: usedMemory,
-            freeBytes: freeMemory,
-            wiredBytes: wiredMemory,
-            activeBytes: activeMemory,
-            inactiveBytes: inactiveMemory,
-            compressedBytes: compressedMemory,
-            appBytes: appMemory,
-            cacheBytes: cacheMemory,
+            totalBytes: totalMemoryBytes,
+            usedBytes: clampedUsedBytes,
+            freeBytes: freeComputedBytes,
+            wiredBytes: wiredBytes,
+            activeBytes: activeBytes,
+            inactiveBytes: inactiveBytes,
+            compressedBytes: compressedBytes,
+            appBytes: appBytes,
+            cacheBytes: cacheBytes,
             swap: swapInfo,
             pressure: pressure
         )
@@ -1237,11 +1252,11 @@ class StatsManager: ObservableObject {
     }
     
     var networkDownloadString: String {
-        return String(format: "%.1f MB/s", networkDownload)
+        StatsFormatting.throughput(networkDownload)
     }
     
     var networkUploadString: String {
-        return String(format: "%.1f MB/s", networkUpload)
+        StatsFormatting.throughput(networkUpload)
     }
     
     var diskReadString: String {

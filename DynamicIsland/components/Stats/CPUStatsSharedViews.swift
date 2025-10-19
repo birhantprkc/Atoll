@@ -227,10 +227,15 @@ struct DetailRow: View {
             Text(label)
                 .font(.system(size: 12, weight: .medium))
                 .foregroundColor(.secondary)
+                .lineLimit(1)
+                .layoutPriority(0.5)
             Spacer()
             Text(value)
                 .font(.system(size: 13, weight: .semibold, design: .monospaced))
                 .foregroundColor(.primary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.85)
+                .layoutPriority(1)
         }
     }
 }
