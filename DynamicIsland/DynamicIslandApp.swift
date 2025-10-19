@@ -656,6 +656,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
         
         previousScreens = NSScreen.screens
+
+        if Defaults[.enableLockScreenWeatherWidget] {
+            LockScreenWeatherManager.shared.prepareLocationAccess()
+            Task { @MainActor in
+                await LockScreenWeatherManager.shared.refresh(force: true)
+            }
+        }
     }
     
     func playWelcomeSound() {
