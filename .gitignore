@@ -114,7 +114,7 @@ integration.json
 
 # GitHub instructions and agent files
 #
-.github/
+.github/instructions/
 rough_note.md
 Solid
 SettingsView.swift.md
