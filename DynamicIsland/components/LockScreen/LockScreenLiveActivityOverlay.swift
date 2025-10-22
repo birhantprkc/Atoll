@@ -1,13 +1,13 @@
 import SwiftUI
 
 final class LockScreenLiveActivityOverlayModel: ObservableObject {
-	@Published var iconName: String = "lock.fill"
 	@Published var scale: CGFloat = 0.6
 	@Published var opacity: Double = 0
 }
 
 struct LockScreenLiveActivityOverlay: View {
 	@ObservedObject var model: LockScreenLiveActivityOverlayModel
+	@ObservedObject var animator: LockIconAnimator
 	let notchSize: CGSize
 
 	private var indicatorSize: CGFloat {
@@ -26,9 +26,7 @@ struct LockScreenLiveActivityOverlay: View {
 		HStack(spacing: 0) {
 			Color.clear
 				.overlay(alignment: .leading) {
-					Image(systemName: model.iconName)
-						.font(.system(size: 12, weight: .semibold))
-						.foregroundStyle(.white)
+					LockIconProgressView(progress: animator.progress)
 						.frame(width: indicatorSize, height: indicatorSize)
 				}
 				.frame(width: indicatorSize, height: notchSize.height)
@@ -52,6 +50,5 @@ struct LockScreenLiveActivityOverlay: View {
 		.frame(width: totalWidth, height: notchSize.height)
 		.scaleEffect(x: model.scale, y: 1, anchor: .center)
 		.opacity(model.opacity)
-		.drawingGroup()
 	}
 }

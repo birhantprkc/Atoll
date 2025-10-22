@@ -19,6 +19,7 @@ class LockScreenLiveActivityWindowManager {
     private var hideTask: Task<Void, Never>?
     private var hostingView: NSHostingView<LockScreenLiveActivityOverlay>?
     private let overlayModel = LockScreenLiveActivityOverlayModel()
+    private let overlayAnimator = LockIconAnimator(initiallyLocked: LockScreenManager.shared.isLocked)
     private weak var viewModel: DynamicIslandViewModel?
 
     private init() {}
@@ -103,7 +104,7 @@ class LockScreenLiveActivityWindowManager {
         let targetFrame = frame(for: windowSize, on: screen)
         window.setFrame(targetFrame, display: true)
 
-        let overlayView = LockScreenLiveActivityOverlay(model: overlayModel, notchSize: notchSize)
+        let overlayView = LockScreenLiveActivityOverlay(model: overlayModel, animator: overlayAnimator, notchSize: notchSize)
 
         if let hostingView {
             hostingView.rootView = overlayView
@@ -134,7 +135,7 @@ class LockScreenLiveActivityWindowManager {
         hideTask?.cancel()
         guard let context = lockContext() else { return }
 
-        overlayModel.iconName = "lock.fill"
+        overlayAnimator.update(isLocked: true)
         overlayModel.scale = 0.6
         overlayModel.opacity = 0
 
@@ -156,23 +157,17 @@ class LockScreenLiveActivityWindowManager {
         hideTask?.cancel()
         guard let context = lockContext() else { return }
 
-        overlayModel.iconName = "lock.open.fill"
-        overlayModel.scale = 0.7
-        overlayModel.opacity = 0
+        overlayModel.scale = 1
+        overlayModel.opacity = 1
 
         present(notchSize: context.notchSize, on: context.screen)
 
-        DispatchQueue.main.async {
-            withAnimation(.spring(response: 0.45, dampingFraction: 0.85)) {
-                self.overlayModel.scale = 1
-            }
-            withAnimation(.easeOut(duration: 0.16)) {
-                self.overlayModel.opacity = 1
-            }
-        }
+        overlayAnimator.update(isLocked: false)
 
         hideTask = Task { [weak self] in
-            try? await Task.sleep(for: .seconds(max(Defaults[.waitInterval], 1.0)))
+            //try? await Task.sleep(for: .milliseconds(450))
+            try? await Task.sleep(for: .seconds(max(Defaults[.waitInterval], 0.7)))
+            //try? await Task.sleep(for: .seconds(1.0))
             guard let self, !Task.isCancelled else { return }
             await MainActor.run {
                 self.hideWithAnimation()

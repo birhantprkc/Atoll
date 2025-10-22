@@ -27,6 +27,7 @@ class LockScreenManager: ObservableObject {
     
     // MARK: - Private Properties
     private var debounceIdleTask: Task<Void, Never>?
+    private var collapseTask: Task<Void, Never>?
     
     // MARK: - Helpers
     
@@ -45,6 +46,7 @@ class LockScreenManager: ObservableObject {
     deinit {
         DistributedNotificationCenter.default().removeObserver(self)
         debounceIdleTask?.cancel()
+        collapseTask?.cancel()
     }
     
     // MARK: - Setup
@@ -80,6 +82,7 @@ class LockScreenManager: ObservableObject {
         
         // Set locked state immediately without animation wrapper
         isLocked = true
+        collapseTask?.cancel()
 
         viewModel?.closeForLockScreen()
 
@@ -120,7 +123,14 @@ class LockScreenManager: ObservableObject {
         
         // Update state immediately
         if Defaults[.enableLockScreenLiveActivity] {
-            self.coordinator.toggleExpandingView(status: false, type: .lockScreen)
+            collapseTask?.cancel()
+            collapseTask = Task { [weak self] in
+                try? await Task.sleep(for: .milliseconds(380))
+                guard let self = self, !Task.isCancelled else { return }
+                await MainActor.run {
+                    self.coordinator.toggleExpandingView(status: false, type: .lockScreen)
+                }
+            }
         }
         
         self.lastUpdated = Date()
