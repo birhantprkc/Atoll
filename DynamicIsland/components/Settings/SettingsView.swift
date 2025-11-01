@@ -1713,6 +1713,7 @@ struct TimerSettings: View {
     @Default(.timerIconColorMode) private var colorMode
     @Default(.timerSolidColor) private var solidColor
     @Default(.timerShowsCountdown) private var showsCountdown
+    @Default(.timerShowsLabel) private var showsLabel
     @Default(.timerShowsProgress) private var showsProgress
     @Default(.timerProgressStyle) private var progressStyle
     @AppStorage("customTimerDuration") private var customTimerDuration: Double = 600
@@ -1777,6 +1778,7 @@ struct TimerSettings: View {
                         ColorPicker("Solid colour", selection: $solidColor, supportsOpacity: false)
                     }
 
+                    Toggle("Show timer name", isOn: $showsLabel)
                     Toggle("Show countdown", isOn: $showsCountdown)
                     Toggle("Show progress", isOn: $showsProgress)
 

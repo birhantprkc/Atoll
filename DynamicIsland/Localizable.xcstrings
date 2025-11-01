@@ -16958,6 +16958,9 @@
         }
       }
     },
+    "Show timer name" : {
+
+    },
     "Shows a lock icon in the Dynamic Island when the screen is locked. Use the toggles above to control the lock screen media panel and weather capsule." : {
 
     },

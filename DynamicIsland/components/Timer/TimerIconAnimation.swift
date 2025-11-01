@@ -9,17 +9,35 @@ import SwiftUI
 import Defaults
 
 struct TimerIconAnimation: View {
+    @ObservedObject var timerManager = TimerManager.shared
+    @Default(.timerIconColorMode) private var colorMode
+    @Default(.timerSolidColor) private var solidColor
+    @Default(.timerPresets) private var timerPresets
     @Default(.accentColor) private var accentColor
     
     var body: some View {
         ZStack {
             Circle()
-                .fill(accentColor.gradient)
+                .fill(resolvedColor.gradient)
                 .frame(width: 24, height: 24)
             
             Image(systemName: "timer")
                 .font(.system(size: 12, weight: .medium))
                 .foregroundStyle(.white)
+        }
+    }
+
+    private var resolvedColor: Color {
+        guard timerManager.isTimerActive else { return accentColor }
+        switch colorMode {
+        case .adaptive:
+            if let presetId = timerManager.activePresetId,
+               let preset = timerPresets.first(where: { $0.id == presetId }) {
+                return preset.color
+            }
+            return timerManager.timerColor
+        case .solid:
+            return solidColor
         }
     }
 }

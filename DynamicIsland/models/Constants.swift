@@ -432,6 +432,7 @@ extension Defaults.Keys {
     static let timerIconColorMode = Key<TimerIconColorMode>("timerIconColorMode", default: .adaptive)
     static let timerSolidColor = Key<Color>("timerSolidColor", default: .blue)
     static let timerShowsCountdown = Key<Bool>("timerShowsCountdown", default: true)
+    static let timerShowsLabel = Key<Bool>("timerShowsLabel", default: true)
     static let timerShowsProgress = Key<Bool>("timerShowsProgress", default: true)
     static let timerProgressStyle = Key<TimerProgressStyle>("timerProgressStyle", default: .bar)
     
