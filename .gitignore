@@ -155,3 +155,5 @@ MoveToSky.xcodeproj
 mew-notch/
 
 /References/
+/builds/
+/appdmg.json
