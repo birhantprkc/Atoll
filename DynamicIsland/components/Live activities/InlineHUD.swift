@@ -24,6 +24,7 @@ struct InlineHUD: View {
     @Default(.useCircularBluetoothBatteryIndicator) var useCircularBluetoothBatteryIndicator
     @Default(.showBluetoothBatteryPercentageText) var showBluetoothBatteryPercentageText
     @Default(.showBluetoothDeviceNameMarquee) var showBluetoothDeviceNameMarquee
+    @Default(.enableMinimalisticUI) var enableMinimalisticUI
     @ObservedObject var bluetoothManager = BluetoothAudioManager.shared
     
     @State private var displayName: String = ""
@@ -33,35 +34,54 @@ struct InlineHUD: View {
         let hasBatteryLevel = value > 0
 
         let baseInfoWidth: CGFloat = {
-            if type == .bluetoothAudio {
-                return showBluetoothDeviceNameMarquee ? 140 : 88
+            guard type == .bluetoothAudio else { return 100 }
+            if showBluetoothDeviceNameMarquee {
+                return enableMinimalisticUI ? 128 : 140
             }
-            return 100
+            return enableMinimalisticUI ? 64 : 72
         }()
+
         let infoWidth: CGFloat = {
             var width = baseInfoWidth + gestureProgress / 2
             if !hoverAnimation { width -= 8 }
-            let minimum: CGFloat = type == .bluetoothAudio ? (showBluetoothDeviceNameMarquee ? 120 : 82) : 88
+            let minimum: CGFloat = {
+                guard type == .bluetoothAudio else { return 88 }
+                if showBluetoothDeviceNameMarquee {
+                    return enableMinimalisticUI ? 112 : 120
+                }
+                return enableMinimalisticUI ? 56 : 68
+            }()
             return max(width, minimum)
         }()
-        let baseTrailingWidth: CGFloat = {
-            if type == .bluetoothAudio {
-                if !hasBatteryLevel {
-                    return showBluetoothDeviceNameMarquee ? 118 : 88
-                }
 
-                if useCircularIndicator {
-                    return showBluetoothBatteryPercentageText ? 120 : 96
-                } else {
-                    return showBluetoothBatteryPercentageText ? 136 : 108
-                }
+        let baseTrailingWidth: CGFloat = {
+            guard type == .bluetoothAudio else { return 100 }
+            if !hasBatteryLevel {
+                return showBluetoothDeviceNameMarquee ? (enableMinimalisticUI ? 104 : 118) : (enableMinimalisticUI ? 74 : 88)
             }
-            return 100
+
+            if useCircularIndicator {
+                return showBluetoothBatteryPercentageText ? (enableMinimalisticUI ? 108 : 120) : (enableMinimalisticUI ? 72 : 84)
+            }
+
+            return showBluetoothBatteryPercentageText ? (enableMinimalisticUI ? 118 : 136) : (enableMinimalisticUI ? 92 : 108)
         }()
+
         let trailingWidth: CGFloat = {
             var width = baseTrailingWidth + gestureProgress / 2
             if !hoverAnimation { width -= 8 }
-            let minimum: CGFloat = type == .bluetoothAudio ? (showBluetoothBatteryPercentageText ? 110 : 92) : 90
+            let minimum: CGFloat = {
+                guard type == .bluetoothAudio else { return 90 }
+                if !hasBatteryLevel {
+                    return showBluetoothDeviceNameMarquee ? (enableMinimalisticUI ? 96 : 110) : (enableMinimalisticUI ? 62 : 88)
+                }
+
+                if useCircularIndicator {
+                    return showBluetoothBatteryPercentageText ? (enableMinimalisticUI ? 92 : 110) : (enableMinimalisticUI ? 56 : 72)
+                }
+
+                return showBluetoothBatteryPercentageText ? (enableMinimalisticUI ? 104 : 120) : (enableMinimalisticUI ? 72 : 90)
+            }()
             return max(width, minimum)
         }()
 
@@ -161,7 +181,14 @@ struct InlineHUD: View {
                         .contentTransition(.interpolate)
                 } else if (type == .bluetoothAudio) {
                     if hasBatteryLevel {
-                        HStack(spacing: useCircularIndicator ? 8 : 6) {
+                        let indicatorSpacing: CGFloat = {
+                            if useCircularIndicator {
+                                return showBluetoothBatteryPercentageText ? 8 : 2
+                            }
+                            return showBluetoothBatteryPercentageText ? 6 : 4
+                        }()
+
+                        HStack(spacing: indicatorSpacing) {
                             if useCircularIndicator {
                                 CircularBatteryIndicator(
                                     value: value,
@@ -221,7 +248,7 @@ struct InlineHUD: View {
                     .frame(maxWidth: .infinity, alignment: .trailing)
                 }
             }
-            .padding(.trailing, 4)
+            .padding(.trailing, trailingWidth > 0 ? 4 : 0)
             .frame(width: trailingWidth, height: vm.closedNotchSize.height - (hoverAnimation ? 0 : 12), alignment: .center)
         }
         .frame(height: vm.closedNotchSize.height + (hoverAnimation ? 8 : 0), alignment: .center)
