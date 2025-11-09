@@ -187,4 +187,40 @@ enum FocusModeType: String {
         case .unknown: return "moon.zzz.fill"
         }
     }
+
+    var accentColor: Color {
+        switch self {
+        case .doNotDisturb:
+            return Color(red: 0.370, green: 0.360, blue: 0.902)
+        case .work:
+            return Color(red: 0.133, green: 0.475, blue: 0.992)
+        case .personal:
+            return Color(red: 0.937, green: 0.282, blue: 0.624)
+        case .sleep:
+            return Color(red: 0.341, green: 0.384, blue: 0.980)
+        case .driving:
+            return Color(red: 0.988, green: 0.561, blue: 0.153)
+        case .fitness:
+            return Color(red: 0.176, green: 0.804, blue: 0.459)
+        case .gaming:
+            return Color(red: 0.639, green: 0.329, blue: 0.937)
+        case .mindfulness:
+            return Color(red: 0.239, green: 0.718, blue: 0.682)
+        case .reading:
+            return Color(red: 0.239, green: 0.596, blue: 0.965)
+        case .custom:
+            return Color(red: 0.513, green: 0.478, blue: 0.965)
+        case .unknown:
+            return Color(red: 0.370, green: 0.360, blue: 0.902)
+        }
+    }
+
+    var inactiveSymbol: String {
+        switch self {
+        case .doNotDisturb:
+            return "moon.circle"
+        default:
+            return sfSymbol
+        }
+    }
 }

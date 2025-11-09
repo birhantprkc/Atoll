@@ -175,6 +175,7 @@ struct GeneralSettings: View {
     @Default(.showRecordingIndicator) var showRecordingIndicator
     @Default(.enableDoNotDisturbDetection) var enableDoNotDisturbDetection
     @Default(.showDoNotDisturbIndicator) var showDoNotDisturbIndicator
+    @Default(.showDoNotDisturbLabel) var showDoNotDisturbLabel
     @Default(.enableMinimalisticUI) var enableMinimalisticUI
     @Default(.lockScreenGlassStyle) var lockScreenGlassStyle
     @Default(.lockScreenShowAppIcon) var lockScreenShowAppIcon
@@ -272,6 +273,9 @@ struct GeneralSettings: View {
                 Defaults.Toggle("Enable Focus Detection", key: .enableDoNotDisturbDetection)
 
                 Defaults.Toggle("Show Focus Indicator", key: .showDoNotDisturbIndicator)
+                    .disabled(!enableDoNotDisturbDetection)
+
+                Defaults.Toggle("Show Focus Label", key: .showDoNotDisturbLabel)
                     .disabled(!enableDoNotDisturbDetection)
 
                 if doNotDisturbManager.isMonitoring {

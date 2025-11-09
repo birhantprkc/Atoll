@@ -2,112 +2,211 @@
 //  DoNotDisturbLiveActivity.swift
 //  DynamicIsland
 //
-//  Renders the closed-notch Focus indicator with a purple moon badge.
+//  Renders the closed-notch Focus indicator with per-mode colours and
+//  an icon-first layout that collapses gracefully when Focus ends.
 //
 
+import Defaults
 import SwiftUI
 
 struct DoNotDisturbLiveActivity: View {
     @EnvironmentObject var vm: DynamicIslandViewModel
     @ObservedObject var manager = DoNotDisturbManager.shared
-    @State private var isExpanded = false
+    @Default(.showDoNotDisturbLabel) private var showLabelSetting
 
-    private let focusColor = Color.purple
+    @State private var isExpanded = false
+    @State private var showInactiveIcon = false
+    @State private var iconScale: CGFloat = 1.0
+    @State private var scaleResetTask: Task<Void, Never>?
+    @State private var collapseTask: Task<Void, Never>?
+    @State private var cleanupTask: Task<Void, Never>?
 
     var body: some View {
         HStack(spacing: 0) {
-            leadingWing
-                .frame(width: leadingWingWidth, height: wingHeight)
+            iconWing
+                .frame(width: iconWingWidth, height: wingHeight)
 
             Rectangle()
                 .fill(Color.black)
                 .frame(width: vm.closedNotchSize.width)
 
-            trailingWing
-                .frame(width: trailingWingWidth, height: wingHeight)
+            labelWing
+                .frame(width: labelWingWidth, height: wingHeight)
         }
         .frame(height: vm.effectiveClosedNotchHeight)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(accessibilityDescription)
-        .onAppear {
-            withAnimation(.smooth(duration: 0.35)) {
-                isExpanded = true
-            }
-        }
-        .onChange(of: manager.isDoNotDisturbActive) { _, isActive in
-            withAnimation(.smooth(duration: 0.35)) {
-                isExpanded = isActive
-            }
-        }
+        .onAppear(perform: handleInitialState)
+        .onChange(of: manager.isDoNotDisturbActive, handleFocusStateChange)
+        .onDisappear(perform: cancelPendingTasks)
     }
+
+    // MARK: - Layout helpers
 
     private var wingHeight: CGFloat {
         max(vm.effectiveClosedNotchHeight - 10, 20)
     }
 
-    private var leadingWingWidth: CGFloat {
-        isExpanded ? max(vm.effectiveClosedNotchHeight - 10, 20) : 0
+    private var iconWingWidth: CGFloat {
+        (isExpanded || showInactiveIcon) ? max(vm.effectiveClosedNotchHeight - 12, 24) : 0
     }
 
-    private var trailingWingWidth: CGFloat {
-        guard isExpanded else { return 0 }
-        return max(vm.closedNotchSize.width * 0.65, 120)
+    private var labelWingWidth: CGFloat {
+        shouldShowLabel ? max(vm.closedNotchSize.width * 0.45, 110) : 0
     }
 
-    private var focusSymbol: String {
-        if let symbol = FocusModeType(rawValue: manager.currentFocusModeIdentifier)?.sfSymbol {
-            return symbol
-        }
-        return FocusModeType.doNotDisturb.sfSymbol
+    private var shouldShowLabel: Bool {
+        showLabelSetting && isExpanded && !labelText.isEmpty
     }
 
-    private var focusLabel: String {
-        if !manager.currentFocusModeName.isEmpty {
-            return manager.currentFocusModeName
-        }
-        return FocusModeType(rawValue: manager.currentFocusModeIdentifier)?.displayName ?? "Do Not Disturb"
+    // MARK: - Focus metadata
+
+    private var focusMode: FocusModeType {
+        FocusModeType(rawValue: manager.currentFocusModeIdentifier) ?? .doNotDisturb
+    }
+
+    private var activeAccentColor: Color {
+        focusMode.accentColor
+    }
+
+    private var labelText: String {
+        let trimmed = manager.currentFocusModeName.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty ? "Focus" : trimmed
     }
 
     private var accessibilityDescription: String {
-        "Focus mode active: \(focusLabel)"
+        if manager.isDoNotDisturbActive {
+            return "Focus active: \(labelText)"
+        } else {
+            return "Focus inactive"
+        }
     }
 
-    private var leadingWing: some View {
-        Color.clear
-            .background {
-                if isExpanded {
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 6, style: .continuous)
-                            .fill(focusColor.opacity(0.18))
-
-                        Image(systemName: focusSymbol)
-                            .font(.system(size: 12, weight: .semibold))
-                            .foregroundColor(focusColor)
-                    }
-                    .frame(width: leadingWingWidth, height: wingHeight)
-                }
-            }
+    private var currentIconName: String {
+        if manager.isDoNotDisturbActive {
+            return focusMode.sfSymbol
+        } else if showInactiveIcon {
+            return focusMode.inactiveSymbol
+        } else {
+            return focusMode.sfSymbol
+        }
     }
 
-    private var trailingWing: some View {
+    private var currentIconColor: Color {
+        if manager.isDoNotDisturbActive {
+            return activeAccentColor
+        } else if showInactiveIcon {
+            return .white
+        } else {
+            return activeAccentColor
+        }
+    }
+
+    private var iconBackground: Color {
+        if manager.isDoNotDisturbActive {
+            return activeAccentColor.opacity(0.18)
+        } else if showInactiveIcon {
+            return Color.white.opacity(0.10)
+        } else {
+            return Color.black.opacity(0.001)
+        }
+    }
+
+    // MARK: - Subviews
+
+    private var iconWing: some View {
         Color.clear
-            .background {
-                if isExpanded {
-                    HStack {
-                        Text(focusLabel)
-                            .font(.system(size: 12, weight: .semibold, design: .rounded))
-                            .foregroundColor(focusColor)
-                            .lineLimit(1)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 6)
-                    }
-                    .frame(maxWidth: .infinity, alignment: .trailing)
-                    .background(
-                        Capsule(style: .continuous)
-                            .fill(focusColor.opacity(0.18))
-                    )
+            .overlay(alignment: .center) {
+                if iconWingWidth > 0 {
+                    RoundedRectangle(cornerRadius: 6, style: .continuous)
+                        .fill(iconBackground)
+                        .overlay {
+                            Image(systemName: currentIconName)
+                                .font(.system(size: 13, weight: .semibold))
+                                .foregroundColor(currentIconColor)
+                                .scaleEffect(iconScale)
+                                .animation(.none, value: iconScale)
+                        }
                 }
             }
+            .animation(.smooth(duration: 0.3), value: iconWingWidth)
+    }
+
+    private var labelWing: some View {
+        Color.clear
+            .overlay(alignment: .trailing) {
+                if shouldShowLabel {
+                    Text(labelText)
+                        .font(.system(size: 12, weight: .semibold, design: .rounded))
+                        .foregroundColor(activeAccentColor)
+                        .lineLimit(1)
+                        .contentTransition(.opacity)
+                        .padding(.horizontal, 4)
+                }
+            }
+            .animation(.smooth(duration: 0.3), value: shouldShowLabel)
+    }
+
+    // MARK: - State transitions
+
+    private func handleInitialState() {
+        if manager.isDoNotDisturbActive {
+            withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
+                isExpanded = true
+            }
+        }
+    }
+
+    private func handleFocusStateChange(_ oldValue: Bool, _ isActive: Bool) {
+        if isActive {
+            cancelPendingTasks()
+            showInactiveIcon = false
+            withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
+                iconScale = 1.0
+                isExpanded = true
+            }
+        } else {
+            triggerInactiveAnimation()
+        }
+    }
+
+    private func triggerInactiveAnimation() {
+        showInactiveIcon = true
+
+        withAnimation(.interpolatingSpring(stiffness: 220, damping: 12)) {
+            iconScale = 1.2
+        }
+
+        scaleResetTask?.cancel()
+        scaleResetTask = Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(180))
+            withAnimation(.spring(response: 0.28, dampingFraction: 0.75)) {
+                iconScale = 1.0
+            }
+        }
+
+        collapseTask?.cancel()
+        collapseTask = Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(320))
+            withAnimation(.smooth(duration: 0.32)) {
+                isExpanded = false
+            }
+        }
+
+        cleanupTask?.cancel()
+        cleanupTask = Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(650))
+            showInactiveIcon = false
+        }
+    }
+
+    private func cancelPendingTasks() {
+        scaleResetTask?.cancel()
+        collapseTask?.cancel()
+        cleanupTask?.cancel()
+        scaleResetTask = nil
+        collapseTask = nil
+        cleanupTask = nil
     }
 }
 

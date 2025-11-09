@@ -10,31 +10,39 @@ import SwiftUI
 struct FocusIndicator: View {
     @ObservedObject var manager = DoNotDisturbManager.shared
 
-    private let focusColor = Color.purple
-
     var body: some View {
         Capsule()
             .fill(Color.black)
             .overlay {
                 ZStack {
                     Circle()
-                        .fill(focusColor.opacity(0.2))
+                        .fill(accentColor.opacity(0.2))
                         .frame(width: 20, height: 20)
 
                     Image(systemName: focusSymbol)
                         .font(.system(size: 12, weight: .semibold))
-                        .foregroundStyle(focusColor)
+                        .foregroundStyle(accentColor)
                 }
             }
             .accessibilityElement(children: .ignore)
-            .accessibilityLabel("Focus mode active")
+            .accessibilityLabel(accessibilityLabel)
+    }
+
+    private var focusMode: FocusModeType {
+        FocusModeType(rawValue: manager.currentFocusModeIdentifier) ?? .doNotDisturb
     }
 
     private var focusSymbol: String {
-        if let symbol = FocusModeType(rawValue: manager.currentFocusModeIdentifier)?.sfSymbol {
-            return symbol
-        }
-        return FocusModeType.doNotDisturb.sfSymbol
+        focusMode.sfSymbol
+    }
+
+    private var accentColor: Color {
+        focusMode.accentColor
+    }
+
+    private var accessibilityLabel: String {
+        let name = manager.currentFocusModeName.isEmpty ? focusMode.displayName : manager.currentFocusModeName
+        return "Focus active: \(name)"
     }
 }
 
