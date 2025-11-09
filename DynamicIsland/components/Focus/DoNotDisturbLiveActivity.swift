@@ -89,10 +89,16 @@ struct DoNotDisturbLiveActivity: View {
     private var labelText: String {
         let trimmed = manager.currentFocusModeName.trimmingCharacters(in: .whitespacesAndNewlines)
         if !trimmed.isEmpty {
+            if focusMode == .doNotDisturb {
+                return "Focus"
+            }
             return trimmed
         }
 
         let fallback = focusMode.displayName
+        if focusMode == .doNotDisturb {
+            return "Focus"
+        }
         return fallback.isEmpty ? "Focus" : fallback
     }
 

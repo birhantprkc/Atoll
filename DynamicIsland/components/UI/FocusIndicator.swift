@@ -40,8 +40,15 @@ struct FocusIndicator: View {
 
     private var accessibilityLabel: String {
         let trimmedName = manager.currentFocusModeName.trimmingCharacters(in: .whitespacesAndNewlines)
-        let name = trimmedName.isEmpty ? focusMode.displayName : trimmedName
-        return "Focus active: \(name)"
+        let baseName: String
+        if trimmedName.isEmpty {
+            baseName = focusMode.displayName
+        } else {
+            baseName = trimmedName
+        }
+
+        let finalName = focusMode == .doNotDisturb ? "Focus" : baseName
+        return "Focus active: \(finalName)"
     }
 }
 

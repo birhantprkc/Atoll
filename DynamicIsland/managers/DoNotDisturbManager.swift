@@ -22,7 +22,6 @@ final class DoNotDisturbManager: ObservableObject {
 
     private let notificationCenter = DistributedNotificationCenter.default()
     private let metadataExtractionQueue = DispatchQueue(label: "com.dynamicisland.focus.metadata", qos: .userInitiated)
-    private var hasLoggedPayload = false
 
     private init() {}
 
@@ -85,14 +84,17 @@ final class DoNotDisturbManager: ObservableObject {
                 let trimmedIdentifier = metadata.identifier?.trimmingCharacters(in: .whitespacesAndNewlines)
                 let trimmedName = metadata.name?.trimmingCharacters(in: .whitespacesAndNewlines)
 
-                let incomingIdentifier = (trimmedIdentifier?.isEmpty == false ? trimmedIdentifier! : self.currentFocusModeIdentifier)
-                let incomingName = (trimmedName?.isEmpty == false ? trimmedName! : self.currentFocusModeName)
+                let resolvedMode = FocusModeType.resolve(identifier: trimmedIdentifier, name: trimmedName)
 
-                let resolvedMode = FocusModeType.resolve(identifier: incomingIdentifier, name: incomingName)
+                debugPrint("[DoNotDisturbManager] Focus update -> notification: \(notification.name.rawValue) | identifier: \(trimmedIdentifier ?? "<nil>") | name: \(trimmedName ?? "<nil>") | resolved: \(resolvedMode.rawValue)")
 
-                debugPrint("[DoNotDisturbManager] Focus update -> identifier: \(trimmedIdentifier ?? "<nil>") (incoming: \(incomingIdentifier.isEmpty ? "<empty>" : incomingIdentifier)) | name: \(trimmedName ?? "<nil>") | resolved: \(resolvedMode.rawValue)")
+                let finalIdentifier: String
+                if let identifier = trimmedIdentifier, !identifier.isEmpty {
+                    finalIdentifier = identifier
+                } else {
+                    finalIdentifier = resolvedMode.rawValue
+                }
 
-                let finalIdentifier = resolvedMode.rawValue
                 if finalIdentifier != self.currentFocusModeIdentifier {
                     self.currentFocusModeIdentifier = finalIdentifier
                 }
@@ -102,8 +104,8 @@ final class DoNotDisturbManager: ObservableObject {
                     finalName = name
                 } else if !resolvedMode.displayName.isEmpty {
                     finalName = resolvedMode.displayName
-                } else if !incomingName.isEmpty {
-                    finalName = incomingName
+                } else if let identifier = trimmedIdentifier, !identifier.isEmpty {
+                    finalName = identifier
                 } else {
                     finalName = "Focus"
                 }
@@ -124,10 +126,7 @@ final class DoNotDisturbManager: ObservableObject {
     private func extractMetadata(from notification: Notification) -> (name: String?, identifier: String?) {
         guard let userInfo = notification.userInfo else { return (nil, nil) }
 
-        if !hasLoggedPayload {
-            hasLoggedPayload = true
-            debugPrint("[DoNotDisturbManager] focus notification payload: \(userInfo)")
-        }
+        debugPrint("[DoNotDisturbManager] raw focus payload -> name: \(notification.name.rawValue), object: \(String(describing: notification.object)), userInfo: \(userInfo)")
 
         let identifierKeys = [
             "FocusModeIdentifier",
@@ -149,15 +148,8 @@ final class DoNotDisturbManager: ObservableObject {
             "Name"
         ]
 
-        let identifier = identifierKeys
-            .compactMap { userInfo[$0] as? String }
-            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-            .first { !$0.isEmpty }
-
-        let name = nameKeys
-            .compactMap { userInfo[$0] as? String }
-            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-            .first { !$0.isEmpty }
+        let identifier = firstMatch(for: identifierKeys, in: userInfo)
+        let name = firstMatch(for: nameKeys, in: userInfo)
 
         return (name, identifier)
     }
@@ -186,7 +178,7 @@ enum FocusModeType: String, CaseIterable {
     
     var displayName: String {
         switch self {
-        case .doNotDisturb: return "DnD"
+    case .doNotDisturb: return "Do Not Disturb"
         case .work: return "Work"
         case .personal: return "Personal"
         case .sleep: return "Sleep"
@@ -285,18 +277,79 @@ extension FocusModeType {
     }
 
     static func resolve(identifier: String?, name: String?) -> FocusModeType {
+        let trimmedName = name?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        if !trimmedName.isEmpty {
+            if let match = FocusModeType.allCases.first(where: {
+                guard !$0.displayName.isEmpty else { return false }
+                return $0.displayName.compare(trimmedName, options: [.caseInsensitive, .diacriticInsensitive]) == .orderedSame
+            }) {
+                return match
+            }
+        }
+
         let trimmedIdentifier = identifier?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         if !trimmedIdentifier.isEmpty {
             return FocusModeType(identifier: trimmedIdentifier)
         }
 
-        let trimmedName = name?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        if !trimmedName.isEmpty {
-            if let match = FocusModeType.allCases.first(where: { !$0.displayName.isEmpty && $0.displayName.compare(trimmedName, options: [.caseInsensitive, .diacriticInsensitive]) == .orderedSame }) {
-                return match
+        return .doNotDisturb
+    }
+}
+
+// MARK: - Metadata helpers
+
+private extension DoNotDisturbManager {
+    func firstMatch(for keys: [String], in value: Any) -> String? {
+        if let dictionary = value as? [AnyHashable: Any] {
+            for key in keys {
+                if let candidate = dictionary[key], let string = normalizedString(from: candidate) {
+                    return string
+                }
+            }
+
+            for nestedValue in dictionary.values {
+                if let nestedMatch = firstMatch(for: keys, in: nestedValue) {
+                    return nestedMatch
+                }
+            }
+        } else if let array = value as? [Any] {
+            for element in array {
+                if let nestedMatch = firstMatch(for: keys, in: element) {
+                    return nestedMatch
+                }
             }
         }
 
-        return .doNotDisturb
+        return nil
+    }
+
+    func normalizedString(from value: Any) -> String? {
+        switch value {
+        case let string as String:
+            let trimmed = string.trimmingCharacters(in: .whitespacesAndNewlines)
+            return trimmed.isEmpty ? nil : trimmed
+        case let number as NSNumber:
+            return number.stringValue
+        case let uuid as UUID:
+            return uuid.uuidString
+        case let uuid as NSUUID:
+            return uuid.uuidString
+        case let data as Data:
+            if let string = String(data: data, encoding: .utf8) {
+                return string.trimmingCharacters(in: .whitespacesAndNewlines)
+            }
+            return nil
+        case let dict as [AnyHashable: Any]:
+            // Attempt to pull common keys from nested dictionaries
+            if let nested = firstMatch(for: ["identifier", "Identifier", "uuid", "UUID"], in: dict) {
+                return nested
+            }
+            if let name = firstMatch(for: ["name", "Name", "displayName", "display_name"], in: dict) {
+                return name
+            }
+            return nil
+        default:
+            return nil
+        }
     }
 }
