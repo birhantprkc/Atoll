@@ -20,6 +20,7 @@ struct DoNotDisturbLiveActivity: View {
     @State private var scaleResetTask: Task<Void, Never>?
     @State private var collapseTask: Task<Void, Never>?
     @State private var cleanupTask: Task<Void, Never>?
+    @State private var labelIntrinsicWidth: CGFloat = 0
 
     var body: some View {
         HStack(spacing: 0) {
@@ -48,11 +49,24 @@ struct DoNotDisturbLiveActivity: View {
     }
 
     private var iconWingWidth: CGFloat {
-        (isExpanded || showInactiveIcon) ? max(vm.effectiveClosedNotchHeight - 12, 24) : 0
+        (isExpanded || showInactiveIcon) ? minimalWingWidth : 0
     }
 
     private var labelWingWidth: CGFloat {
-        shouldShowLabel ? max(vm.closedNotchSize.width * 0.45, 110) : 0
+        if shouldShowLabel {
+            return max(desiredLabelWidth, minimalWingWidth)
+        }
+        return (isExpanded || showInactiveIcon) ? minimalWingWidth : 0
+    }
+
+    private var minimalWingWidth: CGFloat {
+        max(vm.effectiveClosedNotchHeight - 12, 24)
+    }
+
+    private var desiredLabelWidth: CGFloat {
+        let measuredWidth = labelIntrinsicWidth + 8 // horizontal padding inside the label
+        let fallbackWidth = max(vm.closedNotchSize.width * 0.52, 136)
+        return max(measuredWidth, fallbackWidth)
     }
 
     private var shouldShowLabel: Bool {
@@ -62,7 +76,10 @@ struct DoNotDisturbLiveActivity: View {
     // MARK: - Focus metadata
 
     private var focusMode: FocusModeType {
-        FocusModeType(rawValue: manager.currentFocusModeIdentifier) ?? .doNotDisturb
+        FocusModeType.resolve(
+            identifier: manager.currentFocusModeIdentifier,
+            name: manager.currentFocusModeName
+        )
     }
 
     private var activeAccentColor: Color {
@@ -71,7 +88,12 @@ struct DoNotDisturbLiveActivity: View {
 
     private var labelText: String {
         let trimmed = manager.currentFocusModeName.trimmingCharacters(in: .whitespacesAndNewlines)
-        return trimmed.isEmpty ? "Focus" : trimmed
+        if !trimmed.isEmpty {
+            return trimmed
+        }
+
+        let fallback = focusMode.displayName
+        return fallback.isEmpty ? "Focus" : fallback
     }
 
     private var accessibilityDescription: String {
@@ -102,31 +124,18 @@ struct DoNotDisturbLiveActivity: View {
         }
     }
 
-    private var iconBackground: Color {
-        if manager.isDoNotDisturbActive {
-            return activeAccentColor.opacity(0.18)
-        } else if showInactiveIcon {
-            return Color.white.opacity(0.10)
-        } else {
-            return Color.black.opacity(0.001)
-        }
-    }
-
     // MARK: - Subviews
 
     private var iconWing: some View {
         Color.clear
             .overlay(alignment: .center) {
                 if iconWingWidth > 0 {
-                    RoundedRectangle(cornerRadius: 6, style: .continuous)
-                        .fill(iconBackground)
-                        .overlay {
-                            Image(systemName: currentIconName)
-                                .font(.system(size: 13, weight: .semibold))
-                                .foregroundColor(currentIconColor)
-                                .scaleEffect(iconScale)
-                                .animation(.none, value: iconScale)
-                        }
+                    Image(systemName: currentIconName)
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundColor(currentIconColor)
+                        .contentTransition(.opacity)
+                        .scaleEffect(iconScale)
+                        .animation(.none, value: iconScale)
                 }
             }
             .animation(.smooth(duration: 0.3), value: iconWingWidth)
@@ -141,10 +150,19 @@ struct DoNotDisturbLiveActivity: View {
                         .foregroundColor(activeAccentColor)
                         .lineLimit(1)
                         .contentTransition(.opacity)
+                        .background(
+                            GeometryReader { proxy in
+                                Color.clear
+                                    .preference(key: FocusLabelWidthPreferenceKey.self, value: proxy.size.width)
+                            }
+                        )
                         .padding(.horizontal, 4)
                 }
             }
             .animation(.smooth(duration: 0.3), value: shouldShowLabel)
+            .onPreferenceChange(FocusLabelWidthPreferenceKey.self) { value in
+                labelIntrinsicWidth = value
+            }
     }
 
     // MARK: - State transitions
@@ -160,7 +178,9 @@ struct DoNotDisturbLiveActivity: View {
     private func handleFocusStateChange(_ oldValue: Bool, _ isActive: Bool) {
         if isActive {
             cancelPendingTasks()
-            showInactiveIcon = false
+            withAnimation(.smooth(duration: 0.2)) {
+                showInactiveIcon = false
+            }
             withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
                 iconScale = 1.0
                 isExpanded = true
@@ -171,7 +191,9 @@ struct DoNotDisturbLiveActivity: View {
     }
 
     private func triggerInactiveAnimation() {
-        showInactiveIcon = true
+        withAnimation(.smooth(duration: 0.2)) {
+            showInactiveIcon = true
+        }
 
         withAnimation(.interpolatingSpring(stiffness: 220, damping: 12)) {
             iconScale = 1.2
@@ -179,9 +201,9 @@ struct DoNotDisturbLiveActivity: View {
 
         scaleResetTask?.cancel()
         scaleResetTask = Task { @MainActor in
-            try? await Task.sleep(for: .milliseconds(180))
-            withAnimation(.spring(response: 0.28, dampingFraction: 0.75)) {
-                iconScale = 1.0
+            try? await Task.sleep(for: .milliseconds(650))
+            withAnimation(.smooth(duration: 0.2)) {
+                showInactiveIcon = false
             }
         }
 
@@ -196,7 +218,9 @@ struct DoNotDisturbLiveActivity: View {
         cleanupTask?.cancel()
         cleanupTask = Task { @MainActor in
             try? await Task.sleep(for: .milliseconds(650))
-            showInactiveIcon = false
+            withAnimation(.smooth(duration: 0.2)) {
+                showInactiveIcon = false
+            }
         }
     }
 
@@ -215,4 +239,12 @@ struct DoNotDisturbLiveActivity: View {
         .environmentObject(DynamicIslandViewModel())
         .frame(width: 320, height: 54)
         .background(Color.black)
+}
+
+private struct FocusLabelWidthPreferenceKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
+    }
 }

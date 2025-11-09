@@ -14,22 +14,20 @@ struct FocusIndicator: View {
         Capsule()
             .fill(Color.black)
             .overlay {
-                ZStack {
-                    Circle()
-                        .fill(accentColor.opacity(0.2))
-                        .frame(width: 20, height: 20)
-
-                    Image(systemName: focusSymbol)
-                        .font(.system(size: 12, weight: .semibold))
-                        .foregroundStyle(accentColor)
-                }
+                Image(systemName: focusSymbol)
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(accentColor)
+                    .frame(width: 24, height: 24)
             }
             .accessibilityElement(children: .ignore)
             .accessibilityLabel(accessibilityLabel)
     }
 
     private var focusMode: FocusModeType {
-        FocusModeType(rawValue: manager.currentFocusModeIdentifier) ?? .doNotDisturb
+        FocusModeType.resolve(
+            identifier: manager.currentFocusModeIdentifier,
+            name: manager.currentFocusModeName
+        )
     }
 
     private var focusSymbol: String {
@@ -41,7 +39,8 @@ struct FocusIndicator: View {
     }
 
     private var accessibilityLabel: String {
-        let name = manager.currentFocusModeName.isEmpty ? focusMode.displayName : manager.currentFocusModeName
+        let trimmedName = manager.currentFocusModeName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let name = trimmedName.isEmpty ? focusMode.displayName : trimmedName
         return "Focus active: \(name)"
     }
 }
