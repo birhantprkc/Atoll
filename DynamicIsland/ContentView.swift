@@ -472,12 +472,18 @@ struct ContentView: View {
                           else if coordinator.sneakPeek.type == .reminder {
                               if !vm.hideOnClosed && Defaults[.sneakPeekStyles] == .standard, let reminder = reminderManager.activeReminder {
                                   GeometryReader { geo in
-                                      MarqueeText(
-                                          .constant(reminderSneakPeekText(for: reminder)),
-                                          textColor: reminderColor(for: reminder, now: reminderManager.currentDate),
-                                          minDuration: 1,
-                                          frameWidth: geo.size.width
-                                      )
+                                      let chipColor = Color(nsColor: reminder.event.calendar.color).ensureMinimumBrightness(factor: 0.7)
+                                      HStack(spacing: 6) {
+                                          RoundedRectangle(cornerRadius: 2)
+                                              .fill(chipColor)
+                                              .frame(width: 8, height: 12)
+                                          MarqueeText(
+                                              .constant(reminderSneakPeekText(for: reminder)),
+                                              textColor: reminderColor(for: reminder, now: reminderManager.currentDate),
+                                              minDuration: 1,
+                                              frameWidth: max(0, geo.size.width - 18)
+                                          )
+                                      }
                                   }
                                   .padding(.bottom, 10)
                               }

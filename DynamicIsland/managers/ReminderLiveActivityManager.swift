@@ -327,7 +327,7 @@ final class ReminderLiveActivityManager: ObservableObject {
             return
         }
 
-        if entry.triggerDate <= date {
+            if entry.triggerDate <= date {
             if entry.triggerDate > entry.event.start {
                 entry = ReminderEntry(event: entry.event, triggerDate: entry.event.start, leadTime: entry.leadTime)
                 nextReminder = entry
@@ -349,14 +349,17 @@ final class ReminderLiveActivityManager: ObservableObject {
             if criticalWindow > 0 && timeRemaining > 0 {
                 if timeRemaining <= criticalWindow {
                     if !hasShownCriticalSneakPeek {
+                        let displayDuration = min(criticalWindow, max(timeRemaining - 2, 0))
+                        if displayDuration > 0 {
                         DynamicIslandViewCoordinator.shared.toggleSneakPeek(
                             status: true,
                             type: .reminder,
-                            duration: Defaults[.reminderSneakPeekDuration],
+                            duration: displayDuration,
                             value: 0,
                             icon: ReminderLiveActivityManager.criticalIconName
                         )
                         hasShownCriticalSneakPeek = true
+                        }
                     }
                 } else {
                     hasShownCriticalSneakPeek = false
