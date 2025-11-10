@@ -25,10 +25,17 @@ final class ReminderLiveActivityManager: ObservableObject {
 
     private var nextReminder: ReminderEntry?
     private var cancellables = Set<AnyCancellable>()
-    private var tickerCancellable: AnyCancellable?
+    private var tickerTask: Task<Void, Never>? { didSet { oldValue?.cancel() } }
     private var evaluationTask: Task<Void, Never>?
     private var fallbackRefreshTask: Task<Void, Never>?
     private var refreshTask: Task<Void, Never>?
+    private var pendingRefreshTask: Task<Void, Never>?
+    private var pendingRefreshForce = false
+    private var pendingRefreshToken = UUID()
+    private var lastRefreshDate: Date?
+    private let minimumRefreshInterval: TimeInterval = 10
+    private let refreshDebounceInterval: TimeInterval = 0.3
+    private var refreshTaskToken = UUID()
 
     private let calendarService: CalendarServiceProviding
     private let calendarManager = CalendarManager.shared
@@ -38,7 +45,7 @@ final class ReminderLiveActivityManager: ObservableObject {
     private init(calendarService: CalendarServiceProviding = CalendarService()) {
         self.calendarService = calendarService
         setupObservers()
-        Task { await self.refreshUpcomingReminder() }
+        scheduleRefresh(force: true)
     }
 
     private func setupObservers() {
@@ -80,7 +87,7 @@ final class ReminderLiveActivityManager: ObservableObject {
         calendarManager.$events
             .sink { [weak self] _ in
                 guard let self else { return }
-                self.scheduleRefresh(force: true)
+                self.scheduleRefresh(force: false)
             }
             .store(in: &cancellables)
 
@@ -93,12 +100,14 @@ final class ReminderLiveActivityManager: ObservableObject {
     }
 
     private func cancelAllTimers() {
-        tickerCancellable?.cancel()
-        tickerCancellable = nil
+        tickerTask = nil
         evaluationTask?.cancel()
         evaluationTask = nil
         fallbackRefreshTask?.cancel()
         fallbackRefreshTask = nil
+        pendingRefreshTask?.cancel()
+        pendingRefreshTask = nil
+        pendingRefreshForce = false
         refreshTask?.cancel()
         refreshTask = nil
     }
@@ -154,32 +163,92 @@ final class ReminderLiveActivityManager: ObservableObject {
         fallbackRefreshTask = Task { [weak self] in
             guard let self else { return }
             try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
-            await self.refreshUpcomingReminder()
+            await self.scheduleRefresh(force: true)
         }
     }
 
     private func scheduleRefresh(force: Bool) {
+        pendingRefreshForce = pendingRefreshForce || force
+        pendingRefreshToken = UUID()
+        let token = pendingRefreshToken
+
         refreshTask?.cancel()
-        refreshTask = Task { [weak self] in
+        pendingRefreshTask?.cancel()
+        pendingRefreshTask = Task { [weak self] in
             guard let self else { return }
-            await self.refreshUpcomingReminder(force: force)
+            do {
+                try await Task.sleep(nanoseconds: UInt64(self.refreshDebounceInterval * 1_000_000_000))
+            } catch {
+                return
+            }
+            await self.executeScheduledRefresh(token: token)
         }
     }
 
-    private func startTickerIfNeeded() {
-        guard tickerCancellable == nil else { return }
-        tickerCancellable = Timer.publish(every: 1, tolerance: 0.2, on: .main, in: .common)
-            .autoconnect()
-            .sink { [weak self] date in
-                guard let self else { return }
-                self.currentDate = date
-                Task { await self.evaluateCurrentState(at: date) }
+    private func executeScheduledRefresh(token: UUID) async {
+        guard pendingRefreshToken == token else { return }
+        pendingRefreshTask = nil
+
+        if Task.isCancelled {
+            return
+        }
+
+        let now = Date()
+        let force = pendingRefreshForce
+        if !force, let last = lastRefreshDate {
+            let elapsed = now.timeIntervalSince(last)
+            if elapsed < minimumRefreshInterval {
+                let remaining = max(minimumRefreshInterval - elapsed, refreshDebounceInterval)
+                pendingRefreshToken = UUID()
+                let nextToken = pendingRefreshToken
+                pendingRefreshTask = Task { [weak self] in
+                    guard let self else { return }
+                    do {
+                        try await Task.sleep(nanoseconds: UInt64(remaining * 1_000_000_000))
+                    } catch {
+                        return
+                    }
+                    await self.executeScheduledRefresh(token: nextToken)
+                }
+                return
             }
+        }
+
+        pendingRefreshForce = false
+        lastRefreshDate = now
+
+        refreshTask?.cancel()
+        let taskToken = UUID()
+        refreshTaskToken = taskToken
+        let task = Task { [weak self] in
+            guard let self else { return }
+            await self.refreshUpcomingReminder(force: force)
+        }
+        refreshTask = task
+        defer {
+            if refreshTaskToken == taskToken {
+                refreshTask = nil
+            }
+        }
+        _ = try? await task.value
+    }
+
+    private func startTickerIfNeeded() {
+        guard tickerTask == nil else { return }
+        tickerTask = Task { [weak self] in
+            while let self, !Task.isCancelled {
+                await self.handleTick()
+                do {
+                    try await Task.sleep(for: .seconds(1))
+                } catch {
+                    break
+                }
+            }
+        }
     }
 
     private func stopTicker() {
-        tickerCancellable?.cancel()
-        tickerCancellable = nil
+        tickerTask = nil
     }
 
     private func handleEntrySelection(_ entry: ReminderEntry?, referenceDate: Date) {
@@ -275,6 +344,15 @@ final class ReminderLiveActivityManager: ObservableObject {
             stopTicker()
             scheduleEvaluation(at: entry.triggerDate)
         }
+    }
+
+    @MainActor
+    private func handleTick() async {
+        let now = Date()
+        if abs(currentDate.timeIntervalSince(now)) >= 0.5 {
+            currentDate = now
+        }
+        await evaluateCurrentState(at: now)
     }
 
     private func glyphName(for event: EventModel) -> String {
