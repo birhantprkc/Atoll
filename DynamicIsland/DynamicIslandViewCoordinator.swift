@@ -144,9 +144,17 @@ class DynamicIslandViewCoordinator: ObservableObject {
     }
     
     func toggleSneakPeek(status: Bool, type: SneakContentType, duration: TimeInterval = 1.5, value: CGFloat = 0, icon: String = "") {
-        let resolvedDuration = type == .timer ? 10 : duration
+        let resolvedDuration: TimeInterval
+        switch type {
+        case .timer:
+            resolvedDuration = 10
+        case .reminder:
+            resolvedDuration = Defaults[.reminderSneakPeekDuration]
+        default:
+            resolvedDuration = duration
+        }
         sneakPeekDuration = resolvedDuration
-        if type != .music && type != .timer {
+        if type != .music && type != .timer && type != .reminder {
             // close()
             if !hudReplacement {
                 return

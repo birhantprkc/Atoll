@@ -406,7 +406,7 @@ struct ContentView: View {
                             .frame(width: 76, alignment: .trailing)
                         }
                         .frame(height: vm.effectiveClosedNotchHeight + (isHovering ? 8 : 0), alignment: .center)
-                      } else if coordinator.sneakPeek.show && Defaults[.inlineHUD] && (coordinator.sneakPeek.type != .music) && (coordinator.sneakPeek.type != .battery) && (coordinator.sneakPeek.type != .timer) && (coordinator.sneakPeek.type != .volume || vm.notchState == .closed) {
+                      } else if coordinator.sneakPeek.show && Defaults[.inlineHUD] && (coordinator.sneakPeek.type != .music) && (coordinator.sneakPeek.type != .battery) && (coordinator.sneakPeek.type != .timer) && (coordinator.sneakPeek.type != .reminder) && (coordinator.sneakPeek.type != .volume || vm.notchState == .closed) {
                           InlineHUD(type: $coordinator.sneakPeek.type, value: $coordinator.sneakPeek.value, icon: $coordinator.sneakPeek.icon, hoverAnimation: $isHovering, gestureProgress: $gestureProgress)
                               .transition(.opacity)
                       } else if (!coordinator.expandingView.show || coordinator.expandingView.type == .music) && vm.notchState == .closed && (musicManager.isPlaying || !musicManager.isPlayerIdle) && coordinator.musicLiveActivityEnabled && !vm.hideOnClosed && !lockScreenManager.isLocked {
@@ -469,6 +469,19 @@ struct ContentView: View {
                                   .padding(.bottom, 10)
                               }
                           }
+                          else if coordinator.sneakPeek.type == .reminder {
+                              if !vm.hideOnClosed && Defaults[.sneakPeekStyles] == .standard, let reminder = reminderManager.activeReminder {
+                                  GeometryReader { geo in
+                                      MarqueeText(
+                                          .constant(reminderSneakPeekText(for: reminder)),
+                                          textColor: reminderColor(for: reminder.event),
+                                          minDuration: 1,
+                                          frameWidth: geo.size.width
+                                      )
+                                  }
+                                  .padding(.bottom, 10)
+                              }
+                          }
                       }
                   }
               }
@@ -508,6 +521,32 @@ struct ContentView: View {
               .opacity(abs(gestureProgress) > 0.3 ? min(abs(gestureProgress * 2), 0.8) : 1)
           }
       }
+
+    private func reminderColor(for event: EventModel) -> Color {
+        Color(nsColor: event.calendar.color).ensureMinimumBrightness(factor: 0.7)
+    }
+
+    private func reminderSneakPeekText(for entry: ReminderLiveActivityManager.ReminderEntry) -> String {
+        let title = entry.event.title.isEmpty ? "Upcoming Reminder" : entry.event.title
+        let remaining = max(entry.event.start.timeIntervalSince(reminderManager.currentDate), 0)
+        let minutes = Int(ceil(remaining / 60))
+        let timeString = reminderTimeFormatter.string(from: entry.event.start)
+
+        if minutes <= 0 {
+            return "\(title) • starts now @ \(timeString)"
+        } else if minutes == 1 {
+            return "\(title) • in 1 min @ \(timeString)"
+        } else {
+            return "\(title) • in \(minutes) min @ \(timeString)"
+        }
+    }
+
+    private let reminderTimeFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .none
+        formatter.timeStyle = .short
+        return formatter
+    }()
 
     @ViewBuilder
     func DynamicIslandFaceAnimation() -> some View {

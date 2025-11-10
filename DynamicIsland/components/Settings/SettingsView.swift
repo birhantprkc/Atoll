@@ -956,6 +956,7 @@ struct CalendarSettings: View {
     @Default(.enableReminderLiveActivity) var enableReminderLiveActivity
     @Default(.reminderPresentationStyle) var reminderPresentationStyle
     @Default(.reminderLeadTime) var reminderLeadTime
+    @Default(.reminderSneakPeekDuration) var reminderSneakPeekDuration
 
     var body: some View {
         Form {
@@ -1023,6 +1024,19 @@ struct CalendarSettings: View {
                         )
                         .disabled(!enableReminderLiveActivity)
                         Text("\(reminderLeadTime) min")
+                            .foregroundStyle(.secondary)
+                            .frame(width: 60, alignment: .trailing)
+                    }
+
+                    HStack {
+                        Text("Sneak peek duration")
+                        Slider(
+                            value: $reminderSneakPeekDuration,
+                            in: 3...20,
+                            step: 1
+                        )
+                        .disabled(!enableReminderLiveActivity)
+                        Text("\(Int(reminderSneakPeekDuration)) s")
                             .foregroundStyle(.secondary)
                             .frame(width: 60, alignment: .trailing)
                     }

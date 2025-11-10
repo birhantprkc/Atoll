@@ -463,6 +463,7 @@ extension Defaults.Keys {
     static let enableReminderLiveActivity = Key<Bool>("enableReminderLiveActivity", default: true)
     static let reminderPresentationStyle = Key<ReminderPresentationStyle>("reminderPresentationStyle", default: .ringCountdown)
     static let reminderLeadTime = Key<Int>("reminderLeadTime", default: 5)
+    static let reminderSneakPeekDuration = Key<Double>("reminderSneakPeekDuration", default: 10)
     static let timerControlWindowEnabled = Key<Bool>("timerControlWindowEnabled", default: true)
     
     // MARK: ColorPicker Feature

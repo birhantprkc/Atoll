@@ -259,6 +259,13 @@ final class ReminderLiveActivityManager: ObservableObject {
             }
             if activeReminder != entry {
                 activeReminder = entry
+                DynamicIslandViewCoordinator.shared.toggleSneakPeek(
+                    status: true,
+                    type: .reminder,
+                    duration: Defaults[.reminderSneakPeekDuration],
+                    value: 0,
+                    icon: glyphName(for: entry.event)
+                )
             }
             startTickerIfNeeded()
         } else {
@@ -267,6 +274,17 @@ final class ReminderLiveActivityManager: ObservableObject {
             }
             stopTicker()
             scheduleEvaluation(at: entry.triggerDate)
+        }
+    }
+
+    private func glyphName(for event: EventModel) -> String {
+        switch event.type {
+        case .birthday:
+            return "gift.fill"
+        case .reminder(let completed):
+            return completed ? "checkmark.circle" : "bell.fill"
+        case .event:
+            return event.isMeeting ? "person.2.fill" : "calendar"
         }
     }
 }
