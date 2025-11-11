@@ -65,10 +65,7 @@ struct MinimalisticMusicPlayerView: View {
             playbackControls
                 .padding(.top, 4)
 
-            if shouldShowReminderList {
-                MinimalisticReminderEventListView(reminders: reminderEntries, currentDate: reminderManager.currentDate)
-                    .transition(.opacity.combined(with: .move(edge: .bottom)))
-            }
+            reminderList
         }
         .padding(.horizontal, 12)
         .padding(.top, -15)
@@ -82,6 +79,18 @@ struct MinimalisticMusicPlayerView: View {
 
     private var shouldShowReminderList: Bool {
         enableReminderLiveActivity && !reminderEntries.isEmpty
+    }
+
+    private var reminderListHeight: CGFloat {
+        ReminderLiveActivityManager.additionalHeight(forRowCount: reminderEntries.count)
+    }
+
+    private var reminderList: some View {
+        MinimalisticReminderEventListView(reminders: reminderEntries, currentDate: reminderManager.currentDate)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .frame(height: reminderListHeight, alignment: .top)
+            .opacity(shouldShowReminderList ? 1 : 0)
+            .animation(.easeInOut(duration: 0.18), value: shouldShowReminderList)
     }
     
 

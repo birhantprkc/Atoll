@@ -87,6 +87,12 @@ struct ContentView: View {
     @Default(.showNotHumanFace) var showNotHumanFace
     @Default(.useModernCloseAnimation) var useModernCloseAnimation
     @Default(.enableMinimalisticUI) var enableMinimalisticUI
+    private var dynamicNotchResizeAnimation: Animation? {
+        if enableMinimalisticUI && reminderManager.activeWindowReminders.isEmpty == false {
+            return nil
+        }
+        return .easeInOut(duration: 0.4)
+    }
     
     private let extendedHoverPadding: CGFloat = 30
     private let zeroHeightHoverPadding: CGFloat = 10
@@ -344,8 +350,8 @@ struct ContentView: View {
 //                    .keyboardShortcut("E", modifiers: .command)
                 }
         }
-        .frame(maxWidth: dynamicNotchSize.width, maxHeight: dynamicNotchSize.height, alignment: .top)
-        .animation(.easeInOut(duration: 0.4), value: dynamicNotchSize)
+    .frame(maxWidth: dynamicNotchSize.width, maxHeight: dynamicNotchSize.height, alignment: .top)
+    .animation(dynamicNotchResizeAnimation, value: dynamicNotchSize)
         .animation(.easeInOut(duration: 0.4), value: coordinator.currentView)
         .environmentObject(privacyManager)
         .onChange(of: dynamicNotchSize) { oldSize, newSize in
@@ -357,9 +363,11 @@ struct ContentView: View {
                 isViewTransitioning = true
                 let workItem = DispatchWorkItem {
                     isViewTransitioning = false
+                    vm.shouldRecheckHover.toggle()
                 }
                 sizeChangeWorkItem = workItem
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0, execute: workItem) // Frame animation + buffer
+                let delay: TimeInterval = dynamicNotchResizeAnimation == nil ? 0.25 : 1.0
+                DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: workItem)
             }
         }
         .shadow(color: ((vm.notchState == .open || isHovering) && Defaults[.enableShadow]) ? .black.opacity(0.6) : .clear, radius: Defaults[.cornerRadiusScaling] ? 10 : 5)
@@ -736,11 +744,15 @@ struct ContentView: View {
                 }
             }
         } else {
+            if vm.notchState == .open && isViewTransitioning {
+                return
+            }
             hoverTask = Task {
                 try? await Task.sleep(for: .milliseconds(100))
                 guard !Task.isCancelled else { return }
                 
                 await MainActor.run {
+                    guard !self.isViewTransitioning else { return }
                     withAnimation(.bouncy.speed(1.2)) {
                         self.isHovering = false
                     }
@@ -800,7 +812,7 @@ struct ContentView: View {
                 let stillNotHovering = !isHovering
                 let stillOpen = vm.notchState == .open
                 let stillNoPopovers = !hasAnyActivePopovers()
-                let notTransitioning = !isStatsTransitioning && !isSwitchingToStats
+                let notTransitioning = !isStatsTransitioning && !isSwitchingToStats && !isViewTransitioning
                 
                 if stillNotHovering && stillOpen && stillNoPopovers && notTransitioning {
                     vm.close()
