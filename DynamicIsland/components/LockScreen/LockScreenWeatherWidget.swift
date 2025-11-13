@@ -158,12 +158,13 @@ struct LockScreenWeatherWidget: View {
 
 	private func circularBatterySegment(for info: LockScreenWeatherSnapshot.BatteryInfo) -> some View {
 		let level = clampedBatteryLevel(info.batteryLevel)
+		let symbolName = info.usesLaptopSymbol ? "laptopcomputer" : batteryIconName(for: level)
 
 		return VStack(spacing: 6) {
 			Gauge(value: Double(level), in: 0...100) {
 				EmptyView()
 			} currentValueLabel: {
-				Image(systemName: batteryIconName(for: level))
+				Image(systemName: symbolName)
 					.font(.system(size: 20, weight: .semibold))
 					.foregroundStyle(Color.white)
 			} minimumValueLabel: {

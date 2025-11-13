@@ -105,7 +105,8 @@ final class LockScreenWeatherManager: ObservableObject {
             let showsCharging = Defaults[.lockScreenWeatherShowsCharging]
             let chargingInfo = showsCharging ? makeChargingInfo() : nil
             let showsBatteryGauge = Defaults[.lockScreenWeatherShowsBatteryGauge]
-            let batteryInfo = showsBatteryGauge ? makeBatteryGaugeInfo(isCharging: chargingInfo != nil) : nil
+            let widgetStyle = Defaults[.lockScreenWeatherWidgetStyle]
+            let batteryInfo = showsBatteryGauge ? makeBatteryGaugeInfo(isCharging: chargingInfo != nil, widgetStyle: widgetStyle) : nil
             let fallback = LockScreenWeatherSnapshot(
                 temperatureText: snapshot?.temperatureText ?? "--",
                 symbolName: snapshot?.symbolName ?? "cloud.fill",
@@ -116,7 +117,7 @@ final class LockScreenWeatherManager: ObservableObject {
                 battery: batteryInfo,
                 showsLocation: snapshot?.showsLocation ?? false,
                 airQuality: (providerSource.supportsAirQuality && Defaults[.lockScreenWeatherShowsAQI]) ? snapshot?.airQuality : nil,
-                widgetStyle: Defaults[.lockScreenWeatherWidgetStyle],
+                widgetStyle: widgetStyle,
                 showsChargingPercentage: Defaults[.lockScreenWeatherShowsChargingPercentage],
                 temperatureInfo: snapshot?.temperatureInfo,
                 usesGaugeTint: Defaults[.lockScreenWeatherUsesGaugeTint]
@@ -188,6 +189,8 @@ final class LockScreenWeatherManager: ObservableObject {
             Defaults.publisher(.lockScreenWeatherShowsBluetooth, options: [])
                 .map { _ in () }.eraseToAnyPublisher(),
             Defaults.publisher(.lockScreenWeatherShowsBatteryGauge, options: [])
+                .map { _ in () }.eraseToAnyPublisher(),
+            Defaults.publisher(.lockScreenWeatherBatteryUsesLaptopSymbol, options: [])
                 .map { _ in () }.eraseToAnyPublisher(),
             Defaults.publisher(.lockScreenWeatherWidgetStyle, options: [])
                 .map { _ in () }.eraseToAnyPublisher(),
@@ -289,7 +292,7 @@ final class LockScreenWeatherManager: ObservableObject {
         let showsChargingPercentage = Defaults[.lockScreenWeatherShowsChargingPercentage]
         let providerSource = Defaults[.lockScreenWeatherProviderSource]
         let airQualityInfo = (Defaults[.lockScreenWeatherShowsAQI] && providerSource.supportsAirQuality) ? payload.airQuality : nil
-        let batteryInfo = Defaults[.lockScreenWeatherShowsBatteryGauge] ? makeBatteryGaugeInfo(isCharging: chargingInfo != nil) : nil
+        let batteryInfo = Defaults[.lockScreenWeatherShowsBatteryGauge] ? makeBatteryGaugeInfo(isCharging: chargingInfo != nil, widgetStyle: widgetStyle) : nil
         let usesGaugeTint = Defaults[.lockScreenWeatherUsesGaugeTint]
 
         return LockScreenWeatherSnapshot(
@@ -334,7 +337,7 @@ final class LockScreenWeatherManager: ObservableObject {
         )
     }
 
-    private func makeBatteryGaugeInfo(isCharging: Bool) -> LockScreenWeatherSnapshot.BatteryInfo? {
+    private func makeBatteryGaugeInfo(isCharging: Bool, widgetStyle: LockScreenWeatherWidgetStyle) -> LockScreenWeatherSnapshot.BatteryInfo? {
         guard !isCharging else { return nil }
 
         let battery = BatteryStatusViewModel.shared
@@ -343,7 +346,12 @@ final class LockScreenWeatherManager: ObservableObject {
 
         guard clampedLevel >= 0 else { return nil }
 
-        return LockScreenWeatherSnapshot.BatteryInfo(batteryLevel: clampedLevel)
+        let usesLaptopSymbol = widgetStyle == .circular && Defaults[.lockScreenWeatherBatteryUsesLaptopSymbol]
+
+        return LockScreenWeatherSnapshot.BatteryInfo(
+            batteryLevel: clampedLevel,
+            usesLaptopSymbol: usesLaptopSymbol
+        )
     }
 
     private func makeBluetoothInfo() -> LockScreenWeatherSnapshot.BluetoothInfo? {
@@ -427,6 +435,7 @@ struct LockScreenWeatherSnapshot: Equatable {
 
     struct BatteryInfo: Equatable {
         let batteryLevel: Int
+        let usesLaptopSymbol: Bool
     }
 
     struct AirQualityInfo: Equatable {
