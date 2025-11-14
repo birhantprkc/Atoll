@@ -182,10 +182,17 @@ struct DynamicIslandBatteryView: View {
     var body: some View {
         HStack {
             if Defaults[.showBatteryPercentage] {
-                Text("\(Int32(levelBattery))%")
-                    .font(.callout)
-                    .foregroundStyle(.white)
-                    .frame(width: 40, alignment: .trailing)
+                ZStack(alignment: .trailing) {
+                    Text("100%")
+                        .font(.callout)
+                        .hidden()
+                    
+                    Text("\(Int32(levelBattery))%")
+                        .font(.callout)
+                        .foregroundStyle(.white)
+                        .lineLimit(1)
+                }
+                .fixedSize(horizontal: true, vertical: false)
             }
             BatteryView(
                 levelBattery: levelBattery,
