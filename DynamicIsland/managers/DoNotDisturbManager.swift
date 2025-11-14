@@ -342,6 +342,24 @@ enum FocusModeType: String, CaseIterable {
         }
     }
 
+    var internalSymbolName: String? {
+        switch self {
+        case .work: return "person.lanyardcard.fill"
+        case .mindfulness: return "apple.mindfulness"
+        case .gaming: return "rocket.fill"
+        default: return nil
+        }
+    }
+
+    var activeIcon: Image {
+        if let internalSymbolName,
+           let image = Image(internalSystemName: internalSymbolName) {
+            return image
+        }
+
+        return Image(systemName: sfSymbol)
+    }
+
     var accentColor: Color {
         switch self {
         case .doNotDisturb:

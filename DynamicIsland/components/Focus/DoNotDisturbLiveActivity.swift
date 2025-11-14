@@ -110,13 +110,13 @@ struct DoNotDisturbLiveActivity: View {
         }
     }
 
-    private var currentIconName: String {
+    private var currentIcon: Image {
         if manager.isDoNotDisturbActive {
-            return focusMode.sfSymbol
+            return focusMode.activeIcon
         } else if showInactiveIcon {
-            return focusMode.inactiveSymbol
+            return Image(systemName: focusMode.inactiveSymbol)
         } else {
-            return focusMode.sfSymbol
+            return focusMode.activeIcon
         }
     }
 
@@ -136,7 +136,7 @@ struct DoNotDisturbLiveActivity: View {
         Color.clear
             .overlay(alignment: .center) {
                 if iconWingWidth > 0 {
-                    Image(systemName: currentIconName)
+                    currentIcon
                         .font(.system(size: 13, weight: .semibold))
                         .foregroundColor(currentIconColor)
                         .contentTransition(.opacity)
