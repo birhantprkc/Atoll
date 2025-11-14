@@ -66,7 +66,13 @@ struct DoNotDisturbLiveActivity: View {
     private var desiredLabelWidth: CGFloat {
         let measuredWidth = labelIntrinsicWidth + 8 // horizontal padding inside the label
         let fallbackWidth = max(vm.closedNotchSize.width * 0.52, 136)
-        return max(measuredWidth, fallbackWidth)
+        var width = max(measuredWidth, fallbackWidth)
+
+        if focusMode == .doNotDisturb && shouldShowLabel {
+            width = max(width, 164)
+        }
+
+        return width
     }
 
     private var shouldShowLabel: Bool {
@@ -89,15 +95,12 @@ struct DoNotDisturbLiveActivity: View {
     private var labelText: String {
         let trimmed = manager.currentFocusModeName.trimmingCharacters(in: .whitespacesAndNewlines)
         if !trimmed.isEmpty {
-            if focusMode == .doNotDisturb {
-                return "Focus"
-            }
             return trimmed
         }
 
         let fallback = focusMode.displayName
         if focusMode == .doNotDisturb {
-            return "Focus"
+            return "Do Not Disturb"
         }
         return fallback.isEmpty ? "Focus" : fallback
     }
