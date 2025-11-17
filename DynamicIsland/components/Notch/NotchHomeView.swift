@@ -120,7 +120,9 @@ struct MusicControlsView: View {
     @State private var dragging: Bool = false
     @State private var lastDragged: Date = .distantPast
     let showShuffleAndRepeat: Bool
-    @Default(.showMediaOutputControl) private var showMediaOutputControl
+    @Default(.musicAuxLeftControl) private var leftAuxControl
+    @Default(.musicAuxRightControl) private var rightAuxControl
+    @Default(.enableLyrics) private var enableLyrics
 
     var body: some View {
         VStack(alignment: .leading) {
@@ -155,6 +157,35 @@ struct MusicControlsView: View {
                 frameWidth: width
             )
             .fontWeight(.medium)
+            // Lyrics shown under the author name (same font size as author) when enabled in settings
+            if enableLyrics {
+                let transition = AnyTransition.asymmetric(
+                    insertion: .move(edge: .bottom).combined(with: .opacity),
+                    removal: .move(edge: .top).combined(with: .opacity)
+                )
+
+                let line = musicManager.currentLyrics.trimmingCharacters(in: .whitespacesAndNewlines)
+
+                if !line.isEmpty {
+                    let lyricsBinding = Binding<String>(
+                        get: { musicManager.currentLyrics },
+                        set: { _ in }
+                    )
+
+                    MarqueeText(
+                        lyricsBinding,
+                        font: .headline,
+                        nsFont: .headline,
+                        textColor: .white.opacity(0.8),
+                        minDuration: 0.35,
+                        frameWidth: width
+                    )
+                    .padding(.top, 2)
+                    .id(line)
+                    .transition(transition)
+                    .animation(.easeInOut(duration: 0.32), value: line)
+                }
+            }
         }
     }
 
@@ -182,32 +213,23 @@ struct MusicControlsView: View {
     }
 
     private var playbackControls: some View {
-        HStack(spacing: 8) {
+        let controls = resolvedAuxControls
+
+        return HStack(spacing: 8) {
             if showShuffleAndRepeat {
-                HoverButton(
-                    icon: "shuffle", iconColor: musicManager.isShuffled ? .red : .white,
-                    scale: .medium
-                ) {
-                    MusicManager.shared.toggleShuffle()
-                }
+                auxButton(for: controls.left)
             }
-            HoverButton(icon: "backward.fill", scale: .medium) {
+            HoverButton(icon: "backward.fill", scale: .medium, pressEffect: .nudge(-6)) {
                 MusicManager.shared.previousTrack()
             }
             HoverButton(icon: musicManager.isPlaying ? "pause.fill" : "play.fill", scale: .large) {
                 MusicManager.shared.togglePlay()
             }
-            HoverButton(icon: "forward.fill", scale: .medium) {
+            HoverButton(icon: "forward.fill", scale: .medium, pressEffect: .nudge(6)) {
                 MusicManager.shared.nextTrack()
             }
             if showShuffleAndRepeat {
-                if showMediaOutputControl {
-                    MediaOutputPickerButton()
-                } else {
-                    HoverButton(icon: repeatIcon, iconColor: repeatIconColor, scale: .medium) {
-                        MusicManager.shared.toggleRepeat()
-                    }
-                }
+                auxButton(for: controls.right)
             }
         }
         .frame(maxWidth: .infinity, alignment: .center)
@@ -230,6 +252,45 @@ struct MusicControlsView: View {
             return .white
         case .all, .one:
             return .red
+        }
+    }
+
+    private var resolvedAuxControls: (left: MusicAuxiliaryControl, right: MusicAuxiliaryControl) {
+        guard leftAuxControl == rightAuxControl else {
+            return (leftAuxControl, rightAuxControl)
+        }
+        return (leftAuxControl, MusicAuxiliaryControl.alternative(excluding: leftAuxControl))
+    }
+
+    @ViewBuilder
+    private func auxButton(for control: MusicAuxiliaryControl) -> some View {
+        switch control {
+        case .shuffle:
+            HoverButton(
+                icon: "shuffle",
+                iconColor: musicManager.isShuffled ? .red : .white,
+                scale: .medium
+            ) {
+                MusicManager.shared.toggleShuffle()
+            }
+        case .repeatMode:
+            HoverButton(
+                icon: repeatIcon,
+                iconColor: repeatIconColor,
+                scale: .medium
+            ) {
+                MusicManager.shared.toggleRepeat()
+            }
+        case .mediaOutput:
+            MediaOutputPickerButton()
+        case .lyrics:
+            HoverButton(
+                icon: enableLyrics ? "quote.bubble.fill" : "quote.bubble",
+                iconColor: enableLyrics ? .accentColor : .white,
+                scale: .medium
+            ) {
+                enableLyrics.toggle()
+            }
         }
     }
 }

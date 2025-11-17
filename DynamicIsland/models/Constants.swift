@@ -196,6 +196,52 @@ enum ProgressBarStyle: String, CaseIterable, Identifiable, Defaults.Serializable
     var id: String { self.rawValue }
 }
 
+enum MusicAuxiliaryControl: String, CaseIterable, Identifiable, Defaults.Serializable {
+    case shuffle
+    case repeatMode
+    case mediaOutput
+    case lyrics
+
+    var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .shuffle:
+            return "Shuffle"
+        case .repeatMode:
+            return "Repeat"
+        case .mediaOutput:
+            return "Media Output"
+        case .lyrics:
+            return "Lyrics"
+        }
+    }
+
+    var symbolName: String {
+        switch self {
+        case .shuffle:
+            return "shuffle"
+        case .repeatMode:
+            return "repeat"
+        case .mediaOutput:
+            return "speaker.wave.2"
+        case .lyrics:
+            return "quote.bubble"
+        }
+    }
+
+    static func alternative(
+        excluding control: MusicAuxiliaryControl,
+        preferring candidate: MusicAuxiliaryControl? = nil
+    ) -> MusicAuxiliaryControl {
+        if let candidate, candidate != control {
+            return candidate
+        }
+
+        return allCases.first { $0 != control } ?? .shuffle
+    }
+}
+
 enum TimerIconColorMode: String, CaseIterable, Identifiable, Defaults.Serializable {
     case adaptive = "Adaptive"
     case solid = "Solid"
@@ -372,6 +418,9 @@ extension Defaults.Keys {
     static let waitInterval = Key<Double>("waitInterval", default: 3)
     static let showShuffleAndRepeat = Key<Bool>("showShuffleAndRepeat", default: false)
     static let showMediaOutputControl = Key<Bool>("showMediaOutputControl", default: false)
+    static let musicAuxLeftControl = Key<MusicAuxiliaryControl>("musicAuxLeftControl", default: .shuffle)
+    static let musicAuxRightControl = Key<MusicAuxiliaryControl>("musicAuxRightControl", default: .repeatMode)
+    static let didMigrateMusicAuxControls = Key<Bool>("didMigrateMusicAuxControls", default: false)
     // Enable lock screen media widget (shows the standalone panel when screen is locked)
     static let enableLockScreenMediaWidget = Key<Bool>("enableLockScreenMediaWidget", default: true)
     static let enableLockScreenWeatherWidget = Key<Bool>("enableLockScreenWeatherWidget", default: true)
@@ -530,6 +579,9 @@ extension Defaults.Keys {
     // MARK: Minimalistic UI Mode
     static let enableMinimalisticUI = Key<Bool>("enableMinimalisticUI", default: false)
     
+    // MARK: Lyrics Feature
+    static let enableLyrics = Key<Bool>("enableLyrics", default: true)
+    
     // Helper to determine the default media controller based on macOS version
     static var defaultMediaController: MediaControllerType {
         if #available(macOS 15.4, *) {
@@ -548,5 +600,25 @@ extension Defaults.Keys {
         if wasGradientEnabled && Defaults[.progressBarStyle] == .hierarchical {
             Defaults[.progressBarStyle] = .gradient
         }
+    }
+
+    static func migrateMusicAuxControls() {
+        if Defaults[.didMigrateMusicAuxControls] == false {
+            if Defaults[.showMediaOutputControl] {
+                Defaults[.musicAuxRightControl] = .mediaOutput
+            }
+
+            Defaults[.didMigrateMusicAuxControls] = true
+        }
+
+        normalizeMusicAuxControls()
+    }
+
+    private static func normalizeMusicAuxControls() {
+        guard Defaults[.musicAuxLeftControl] == Defaults[.musicAuxRightControl] else { return }
+
+        let current = Defaults[.musicAuxLeftControl]
+        let fallback = MusicAuxiliaryControl.alternative(excluding: current)
+        Defaults[.musicAuxRightControl] = fallback
     }
 }

@@ -45,7 +45,6 @@ class DynamicIslandViewModel: NSObject, ObservableObject {
 
     @Published var notchSize: CGSize = getClosedNotchSize()
     @Published var closedNotchSize: CGSize = getClosedNotchSize()
-    private var minimalisticReminderRowCount: Int = 0
     
     deinit {
         destroy()
@@ -77,13 +76,39 @@ class DynamicIslandViewModel: NSObject, ObservableObject {
         ReminderLiveActivityManager.shared.$activeWindowReminders
             .removeDuplicates()
             .receive(on: RunLoop.main)
-            .sink { [weak self] entries in
+            .sink { [weak self] _ in
                 guard let self else { return }
-                self.minimalisticReminderRowCount = entries.count
                 let updatedTarget = self.calculateDynamicNotchSize()
                 guard self.notchState == .open else { return }
                 guard self.notchSize != updatedTarget else { return }
-                self.notchSize = updatedTarget
+                withAnimation(.smooth) {
+                    self.notchSize = updatedTarget
+                }
+                if let delegate = AppDelegate.shared {
+                    delegate.ensureWindowSize(updatedTarget, animated: true, force: false)
+                }
+            }
+            .store(in: &cancellables)
+
+        // Observe settings + lyrics changes to dynamically resize the notch
+        let enableLyricsPublisher = Defaults.publisher(.enableLyrics).map { $0.newValue }
+
+        enableLyricsPublisher
+            .combineLatest(MusicManager.shared.$currentLyrics)
+            .removeDuplicates { $0.0 == $1.0 && $0.1 == $1.1 }
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in
+                guard let self else { return }
+                guard Defaults[.enableMinimalisticUI] else { return }
+                let updatedTarget = self.calculateDynamicNotchSize()
+                guard self.notchState == .open else { return }
+                guard self.notchSize != updatedTarget else { return }
+                withAnimation(.smooth) {
+                    self.notchSize = updatedTarget
+                }
+                if let delegate = AppDelegate.shared {
+                    delegate.ensureWindowSize(updatedTarget, animated: true, force: false)
+                }
             }
             .store(in: &cancellables)
     }
@@ -168,30 +193,25 @@ class DynamicIslandViewModel: NSObject, ObservableObject {
         // Use minimalistic size if minimalistic UI is enabled
         var baseSize = Defaults[.enableMinimalisticUI] ? minimalisticOpenNotchSize : openNotchSize
 
-        if Defaults[.enableMinimalisticUI] {
-            let extraHeight = ReminderLiveActivityManager.additionalHeight(forRowCount: minimalisticReminderRowCount)
-            baseSize.height += extraHeight
-        }
-        
         // Only apply dynamic sizing when on stats tab and stats are enabled
         guard DynamicIslandViewCoordinator.shared.currentView == .stats && Defaults[.enableStatsFeature] else {
             return baseSize
         }
-        
+
         let enabledGraphsCount = [
             Defaults[.showCpuGraph],
-            Defaults[.showMemoryGraph], 
+            Defaults[.showMemoryGraph],
             Defaults[.showGpuGraph],
             Defaults[.showNetworkGraph],
             Defaults[.showDiskGraph]
         ].filter { $0 }.count
-        
+
         // If 4+ graphs are enabled, increase width
         if enabledGraphsCount >= 4 {
             let extraWidth: CGFloat = CGFloat(enabledGraphsCount - 3) * 120
             return CGSize(width: baseSize.width + extraWidth, height: baseSize.height)
         }
-        
+
         return baseSize
     }
 

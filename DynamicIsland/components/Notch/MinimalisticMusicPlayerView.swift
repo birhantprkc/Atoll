@@ -12,12 +12,16 @@ import Defaults
 import AppKit
 #endif
 
+// Lyrics are shown/hidden only via Defaults[.enableLyrics] in settings. Inline display is used in the player views.
+
 struct MinimalisticMusicPlayerView: View {
     @EnvironmentObject var vm: DynamicIslandViewModel
     let albumArtNamespace: Namespace.ID
-    @Default(.showMediaOutputControl) var showMediaOutputControl
+    @Default(.musicAuxLeftControl) private var leftAuxControl
+    @Default(.musicAuxRightControl) private var rightAuxControl
     @ObservedObject private var reminderManager = ReminderLiveActivityManager.shared
     @Default(.enableReminderLiveActivity) private var enableReminderLiveActivity
+    @Default(.enableLyrics) private var enableLyrics
 
     var body: some View {
         VStack(spacing: 0) {
@@ -46,6 +50,7 @@ struct MinimalisticMusicPlayerView: View {
                             .font(.system(size: 10, weight: .regular))
                             .foregroundColor(Defaults[.playerColorTinting] ? Color(nsColor: musicManager.avgColor).ensureMinimumBrightness(factor: 0.6) : .gray)
                             .lineLimit(1)
+
                     }
                     .frame(width: textWidth, alignment: .leading)
 
@@ -65,12 +70,77 @@ struct MinimalisticMusicPlayerView: View {
             playbackControls
                 .padding(.top, 4)
 
+            if enableLyrics {
+                lyricsView
+                    .padding(.top, 10)
+            }
+
             reminderList
         }
         .padding(.horizontal, 12)
         .padding(.top, -15)
-    .padding(.bottom, shouldShowReminderList ? ReminderLiveActivityManager.listBottomPadding : ReminderLiveActivityManager.baselineMinimalisticBottomPadding)
+        .padding(.bottom, ReminderLiveActivityManager.baselineMinimalisticBottomPadding)
         .frame(maxWidth: .infinity)
+        .frame(height: calculateDynamicHeight(), alignment: .top)
+    }
+
+    // MARK: - TypingLyricView
+
+    struct TypingLyricView: View {
+        let text: String
+        let color: Color
+        let id: Int
+        let playbackRate: Double
+        let isPlaying: Bool
+        @State private var displayed: String = ""
+        @State private var lastText: String = ""
+        @State private var animationTask: Task<Void, Never>?
+
+        var body: some View {
+            Text(displayed)
+                .font(.system(size: 13, weight: .medium))
+                .foregroundColor(color)
+                .lineLimit(2)
+                .multilineTextAlignment(.leading)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 4)
+                .padding(.top, 4)
+                .id(id)
+                .onChange(of: text) { _, newText in
+                    animateTyping(newText)
+                }
+                .onChange(of: isPlaying) { _, playing in
+                    if !playing {
+                        animationTask?.cancel()
+                    } else if displayed != text {
+                        animateTyping(text)
+                    }
+                }
+                .onAppear {
+                    animateTyping(text)
+                }
+                .onDisappear {
+                    animationTask?.cancel()
+                }
+        }
+
+        private func animateTyping(_ newText: String) {
+            animationTask?.cancel()
+            displayed = ""
+            lastText = newText
+            let chars = Array(newText)
+
+            animationTask = Task {
+                for (i, c) in chars.enumerated() {
+                    if Task.isCancelled { return }
+                    try? await Task.sleep(for: .milliseconds(Int(30 / max(playbackRate, 0.1))))
+                    if Task.isCancelled { return }
+                    if lastText == newText {
+                        displayed += String(c)
+                    }
+                }
+            }
+        }
     }
 
     private var reminderEntries: [ReminderLiveActivityManager.ReminderEntry] {
@@ -85,6 +155,34 @@ struct MinimalisticMusicPlayerView: View {
         ReminderLiveActivityManager.additionalHeight(forRowCount: reminderEntries.count)
     }
 
+    private func calculateDynamicHeight() -> CGFloat {
+        var height: CGFloat = 50 // Base height for header
+
+        // Add progress bar height
+        height += 6 + 4 // progress bar + top padding
+
+        // Add playback controls height
+        height += 40 + 2 // controls + top padding
+
+        // Add lyrics height if enabled in settings (reserve space even while loading)
+        if enableLyrics {
+            let lyricsTopPadding: CGFloat = 10
+            let lyricsEstimatedHeight: CGFloat = 34
+            height += lyricsTopPadding + lyricsEstimatedHeight
+        }
+
+        // Add reminder list height if showing
+        if shouldShowReminderList {
+            height += reminderListHeight
+        }
+
+        // Add padding
+        height += 15 // top padding
+        height += ReminderLiveActivityManager.baselineMinimalisticBottomPadding
+
+        return height
+    }
+
     private var reminderList: some View {
         MinimalisticReminderEventListView(reminders: reminderEntries)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -92,6 +190,36 @@ struct MinimalisticMusicPlayerView: View {
             .opacity(shouldShowReminderList ? 1 : 0)
             .animation(.easeInOut(duration: 0.18), value: shouldShowReminderList)
             .environmentObject(vm)
+    }
+
+    private var lyricsView: some View {
+        let line = musicManager.currentLyrics.trimmingCharacters(in: .whitespacesAndNewlines)
+        let transition: AnyTransition = .asymmetric(
+            insertion: .move(edge: .bottom).combined(with: .opacity),
+            removal: .move(edge: .top).combined(with: .opacity)
+        )
+
+        return HStack(spacing: 6) {
+            if !line.isEmpty {
+                Image(systemName: "music.note")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundColor(.white.opacity(0.7))
+                    .symbolRenderingMode(.monochrome)
+
+                Text(line)
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundColor(.white.opacity(0.88))
+                    .lineLimit(2)
+                    .multilineTextAlignment(.leading)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.trailing, 6)
+                    .id(line)
+                    .transition(transition)
+            }
+        }
+        .padding(.horizontal, 6)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .animation(.smooth(duration: 0.32), value: line)
     }
     
 
@@ -472,31 +600,25 @@ private struct MinimalisticReminderDetailsView: View {
     // MARK: - Playback Controls (Larger)
     
     private var playbackControls: some View {
-        HStack(spacing: 20) {
+        let controls = resolvedAuxControls
+
+        return HStack(spacing: 16) {
             if Defaults[.showShuffleAndRepeat] {
-                controlButton(icon: "shuffle", isActive: musicManager.isShuffled) {
-                    Task { await musicManager.toggleShuffle() }
-                }
+                auxButton(for: controls.left)
             }
-            
-            controlButton(icon: "backward.fill", size: 18) {
+
+            controlButton(icon: "backward.fill", size: 18, pressEffect: .nudge(-8)) {
                 Task { await musicManager.previousTrack() }
             }
-            
+
             playPauseButton
-            
-            controlButton(icon: "forward.fill", size: 18) {
+
+            controlButton(icon: "forward.fill", size: 18, pressEffect: .nudge(8)) {
                 Task { await musicManager.nextTrack() }
             }
-            
+
             if Defaults[.showShuffleAndRepeat] {
-                if showMediaOutputControl {
-                    MinimalisticMediaOutputButton()
-                } else {
-                    controlButton(icon: repeatIcon, isActive: musicManager.repeatMode != .off) {
-                        Task { await musicManager.toggleRepeat() }
-                    }
-                }
+                auxButton(for: controls.right)
             }
         }
         .frame(maxWidth: .infinity, alignment: .center)
@@ -511,13 +633,22 @@ private struct MinimalisticReminderDetailsView: View {
             frameSize: CGSize(width: 54, height: 54),
             cornerRadius: 20,
             foregroundColor: .white,
+            pressEffect: .none,
+            symbolEffectStyle: .replace,
             action: {
                 Task { await musicManager.togglePlay() }
             }
         )
     }
     
-    private func controlButton(icon: String, size: CGFloat = 18, isActive: Bool = false, action: @escaping () -> Void) -> some View {
+    private func controlButton(
+        icon: String,
+        size: CGFloat = 18,
+        isActive: Bool = false,
+        pressEffect: MinimalisticSquircircleButton.PressEffect = .none,
+        symbolEffect: MinimalisticSquircircleButton.SymbolEffectStyle = .none,
+        action: @escaping () -> Void
+    ) -> some View {
         MinimalisticSquircircleButton(
             icon: icon,
             fontSize: size,
@@ -525,8 +656,41 @@ private struct MinimalisticReminderDetailsView: View {
             frameSize: CGSize(width: 40, height: 40),
             cornerRadius: 16,
             foregroundColor: isActive ? .red : .white.opacity(0.85),
+            pressEffect: pressEffect,
+            symbolEffectStyle: symbolEffect,
             action: action
         )
+    }
+
+    @ViewBuilder
+    private func auxButton(for control: MusicAuxiliaryControl) -> some View {
+        switch control {
+        case .shuffle:
+            controlButton(icon: "shuffle", isActive: musicManager.isShuffled) {
+                Task { await musicManager.toggleShuffle() }
+            }
+        case .repeatMode:
+            controlButton(icon: repeatIcon, isActive: musicManager.repeatMode != .off, symbolEffect: .replace) {
+                Task { await musicManager.toggleRepeat() }
+            }
+        case .mediaOutput:
+            MinimalisticMediaOutputButton()
+        case .lyrics:
+            controlButton(
+                icon: enableLyrics ? "quote.bubble.fill" : "quote.bubble",
+                isActive: enableLyrics,
+                symbolEffect: .replace
+            ) {
+                enableLyrics.toggle()
+            }
+        }
+    }
+
+    private var resolvedAuxControls: (left: MusicAuxiliaryControl, right: MusicAuxiliaryControl) {
+        guard leftAuxControl == rightAuxControl else {
+            return (leftAuxControl, rightAuxControl)
+        }
+        return (leftAuxControl, MusicAuxiliaryControl.alternative(excluding: leftAuxControl))
     }
     private struct MinimalisticMediaOutputButton: View {
         @ObservedObject private var routeManager = AudioRouteManager.shared
@@ -542,7 +706,8 @@ private struct MinimalisticReminderDetailsView: View {
                 fontWeight: .medium,
                 frameSize: CGSize(width: 40, height: 40),
                 cornerRadius: 16,
-                foregroundColor: .white.opacity(0.85)
+                foregroundColor: .white.opacity(0.85),
+                symbolEffectStyle: .replace
             ) {
                 isPopoverPresented.toggle()
                 if isPopoverPresented {
@@ -655,15 +820,41 @@ private struct MinimalisticSquircircleButton: View {
     let frameSize: CGSize
     let cornerRadius: CGFloat
     let foregroundColor: Color
+    let pressEffect: PressEffect
+    let symbolEffectStyle: SymbolEffectStyle
     let action: () -> Void
 
     @State private var isHovering = false
+    @State private var pressOffset: CGFloat = 0
+
+    init(
+        icon: String,
+        fontSize: CGFloat,
+        fontWeight: Font.Weight,
+        frameSize: CGSize,
+        cornerRadius: CGFloat,
+        foregroundColor: Color,
+        pressEffect: PressEffect = .none,
+        symbolEffectStyle: SymbolEffectStyle = .none,
+        action: @escaping () -> Void
+    ) {
+        self.icon = icon
+        self.fontSize = fontSize
+        self.fontWeight = fontWeight
+        self.frameSize = frameSize
+        self.cornerRadius = cornerRadius
+        self.foregroundColor = foregroundColor
+        self.pressEffect = pressEffect
+        self.symbolEffectStyle = symbolEffectStyle
+        self.action = action
+    }
 
     var body: some View {
-        Button(action: action) {
-            Image(systemName: icon)
-                .font(.system(size: fontSize, weight: fontWeight))
-                .foregroundColor(foregroundColor)
+        Button {
+            triggerPressEffect()
+            action()
+        } label: {
+            iconView()
                 .frame(width: frameSize.width, height: frameSize.height)
                 .background(
                     RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
@@ -672,10 +863,62 @@ private struct MinimalisticSquircircleButton: View {
                 .contentShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
         }
         .buttonStyle(PlainButtonStyle())
+        .offset(x: pressOffset)
         .onHover { hovering in
             withAnimation(.easeOut(duration: 0.18)) {
                 isHovering = hovering
             }
         }
+    }
+
+    private func triggerPressEffect() {
+        guard case let .nudge(amount) = pressEffect else { return }
+
+        withAnimation(.spring(response: 0.16, dampingFraction: 0.72)) {
+            pressOffset = amount
+        }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
+            withAnimation(.spring(response: 0.26, dampingFraction: 0.8)) {
+                pressOffset = 0
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func iconView() -> some View {
+        let image = Image(systemName: icon)
+            .font(.system(size: fontSize, weight: fontWeight))
+            .foregroundColor(foregroundColor)
+
+        switch symbolEffectStyle {
+        case .none:
+            image
+        case .replace:
+            if #available(macOS 14.0, *) {
+                image
+                    .contentTransition(.symbolEffect(.replace))
+                    .id(icon)
+            } else {
+                image
+            }
+        case .bounce:
+            if #available(macOS 14.0, *) {
+                image.symbolEffect(.bounce, value: icon)
+            } else {
+                image
+            }
+        }
+    }
+
+    enum PressEffect {
+        case none
+        case nudge(CGFloat)
+    }
+
+    enum SymbolEffectStyle {
+        case none
+        case replace
+        case bounce
     }
 }

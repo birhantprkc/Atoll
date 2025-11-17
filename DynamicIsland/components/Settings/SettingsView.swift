@@ -855,6 +855,10 @@ struct Media: View {
     @Default(.sneakPeekStyles) var sneakPeekStyles
     @Default(.enableMinimalisticUI) var enableMinimalisticUI
     @Default(.showShuffleAndRepeat) private var showShuffleAndRepeat
+    @Default(.musicAuxLeftControl) private var musicAuxLeftControl
+    @Default(.musicAuxRightControl) private var musicAuxRightControl
+    @State private var previousLeftAuxControl: MusicAuxiliaryControl = Defaults[.musicAuxLeftControl]
+    @State private var previousRightAuxControl: MusicAuxiliaryControl = Defaults[.musicAuxRightControl]
 
     var body: some View {
         Form {
@@ -896,9 +900,21 @@ struct Media: View {
                     }
                 }
                 Defaults.Toggle(key: .showMediaOutputControl) {
-                    Text("Replace repeat button with media output control")
+                    Text("Show media output control in other layouts")
                 }
                 .disabled(!showShuffleAndRepeat)
+                if showShuffleAndRepeat {
+                    Picker("Left button", selection: $musicAuxLeftControl) {
+                        ForEach(MusicAuxiliaryControl.allCases) { control in
+                            Text(control.displayName).tag(control)
+                        }
+                    }
+                    Picker("Right button", selection: $musicAuxRightControl) {
+                        ForEach(MusicAuxiliaryControl.allCases) { control in
+                            Text(control.displayName).tag(control)
+                        }
+                    }
+                }
             } header: {
                 Text("Media controls")
             }
@@ -908,6 +924,7 @@ struct Media: View {
                     isOn: $coordinator.musicLiveActivityEnabled.animation()
                 )
                 Toggle("Enable sneak peek", isOn: $enableSneakPeek)
+                Defaults.Toggle("Enable lyrics", key: .enableLyrics)
                 Picker("Sneak Peek Style", selection: $sneakPeekStyles){
                     ForEach(SneakPeekStyle.allCases) { style in
                         Text(style.rawValue).tag(style)
@@ -954,6 +971,42 @@ struct Media: View {
                     Defaults[.enableFullscreenMediaDetection] = hideNotchOption != .never
                 }
         }
+        .onAppear {
+            ensureAuxControlsUnique()
+            previousLeftAuxControl = musicAuxLeftControl
+            previousRightAuxControl = musicAuxRightControl
+        }
+        .onChange(of: musicAuxLeftControl) { newValue in
+            if newValue == musicAuxRightControl {
+                let fallback = MusicAuxiliaryControl.alternative(
+                    excluding: newValue,
+                    preferring: previousLeftAuxControl
+                )
+                if fallback != musicAuxRightControl {
+                    musicAuxRightControl = fallback
+                }
+            }
+
+            previousLeftAuxControl = newValue
+        }
+        .onChange(of: musicAuxRightControl) { newValue in
+            if newValue == musicAuxLeftControl {
+                let fallback = MusicAuxiliaryControl.alternative(
+                    excluding: newValue,
+                    preferring: previousRightAuxControl
+                )
+                if fallback != musicAuxLeftControl {
+                    musicAuxLeftControl = fallback
+                }
+            }
+
+            previousRightAuxControl = newValue
+        }
+        .onChange(of: showShuffleAndRepeat) { isEnabled in
+            if isEnabled {
+                ensureAuxControlsUnique()
+            }
+        }
         .navigationTitle("Media")
     }
 
@@ -963,6 +1016,15 @@ struct Media: View {
             return MediaControllerType.allCases.filter { $0 != .nowPlaying }
         } else {
             return MediaControllerType.allCases
+        }
+    }
+
+    private func ensureAuxControlsUnique() {
+        guard showShuffleAndRepeat, musicAuxLeftControl == musicAuxRightControl else { return }
+
+        let fallback = MusicAuxiliaryControl.alternative(excluding: musicAuxLeftControl)
+        if fallback != musicAuxRightControl {
+            musicAuxRightControl = fallback
         }
     }
 }
