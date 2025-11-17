@@ -198,11 +198,6 @@ class DynamicIslandViewModel: NSObject, ObservableObject {
         if Defaults[.enableMinimalisticUI] {
             let extraHeight = ReminderLiveActivityManager.additionalHeight(forRowCount: minimalisticReminderRowCount)
             baseSize.height += extraHeight
-
-            // Add extra height for lyrics if enabled in settings
-            if Defaults[.enableLyrics] {
-                baseSize.height += 24 // Additional height for lyrics display
-            }
         }
 
         // Only apply dynamic sizing when on stats tab and stats are enabled

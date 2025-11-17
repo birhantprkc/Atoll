@@ -50,18 +50,6 @@ struct MinimalisticMusicPlayerView: View {
                             .foregroundColor(Defaults[.playerColorTinting] ? Color(nsColor: musicManager.avgColor).ensureMinimumBrightness(factor: 0.6) : .gray)
                             .lineLimit(1)
 
-                        // Lyrics shown under the author name, same font size as author
-                        if enableLyrics {
-                            Text(musicManager.currentLyrics)
-                                .font(.system(size: 10, weight: .regular))
-                                .foregroundColor(.white.opacity(0.8))
-                                .lineLimit(2)
-                                .multilineTextAlignment(.leading)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .padding(.top, 4)
-                                .transition(.opacity)
-                                .animation(.easeInOut(duration: 0.3), value: musicManager.currentLyrics)
-                        }
                     }
                     .frame(width: textWidth, alignment: .leading)
 
@@ -81,7 +69,10 @@ struct MinimalisticMusicPlayerView: View {
             playbackControls
                 .padding(.top, 4)
 
-            // Lyrics are displayed inline under the artist name (see header area)
+            if enableLyrics {
+                lyricsView
+                    .padding(.top, 10)
+            }
 
             reminderList
         }
@@ -90,7 +81,6 @@ struct MinimalisticMusicPlayerView: View {
         .padding(.bottom, shouldShowReminderList ? ReminderLiveActivityManager.listBottomPadding : ReminderLiveActivityManager.baselineMinimalisticBottomPadding)
         .frame(maxWidth: .infinity)
         .frame(height: calculateDynamicHeight(), alignment: .center)
-    .animation(.easeInOut(duration: 0.3), value: musicManager.currentLyrics)
     }
 
     // MARK: - TypingLyricView
@@ -174,8 +164,10 @@ struct MinimalisticMusicPlayerView: View {
         height += 40 + 2 // controls + top padding
 
         // Add lyrics height if enabled in settings (reserve space even while loading)
-        if Defaults[.enableLyrics] {
-            height += 20 + 4 // lyrics + top padding
+        if enableLyrics {
+            let lyricsTopPadding: CGFloat = 10
+            let lyricsEstimatedHeight: CGFloat = 30
+            height += lyricsTopPadding + lyricsEstimatedHeight
         }
 
         // Add reminder list height if showing
@@ -197,6 +189,36 @@ struct MinimalisticMusicPlayerView: View {
             .opacity(shouldShowReminderList ? 1 : 0)
             .animation(.easeInOut(duration: 0.18), value: shouldShowReminderList)
             .environmentObject(vm)
+    }
+
+    private var lyricsView: some View {
+        let line = musicManager.currentLyrics.trimmingCharacters(in: .whitespacesAndNewlines)
+        let transition: AnyTransition = .asymmetric(
+            insertion: .move(edge: .bottom).combined(with: .opacity),
+            removal: .move(edge: .top).combined(with: .opacity)
+        )
+
+        return HStack(spacing: 6) {
+            if !line.isEmpty {
+                Image(systemName: "music.note")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundColor(.white.opacity(0.7))
+                    .symbolRenderingMode(.monochrome)
+
+                Text(line)
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundColor(.white.opacity(0.88))
+                    .lineLimit(2)
+                    .multilineTextAlignment(.leading)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.trailing, 6)
+                    .id(line)
+                    .transition(transition)
+            }
+        }
+        .padding(.horizontal, 6)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .animation(.smooth(duration: 0.32), value: line)
     }
     
 

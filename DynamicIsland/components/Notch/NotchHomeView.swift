@@ -157,6 +157,11 @@ struct MusicControlsView: View {
             .fontWeight(.medium)
             // Lyrics shown under the author name (same font size as author) when enabled in settings
             if Defaults[.enableLyrics] {
+                let transition = AnyTransition.asymmetric(
+                    insertion: .move(edge: .bottom).combined(with: .opacity),
+                    removal: .move(edge: .top).combined(with: .opacity)
+                )
+
                 Text(musicManager.currentLyrics)
                     .font(.headline)
                     .foregroundColor(.white.opacity(0.8))
@@ -164,8 +169,9 @@ struct MusicControlsView: View {
                     .multilineTextAlignment(.leading)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.top, 2)
-                    .transition(.opacity)
-                    .animation(.easeInOut(duration: 0.3), value: musicManager.currentLyrics)
+                    .id(musicManager.currentLyrics)
+                    .transition(transition)
+                    .animation(.easeInOut(duration: 0.32), value: musicManager.currentLyrics)
             }
         }
     }

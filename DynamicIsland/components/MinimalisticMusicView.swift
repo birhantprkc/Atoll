@@ -52,15 +52,7 @@ struct MinimalisticMusicView: View {
 
                                 // Lyrics under the author name (same font size as author)
                                 if enableLyrics {
-                                    Text(musicManager.currentLyrics)
-                                        .font(.system(size: 10, weight: .regular))
-                                        .foregroundColor(.white.opacity(0.8))
-                                        .lineLimit(2)
-                                        .multilineTextAlignment(.center)
-                                        .frame(maxWidth: .infinity, alignment: .center)
-                                        .padding(.horizontal, 4)
-                                        .transition(.opacity)
-                                        .animation(.easeInOut(duration: 0.3), value: musicManager.currentLyrics)
+                                    lyricsLineView
                                 }
                             }
                             .frame(width: geo.size.width, height: geo.size.height, alignment: .center)
@@ -75,7 +67,7 @@ struct MinimalisticMusicView: View {
             // (lyrics are displayed inline under the artist name)
         }
         // reserve extra height when lyrics are enabled
-        .frame(height: vm.effectiveClosedNotchHeight + (isHovering ? 8 : 0) + (enableLyrics ? 22 : 0), alignment: .center)
+        .frame(height: vm.effectiveClosedNotchHeight + (isHovering ? 8 : 0), alignment: .center)
         .onHover { hovering in
             isHovering = hovering
         }
@@ -116,5 +108,35 @@ struct MinimalisticMusicView: View {
         }
         .frame(width: max(0, vm.effectiveClosedNotchHeight - (isHovering ? 0 : 12)),
                height: max(0, vm.effectiveClosedNotchHeight - (isHovering ? 0 : 12)), alignment: .center)
+    }
+}
+
+private extension MinimalisticMusicView {
+    var lyricsLineView: some View {
+        let line = musicManager.currentLyrics.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        return HStack(spacing: 6) {
+            if !line.isEmpty {
+                Image(systemName: "music.note")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundColor(.white.opacity(0.7))
+                    .symbolRenderingMode(.monochrome)
+
+                Text(line)
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundColor(.white.opacity(0.88))
+                    .lineLimit(2)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .padding(.horizontal, 6)
+                    .id(line)
+                    .transition(.asymmetric(
+                        insertion: .move(edge: .bottom).combined(with: .opacity),
+                        removal: .move(edge: .top).combined(with: .opacity)
+                    ))
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .center)
+        .animation(.smooth(duration: 0.32), value: line)
     }
 }
