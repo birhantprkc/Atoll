@@ -430,14 +430,13 @@ struct LockScreenMusicPanel: View {
     
     private var playPauseButton: some View {
         let frameSize: CGFloat = isExpanded ? 80 : 54
-        let symbolSize: CGFloat = isExpanded ? 34 : 26
         let iconName = musicManager.isPlaying ? "pause.fill" : "play.fill"
 
         return HoverButton(
             icon: iconName,
             iconColor: .white,
             scale: .large,
-            pressEffect: .none
+            pressEffect: nil
         ) {
             registerInteraction()
             musicManager.togglePlay()

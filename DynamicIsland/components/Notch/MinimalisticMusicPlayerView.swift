@@ -629,7 +629,7 @@ private struct MinimalisticReminderDetailsView: View {
             pressEffect: .none,
             symbolEffectStyle: .replace,
             action: {
-                Task { await musicManager.togglePlay() }
+                musicManager.togglePlay()
             }
         )
     }
@@ -909,9 +909,7 @@ private struct MinimalisticSquircircleButton: View {
             image
         case .replace:
             if #available(macOS 14.0, *) {
-                image
-                    .contentTransition(.symbolEffect(.replace))
-                    .id(icon)
+                image.contentTransition(.symbolEffect(.replace))
             } else {
                 image
             }
@@ -926,7 +924,6 @@ private struct MinimalisticSquircircleButton: View {
                 image
                     .contentTransition(.symbolEffect(.replace))
                     .symbolEffect(.bounce, value: icon)
-                    .id(icon)
             } else {
                 image
             }
