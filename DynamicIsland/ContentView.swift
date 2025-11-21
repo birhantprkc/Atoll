@@ -72,8 +72,8 @@ struct ContentView: View {
 
     @State private var gestureProgress: CGFloat = .zero
     @State private var isMusicControlWindowVisible = false
-    @State private var pendingMusicControlSync: DispatchWorkItem?
-    @State private var musicControlHideWorkItem: DispatchWorkItem?
+    @State private var pendingMusicControlTask: Task<Void, Never>?
+    @State private var musicControlHideTask: Task<Void, Never>?
     @State private var musicControlVisibilityDeadline: Date?
 
     @State private var haptics: Bool = false
@@ -1005,7 +1005,9 @@ struct ContentView: View {
 
         if isPlaying {
             clearMusicControlVisibilityDeadline()
-            scheduleMusicControlWindowSync(forceRefresh: true)
+            if vm.notchState == .closed {
+                scheduleMusicControlWindowSync(forceRefresh: false)
+            }
         } else {
             extendMusicControlVisibilityAfterPause()
         }
@@ -1027,7 +1029,9 @@ struct ContentView: View {
         let deadline = Date().addingTimeInterval(musicControlPauseGrace)
         musicControlVisibilityDeadline = deadline
         scheduleMusicControlVisibilityCheck(deadline: deadline)
-        scheduleMusicControlWindowSync(forceRefresh: true)
+        if vm.notchState == .closed {
+            scheduleMusicControlWindowSync(forceRefresh: false)
+        }
     }
 
     private func clearMusicControlVisibilityDeadline() {
@@ -1038,24 +1042,31 @@ struct ContentView: View {
     private func scheduleMusicControlVisibilityCheck(deadline: Date) {
         cancelMusicControlVisibilityTimer()
 
-        let workItem = DispatchWorkItem {
-            musicControlHideWorkItem = nil
+        let interval = max(0, deadline.timeIntervalSinceNow)
+
+        musicControlHideTask = Task { @MainActor [interval] in
+            defer { musicControlHideTask = nil }
+
+            if interval > 0 {
+                let nanoseconds = UInt64(interval * 1_000_000_000)
+                try? await Task.sleep(nanoseconds: nanoseconds)
+            }
+
+            guard !Task.isCancelled else { return }
 
             if let currentDeadline = musicControlVisibilityDeadline, currentDeadline <= Date() {
                 musicControlVisibilityDeadline = nil
             }
 
-            scheduleMusicControlWindowSync(forceRefresh: true)
+            if vm.notchState == .closed {
+                scheduleMusicControlWindowSync(forceRefresh: false)
+            }
         }
-
-        musicControlHideWorkItem = workItem
-        let interval = max(0, deadline.timeIntervalSinceNow)
-        DispatchQueue.main.asyncAfter(deadline: .now() + interval, execute: workItem)
     }
 
     private func cancelMusicControlVisibilityTimer() {
-        musicControlHideWorkItem?.cancel()
-        musicControlHideWorkItem = nil
+        musicControlHideTask?.cancel()
+        musicControlHideTask = nil
     }
 
     private func musicControlVisibilityIsActive() -> Bool {
@@ -1089,8 +1100,16 @@ struct ContentView: View {
         }
 
         let syncDelay = max(0, delay)
-        let workItem = DispatchWorkItem { [forceRefresh] in
-            pendingMusicControlSync = nil
+
+        pendingMusicControlTask = Task { @MainActor [forceRefresh, syncDelay] in
+            defer { pendingMusicControlTask = nil }
+
+            if syncDelay > 0 {
+                let nanoseconds = UInt64(syncDelay * 1_000_000_000)
+                try? await Task.sleep(nanoseconds: nanoseconds)
+            }
+
+            guard !Task.isCancelled else { return }
 
             if shouldShowMusicControlWindow() {
                 syncMusicControlWindow(forceRefresh: forceRefresh)
@@ -1098,15 +1117,12 @@ struct ContentView: View {
                 hideMusicControlWindow()
             }
         }
-
-        pendingMusicControlSync = workItem
-        DispatchQueue.main.asyncAfter(deadline: .now() + syncDelay, execute: workItem)
         #endif
     }
 
     private func cancelMusicControlWindowSync() {
-        pendingMusicControlSync?.cancel()
-        pendingMusicControlSync = nil
+        pendingMusicControlTask?.cancel()
+        pendingMusicControlTask = nil
     }
 
     #if os(macOS)
