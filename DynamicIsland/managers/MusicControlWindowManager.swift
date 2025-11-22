@@ -4,7 +4,7 @@ import SwiftUI
 import SkyLightWindow
 import QuartzCore
 
-struct MusicControlWindowMetrics {
+struct MusicControlWindowMetrics: Equatable {
     let notchHeight: CGFloat
     let notchWidth: CGFloat
     let rightWingWidth: CGFloat
@@ -86,15 +86,23 @@ final class MusicControlWindowManager {
         guard window != nil else {
             return present(using: viewModel, metrics: metrics)
         }
+
+        if let lastMetrics, lastMetrics == metrics {
+            return true
+        }
+
         return present(using: viewModel, metrics: metrics)
     }
 
-    func hide(animated: Bool = true) {
+    func hide(animated: Bool = true, tearDown: Bool = true) {
         guard let window else { return }
 
         guard animated, window.alphaValue > 0.01 else {
             window.orderOut(nil)
             window.alphaValue = 0
+            if tearDown {
+                tearDownHostingView()
+            }
             return
         }
 
@@ -106,11 +114,22 @@ final class MusicControlWindowManager {
             context.timingFunction = CAMediaTimingFunction(name: .easeIn)
             window.animator().setFrame(retreatFrame, display: true)
             window.animator().alphaValue = 0
-        } completionHandler: {
+        } completionHandler: { [weak self] in
             window.setFrame(originalFrame, display: false)
             window.orderOut(nil)
             window.alphaValue = 0
+            if tearDown {
+                self?.tearDownHostingView()
+            }
         }
+    }
+
+    private func tearDownHostingView() {
+        if let window {
+            window.contentView = nil
+        }
+        hostingView = nil
+        lastMetrics = nil
     }
 
     private func ensureHostingView(with overlay: MusicControlOverlay) -> NSHostingView<MusicControlOverlay> {
