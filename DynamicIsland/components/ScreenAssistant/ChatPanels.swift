@@ -47,9 +47,7 @@ class ChatMessagesPanel: NSPanel {
             .fullScreenAuxiliary
         ]
         
-        // Apply screen capture hiding setting
-        updateScreenCaptureVisibility()
-        setupScreenCaptureObserver()
+        ScreenCaptureVisibilityManager.shared.register(self, scope: .panelsOnly)
         
         acceptsMouseMovedEvents = true
     }
@@ -78,27 +76,8 @@ class ChatMessagesPanel: NSPanel {
         setFrameOrigin(NSPoint(x: xPosition, y: yPosition))
     }
     
-    private func setupScreenCaptureObserver() {
-        // Observe changes to hidePanelsFromScreenCapture setting
-        Defaults.observe(.hidePanelsFromScreenCapture) { [weak self] change in
-            DispatchQueue.main.async {
-                self?.updateScreenCaptureVisibility()
-            }
-        }
-    }
-    
-    private func updateScreenCaptureVisibility() {
-        let shouldHide = Defaults[.hidePanelsFromScreenCapture]
-        
-        if shouldHide {
-            // Hide from screen capture and recording
-            self.sharingType = .none
-            print("🙈 ChatMessagesPanel: Hidden from screen capture and recordings")
-        } else {
-            // Allow normal screen capture
-            self.sharingType = .readOnly
-            print("👁️ ChatMessagesPanel: Visible in screen capture and recordings")
-        }
+    deinit {
+        ScreenCaptureVisibilityManager.shared.unregister(self)
     }
 }
 
@@ -152,9 +131,7 @@ class ChatInputPanel: NSPanel {
             .fullScreenAuxiliary
         ]
         
-        // Apply screen capture hiding setting
-        updateScreenCaptureVisibility()
-        setupScreenCaptureObserver()
+        ScreenCaptureVisibilityManager.shared.register(self, scope: .panelsOnly)
         
         acceptsMouseMovedEvents = true
     }
@@ -183,27 +160,8 @@ class ChatInputPanel: NSPanel {
         setFrameOrigin(NSPoint(x: xPosition, y: yPosition))
     }
     
-    private func setupScreenCaptureObserver() {
-        // Observe changes to hidePanelsFromScreenCapture setting
-        Defaults.observe(.hidePanelsFromScreenCapture) { [weak self] change in
-            DispatchQueue.main.async {
-                self?.updateScreenCaptureVisibility()
-            }
-        }
-    }
-    
-    private func updateScreenCaptureVisibility() {
-        let shouldHide = Defaults[.hidePanelsFromScreenCapture]
-        
-        if shouldHide {
-            // Hide from screen capture and recording
-            self.sharingType = .none
-            print("🙈 ChatInputPanel: Hidden from screen capture and recordings")
-        } else {
-            // Allow normal screen capture
-            self.sharingType = .readOnly
-            print("👁️ ChatInputPanel: Visible in screen capture and recordings")
-        }
+    deinit {
+        ScreenCaptureVisibilityManager.shared.unregister(self)
     }
 }
 
@@ -786,45 +744,23 @@ struct ScreenshotPopoverBackground: NSViewRepresentable {
     func makeNSView(context: Context) -> NSView {
         let view = NSView()
         
-        // Apply screen capture protection like our other panels
         DispatchQueue.main.async {
-            if let window = view.window {
-                self.updateScreenCaptureVisibility(window: window)
-                self.setupScreenCaptureObserver(window: window)
-            }
+            guard let window = view.window else { return }
+            ScreenCaptureVisibilityManager.shared.register(window, scope: .panelsOnly)
         }
         
         return view
     }
     
     func updateNSView(_ nsView: NSView, context: Context) {
-        // Update screen capture protection when view updates
         if let window = nsView.window {
-            updateScreenCaptureVisibility(window: window)
+            ScreenCaptureVisibilityManager.shared.register(window, scope: .panelsOnly)
         }
     }
     
-    private func updateScreenCaptureVisibility(window: NSWindow) {
-        let shouldHide = Defaults[.hidePanelsFromScreenCapture]
-        
-        if shouldHide {
-            // Hide from screen capture and recording
-            window.sharingType = .none
-            print("🙈 ScreenshotPopover: Hidden from screen capture and recordings")
-        } else {
-            // Allow normal screen capture
-            window.sharingType = .readOnly
-            print("👁️ ScreenshotPopover: Visible in screen capture and recordings")
-        }
-    }
-    
-    private func setupScreenCaptureObserver(window: NSWindow) {
-        // Observe changes to hidePanelsFromScreenCapture setting
-        Defaults.observe(.hidePanelsFromScreenCapture) { [weak window] change in
-            DispatchQueue.main.async {
-                guard let window = window else { return }
-                self.updateScreenCaptureVisibility(window: window)
-            }
+    static func dismantleNSView(_ nsView: NSView, coordinator: ()) {
+        if let window = nsView.window {
+            ScreenCaptureVisibilityManager.shared.unregister(window)
         }
     }
 }

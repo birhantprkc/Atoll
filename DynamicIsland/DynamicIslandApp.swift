@@ -781,6 +781,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             window.isRestorable = false
             window.identifier = NSUserInterfaceItemIdentifier("OnboardingWindow")
 
+            ScreenCaptureVisibilityManager.shared.register(window, scope: .panelsOnly)
+
             onboardingWindowController = NSWindowController(window: window)
         }
 

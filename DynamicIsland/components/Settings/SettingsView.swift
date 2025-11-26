@@ -232,7 +232,7 @@ struct GeneralSettings: View {
                     NotificationCenter.default.post(name: Notification.Name.automaticallySwitchDisplayChanged, object: nil)
                 }
                 .disabled(showOnAllDisplays)
-                Defaults.Toggle("Hide panels from screenshots & screen recordings", key: .hidePanelsFromScreenCapture)
+                Defaults.Toggle("Hide Dynamic Island during screenshots & recordings", key: .hideDynamicIslandFromScreenCapture)
             } header: {
                 Text("System features")
             }

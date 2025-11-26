@@ -58,9 +58,7 @@ class ModelSelectionPanel: NSPanel {
             .fullScreenAuxiliary
         ]
         
-        // Apply screen capture hiding setting
-        updateScreenCaptureVisibility()
-        setupScreenCaptureObserver()
+        ScreenCaptureVisibilityManager.shared.register(self, scope: .panelsOnly)
         
         acceptsMouseMovedEvents = true
     }
@@ -89,27 +87,8 @@ class ModelSelectionPanel: NSPanel {
         setFrameOrigin(NSPoint(x: xPosition, y: yPosition))
     }
     
-    private func setupScreenCaptureObserver() {
-        // Observe changes to hidePanelsFromScreenCapture setting
-        Defaults.observe(.hidePanelsFromScreenCapture) { [weak self] change in
-            DispatchQueue.main.async {
-                self?.updateScreenCaptureVisibility()
-            }
-        }
-    }
-    
-    private func updateScreenCaptureVisibility() {
-        let shouldHide = Defaults[.hidePanelsFromScreenCapture]
-        
-        if shouldHide {
-            // Hide from screen capture and recording
-            self.sharingType = .none
-            print("🙈 ModelSelectionPanel: Hidden from screen capture and recordings")
-        } else {
-            // Allow normal screen capture
-            self.sharingType = .readOnly
-            print("👁️ ModelSelectionPanel: Visible in screen capture and recordings")
-        }
+    deinit {
+        ScreenCaptureVisibilityManager.shared.unregister(self)
     }
 }
 
