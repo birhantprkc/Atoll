@@ -19,6 +19,8 @@ private let minimalisticBaseOpenNotchSize: CGSize = .init(width: 420, height: 18
 private let minimalisticLyricsExtraHeight: CGFloat = 40
 let statsSecondRowContentHeight: CGFloat = 120
 let statsGridSpacingHeight: CGFloat = 12
+let notchShadowPaddingStandard: CGFloat = 18
+let notchShadowPaddingMinimalistic: CGFloat = 12
 
 @MainActor
 var minimalisticOpenNotchSize: CGSize {
@@ -69,6 +71,14 @@ func statsAdjustedNotchSize(
     let extraHeight = (statsSecondRowContentHeight + statsGridSpacingHeight) * clampedProgress
     adjustedSize.height += extraHeight
     return adjustedSize
+}
+
+func notchShadowPaddingValue(isMinimalistic: Bool) -> CGFloat {
+    isMinimalistic ? notchShadowPaddingMinimalistic : notchShadowPaddingStandard
+}
+
+func addShadowPadding(to size: CGSize, isMinimalistic: Bool) -> CGSize {
+    CGSize(width: size.width, height: size.height + notchShadowPaddingValue(isMinimalistic: isMinimalistic))
 }
 
 enum MusicPlayerImageSizes {

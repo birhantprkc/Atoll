@@ -278,10 +278,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         // Use minimalistic or normal size based on settings, then adjust for stats layout
         let baseSize = Defaults[.enableMinimalisticUI] ? minimalisticOpenNotchSize : openNotchSize
-        return statsAdjustedNotchSize(
+        let adjustedContentSize = statsAdjustedNotchSize(
             from: baseSize,
             isStatsTabActive: coordinator.currentView == .stats,
             secondRowProgress: coordinator.statsSecondRowExpansion
+        )
+        return addShadowPadding(
+            to: adjustedContentSize,
+            isMinimalistic: Defaults[.enableMinimalisticUI]
         )
     }
 

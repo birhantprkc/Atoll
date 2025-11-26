@@ -84,7 +84,11 @@ class DynamicIslandViewModel: NSObject, ObservableObject {
                     self.notchSize = updatedTarget
                 }
                 if let delegate = AppDelegate.shared {
-                    delegate.ensureWindowSize(updatedTarget, animated: true, force: false)
+                    delegate.ensureWindowSize(
+                        addShadowPadding(to: updatedTarget, isMinimalistic: Defaults[.enableMinimalisticUI]),
+                        animated: true,
+                        force: false
+                    )
                 }
             }
             .store(in: &cancellables)
@@ -106,7 +110,11 @@ class DynamicIslandViewModel: NSObject, ObservableObject {
                     self.notchSize = updatedTarget
                 }
                 if let delegate = AppDelegate.shared {
-                    delegate.ensureWindowSize(updatedTarget, animated: true, force: false)
+                    delegate.ensureWindowSize(
+                        addShadowPadding(to: updatedTarget, isMinimalistic: Defaults[.enableMinimalisticUI]),
+                        animated: true,
+                        force: false
+                    )
                 }
             }
             .store(in: &cancellables)
@@ -123,7 +131,11 @@ class DynamicIslandViewModel: NSObject, ObservableObject {
                     self.notchSize = updatedTarget
                 }
                 if let delegate = AppDelegate.shared {
-                    delegate.ensureWindowSize(updatedTarget, animated: false, force: false)
+                    delegate.ensureWindowSize(
+                        addShadowPadding(to: updatedTarget, isMinimalistic: Defaults[.enableMinimalisticUI]),
+                        animated: false,
+                        force: false
+                    )
                 }
             }
             .store(in: &cancellables)
@@ -184,7 +196,11 @@ class DynamicIslandViewModel: NSObject, ObservableObject {
 
         let applyWindowResize: () -> Void = {
             guard let delegate = AppDelegate.shared else { return }
-            delegate.ensureWindowSize(targetSize, animated: false, force: true)
+            delegate.ensureWindowSize(
+                addShadowPadding(to: targetSize, isMinimalistic: Defaults[.enableMinimalisticUI]),
+                animated: false,
+                force: true
+            )
         }
 
         if Thread.isMainThread {
