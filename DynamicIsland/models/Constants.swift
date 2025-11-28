@@ -224,7 +224,7 @@ enum MusicAuxiliaryControl: String, CaseIterable, Identifiable, Defaults.Seriali
         case .repeatMode:
             return "repeat"
         case .mediaOutput:
-            return "speaker.wave.2"
+            return "laptopcomputer"
         case .lyrics:
             return "quote.bubble"
         }
@@ -473,6 +473,7 @@ extension Defaults.Keys {
     static let lockScreenShowAppIcon = Key<Bool>("lockScreenShowAppIcon", default: false)
     static let lockScreenPanelShowsBorder = Key<Bool>("lockScreenPanelShowsBorder", default: true)
     static let lockScreenPanelUsesBlur = Key<Bool>("lockScreenPanelUsesBlur", default: true)
+    static let lockScreenTimerWidgetUsesBlur = Key<Bool>("lockScreenTimerWidgetUsesBlur", default: true)
     static let lockScreenReminderChipStyle = Key<LockScreenReminderChipStyle>("lockScreenReminderChipStyle", default: .eventColor)
     
         // MARK: Battery
