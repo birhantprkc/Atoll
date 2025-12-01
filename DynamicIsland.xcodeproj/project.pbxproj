@@ -427,7 +427,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = "1.0.2-beta";
+				MARKETING_VERSION = "1.2-beta";
 				PRODUCT_BUNDLE_IDENTIFIER = com.Ebullioscopic.Atoll;
 				PRODUCT_NAME = Atoll;
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -496,7 +496,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = "1.0.2-beta";
+				MARKETING_VERSION = "1.2-beta";
 				PRODUCT_BUNDLE_IDENTIFIER = com.Ebullioscopic.Atoll;
 				PRODUCT_NAME = Atoll;
 				PROVISIONING_PROFILE_SPECIFIER = "";
