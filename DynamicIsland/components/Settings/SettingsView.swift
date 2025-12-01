@@ -1282,21 +1282,42 @@ struct HUD: View {
     @Default(.enableKeyboardBacklightHUD) var enableKeyboardBacklightHUD
     @Default(.systemHUDSensitivity) var systemHUDSensitivity
     @ObservedObject var coordinator = DynamicIslandViewCoordinator.shared
+    @ObservedObject private var accessibilityPermission = AccessibilityPermissionStore.shared
 
     private func highlightID(_ title: String) -> String {
         SettingsTab.hud.highlightID(for: title)
     }
+
+    private var hasAccessibilityPermission: Bool {
+        accessibilityPermission.isAuthorized
+    }
     
     var body: some View {
         Form {
+            if !hasAccessibilityPermission {
+                Section {
+                    SettingsPermissionCallout(
+                        message: "Accessibility permission lets Dynamic Island replace the native volume, brightness, and keyboard HUDs.",
+                        requestAction: { accessibilityPermission.requestAuthorizationPrompt() },
+                        openSettingsAction: { accessibilityPermission.openSystemSettings() }
+                    )
+                } header: {
+                    Text("Accessibility")
+                }
+            }
+
             Section {
                 Toggle("Enable HUDs", isOn: $enableSystemHUD)
-                    .disabled(Defaults[.enableCustomOSD])
+                    .disabled(Defaults[.enableCustomOSD] || !hasAccessibilityPermission)
             } header: {
                 Text("General")
             } footer: {
                 if Defaults[.enableCustomOSD] {
                     Text("HUDs are disabled because Custom OSD is enabled. Disable Custom OSD in the Custom OSD tab to use HUDs.")
+                        .foregroundStyle(.secondary)
+                        .font(.caption)
+                } else if !hasAccessibilityPermission {
+                    Text("Grant Accessibility permission in System Settings to control macOS HUD replacements from here.")
                         .foregroundStyle(.secondary)
                         .font(.caption)
                 } else {
@@ -1306,7 +1327,7 @@ struct HUD: View {
                 }
             }
             
-            if enableSystemHUD && !Defaults[.enableCustomOSD] {
+            if enableSystemHUD && !Defaults[.enableCustomOSD] && hasAccessibilityPermission {
                 Section {
                     Toggle("Volume HUD", isOn: $enableVolumeHUD)
                     Toggle("Brightness HUD", isOn: $enableBrightnessHUD)
@@ -1407,6 +1428,14 @@ struct HUD: View {
             }
         }
         .navigationTitle("HUDs")
+        .onAppear {
+            accessibilityPermission.refreshStatus()
+        }
+        .onChange(of: accessibilityPermission.isAuthorized) { _, granted in
+            if !granted {
+                enableSystemHUD = false
+            }
+        }
     }
 }
 
@@ -4418,6 +4447,7 @@ struct CustomOSDSettings: View {
     @Default(.osdMaterial) var osdMaterial
     @Default(.osdIconColorStyle) var osdIconColorStyle
     @Default(.enableSystemHUD) var enableSystemHUD
+    @ObservedObject private var accessibilityPermission = AccessibilityPermissionStore.shared
     
     @State private var showAlphaWarning = false
     @State private var previewValue: CGFloat = 0.65
@@ -4426,13 +4456,33 @@ struct CustomOSDSettings: View {
     private func highlightID(_ title: String) -> String {
         SettingsTab.osd.highlightID(for: title)
     }
+
+    private var hasAccessibilityPermission: Bool {
+        accessibilityPermission.isAuthorized
+    }
     
     var body: some View {
         Form {
+            if !hasAccessibilityPermission {
+                Section {
+                    SettingsPermissionCallout(
+                        message: "Accessibility permission is needed to intercept system controls for the Custom OSD.",
+                        requestAction: { accessibilityPermission.requestAuthorizationPrompt() },
+                        openSettingsAction: { accessibilityPermission.openSystemSettings() }
+                    )
+                } header: {
+                    Text("Accessibility")
+                }
+            }
+
             Section {
                 Toggle("Enable Custom OSD", isOn: Binding(
                     get: { enableCustomOSD },
                     set: { newValue in
+                        guard hasAccessibilityPermission else {
+                            enableCustomOSD = false
+                            return
+                        }
                         if newValue && !hasSeenOSDAlphaWarning {
                             showAlphaWarning = true
                         } else {
@@ -4445,12 +4495,16 @@ struct CustomOSDSettings: View {
                     }
                 ))
                     .settingsHighlight(id: highlightID("Enable Custom OSD"))
-                    .disabled(enableSystemHUD)
+                    .disabled(enableSystemHUD || !hasAccessibilityPermission)
             } header: {
                 Text("General")
             } footer: {
                 if enableSystemHUD {
                     Text("Custom OSD is disabled because HUDs are enabled. Disable HUDs in the HUDs tab to use Custom OSD.")
+                        .foregroundStyle(.secondary)
+                        .font(.caption)
+                } else if !hasAccessibilityPermission {
+                    Text("Grant Accessibility permission in System Settings to customize the on-screen display replacements here.")
                         .foregroundStyle(.secondary)
                         .font(.caption)
                 } else {
@@ -4460,7 +4514,7 @@ struct CustomOSDSettings: View {
                 }
             }
             
-            if enableCustomOSD {
+            if enableCustomOSD && hasAccessibilityPermission {
                 Section {
                     Toggle("Volume OSD", isOn: $enableOSDVolume)
                         .settingsHighlight(id: highlightID("Volume OSD"))
@@ -4572,6 +4626,49 @@ struct CustomOSDSettings: View {
             Text("Custom OSD is an experimental alpha feature and may contain bugs or unexpected behavior.\n\nThis feature requires macOS 15 or later and is still under active development. It's recommended to keep it disabled unless you want to help test it.")
         }
         .navigationTitle("Custom OSD")
+        .onAppear {
+            accessibilityPermission.refreshStatus()
+        }
+        .onChange(of: accessibilityPermission.isAuthorized) { _, granted in
+            if !granted {
+                enableCustomOSD = false
+            }
+        }
+    }
+}
+
+struct SettingsPermissionCallout: View {
+    let message: String
+    let requestAction: () -> Void
+    let openSettingsAction: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Label("Accessibility permission required", systemImage: "exclamationmark.triangle.fill")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.orange)
+
+            Text(message)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+
+            HStack(spacing: 8) {
+                Button("Request Access") {
+                    requestAction()
+                }
+                .buttonStyle(.borderedProminent)
+
+                Button("Open Settings") {
+                    openSettingsAction()
+                }
+                .buttonStyle(.bordered)
+            }
+            .controlSize(.small)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(12)
+        .background(Color.secondary.opacity(0.08))
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 }
 
