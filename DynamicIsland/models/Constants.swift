@@ -589,6 +589,7 @@ extension Defaults.Keys {
     
     // MARK: Custom OSD Window Feature
     static let enableCustomOSD = Key<Bool>("enableCustomOSD", default: false)
+    static let hasSeenOSDAlphaWarning = Key<Bool>("hasSeenOSDAlphaWarning", default: false)
     static let enableOSDVolume = Key<Bool>("enableOSDVolume", default: true)
     static let enableOSDBrightness = Key<Bool>("enableOSDBrightness", default: true)
     static let enableOSDKeyboardBacklight = Key<Bool>("enableOSDKeyboardBacklight", default: true)

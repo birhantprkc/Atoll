@@ -261,6 +261,18 @@ struct SettingsView: View {
                             sidebarIcon(for: tab)
                             Text(tab.title)
                                 .foregroundStyle(Color.primary)
+                            if tab == .osd {
+                                Spacer()
+                                Text("ALPHA")
+                                    .font(.system(size: 9, weight: .bold))
+                                    .foregroundStyle(.white)
+                                    .padding(.horizontal, 6)
+                                    .padding(.vertical, 2)
+                                    .background(
+                                        Capsule()
+                                            .fill(Color.orange)
+                                    )
+                            }
                         }
                         .padding(.vertical, 4)
                     }
@@ -728,7 +740,25 @@ struct SettingsView: View {
             }
         case .osd:
             SettingsForm(tab: .osd) {
-                CustomOSDSettings()
+                if #available(macOS 15.0, *) {
+                    CustomOSDSettings()
+                } else {
+                    VStack(spacing: 16) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .font(.system(size: 48))
+                            .foregroundStyle(.orange)
+                        
+                        Text("macOS 15 or later required")
+                            .font(.headline)
+                        
+                        Text("Custom OSD feature requires macOS 15 or later.")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .padding()
+                }
             }
         case .battery:
             SettingsForm(tab: .battery) {
@@ -4362,6 +4392,7 @@ struct ColorPickerSettings: View {
 
 struct CustomOSDSettings: View {
     @Default(.enableCustomOSD) var enableCustomOSD
+    @Default(.hasSeenOSDAlphaWarning) var hasSeenOSDAlphaWarning
     @Default(.enableOSDVolume) var enableOSDVolume
     @Default(.enableOSDBrightness) var enableOSDBrightness
     @Default(.enableOSDKeyboardBacklight) var enableOSDKeyboardBacklight
@@ -4369,6 +4400,7 @@ struct CustomOSDSettings: View {
     @Default(.osdIconColorStyle) var osdIconColorStyle
     @Default(.enableSystemHUD) var enableSystemHUD
     
+    @State private var showAlphaWarning = false
     @State private var previewValue: CGFloat = 0.65
     @State private var previewType: SneakContentType = .volume
     
@@ -4379,15 +4411,22 @@ struct CustomOSDSettings: View {
     var body: some View {
         Form {
             Section {
-                Toggle("Enable Custom OSD", isOn: $enableCustomOSD)
-                    .settingsHighlight(id: highlightID("Enable Custom OSD"))
-                    .disabled(enableSystemHUD)
-                    .onChange(of: enableCustomOSD) { _, enabled in
-                        if enabled {
-                            // Disable System HUD when OSD is enabled
-                            enableSystemHUD = false
+                Toggle("Enable Custom OSD", isOn: Binding(
+                    get: { enableCustomOSD },
+                    set: { newValue in
+                        if newValue && !hasSeenOSDAlphaWarning {
+                            showAlphaWarning = true
+                        } else {
+                            enableCustomOSD = newValue
+                            if newValue {
+                                // Disable System HUD when OSD is enabled
+                                enableSystemHUD = false
+                            }
                         }
                     }
+                ))
+                    .settingsHighlight(id: highlightID("Enable Custom OSD"))
+                    .disabled(enableSystemHUD)
             } header: {
                 Text("General")
             } footer: {
@@ -4500,6 +4539,18 @@ struct CustomOSDSettings: View {
                         .font(.caption)
                 }
             }
+        }
+        .alert("Alpha Feature Warning", isPresented: $showAlphaWarning) {
+            Button("Cancel", role: .cancel) {
+                enableCustomOSD = false
+            }
+            Button("Enable Anyway") {
+                hasSeenOSDAlphaWarning = true
+                enableCustomOSD = true
+                enableSystemHUD = false
+            }
+        } message: {
+            Text("Custom OSD is an experimental alpha feature and may contain bugs or unexpected behavior.\n\nThis feature requires macOS 15 or later and is still under active development. It's recommended to keep it disabled unless you want to help test it.")
         }
         .navigationTitle("Custom OSD")
     }
