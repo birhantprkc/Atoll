@@ -34,7 +34,6 @@ private enum SettingsTab: String, CaseIterable, Identifiable {
     case downloads
     case shelf
     case shortcuts
-    case extensions
     case about
 
     var id: String { rawValue }
@@ -58,7 +57,6 @@ private enum SettingsTab: String, CaseIterable, Identifiable {
         case .downloads: return "Downloads"
         case .shelf: return "Shelf"
         case .shortcuts: return "Shortcuts"
-        case .extensions: return "Extensions"
         case .about: return "About"
         }
     }
@@ -82,7 +80,6 @@ private enum SettingsTab: String, CaseIterable, Identifiable {
         case .downloads: return "square.and.arrow.down"
         case .shelf: return "books.vertical"
         case .shortcuts: return "keyboard"
-        case .extensions: return "puzzlepiece.extension"
         case .about: return "info.circle"
         }
     }
@@ -106,7 +103,6 @@ private enum SettingsTab: String, CaseIterable, Identifiable {
         case .downloads: return .gray
         case .shelf: return .brown
         case .shortcuts: return .orange
-        case .extensions: return .blue
         case .about: return .secondary
         }
     }
@@ -233,7 +229,6 @@ private struct SettingsForm<Content: View>: View {
 }
 
 struct SettingsView: View {
-    @StateObject var extensionManager = DynamicIslandExtensionManager()
     @State private var selectedTab: SettingsTab = .general
     @State private var searchText: String = ""
     @StateObject private var highlightCoordinator = SettingsHighlightCoordinator()
@@ -260,11 +255,13 @@ struct SettingsView: View {
                     .padding(.horizontal, 12)
 
                 List(filteredTabs, selection: selectionBinding) { tab in
+                    let isComingSoon = tab == .downloads
                     NavigationLink(value: tab) {
                         HStack(spacing: 10) {
                             sidebarIcon(for: tab)
+                                .opacity(isComingSoon ? 0.45 : 1)
                             Text(tab.title)
-                                .foregroundStyle(Color.primary)
+                                .foregroundStyle(isComingSoon ? Color.secondary : Color.primary)
                             if tab == .osd {
                                 Spacer()
                                 Text("ALPHA")
@@ -276,11 +273,15 @@ struct SettingsView: View {
                                         Capsule()
                                             .fill(Color.orange)
                                     )
+                            } else if isComingSoon {
+                                Spacer()
+                                comingSoonTag()
                             }
                         }
                         .padding(.vertical, 4)
                     }
                     .tag(tab)
+                    .disabled(isComingSoon)
                     .listRowInsets(EdgeInsets(top: 4, leading: 12, bottom: 4, trailing: 10))
                 }
                 .listStyle(SidebarListStyle())
@@ -303,13 +304,12 @@ struct SettingsView: View {
                 .opacity(0) // Invisible, but reserves space for a consistent look between tabs
                 .disabled(true)
         }
-        .environmentObject(extensionManager)
         .environmentObject(highlightCoordinator)
         .formStyle(.grouped)
         .frame(width: 700)
         .onChange(of: searchText) { _, newValue in
             let matches = tabsMatchingSearch(newValue)
-            guard let firstMatch = matches.first else { return }
+            guard let firstMatch = matches.first(where: { $0 != .downloads }) else { return }
             if !matches.contains(resolvedSelection) {
                 selectedTab = firstMatch
             }
@@ -347,7 +347,10 @@ struct SettingsView: View {
     private var selectionBinding: Binding<SettingsTab> {
         Binding(
             get: { resolvedSelection },
-            set: { selectedTab = $0 }
+            set: { newValue in
+                guard newValue != .downloads else { return }
+                selectedTab = newValue
+            }
         )
     }
 
@@ -382,7 +385,6 @@ struct SettingsView: View {
             .downloads,
             .shelf,
             .shortcuts,
-            .extensions,
             .about
         ]
 
@@ -402,10 +404,11 @@ struct SettingsView: View {
     }
 
     private var searchSuggestions: [SettingsSearchEntry] {
-        Array(searchEntries(matching: searchText).prefix(8))
+        Array(searchEntries(matching: searchText).filter { $0.tab != .downloads }.prefix(8))
     }
 
     private func handleSearchSuggestionSelection(_ suggestion: SettingsSearchEntry) {
+        guard suggestion.tab != .downloads else { return }
         highlightCoordinator.focus(on: suggestion)
         selectedTab = suggestion.tab
     }
@@ -583,12 +586,6 @@ struct SettingsView: View {
             SettingsSearchEntry(tab: .battery, title: "Show power status notifications", keywords: ["notifications", "power"], highlightID: SettingsTab.battery.highlightID(for: "Show power status notifications")),
             SettingsSearchEntry(tab: .battery, title: "Show power status icons", keywords: ["power icons", "charging icon"], highlightID: SettingsTab.battery.highlightID(for: "Show power status icons")),
 
-            // Downloads
-            SettingsSearchEntry(tab: .downloads, title: "Show download progress", keywords: ["downloads", "progress"], highlightID: SettingsTab.downloads.highlightID(for: "Show download progress")),
-            SettingsSearchEntry(tab: .downloads, title: "Enable Safari Downloads", keywords: ["safari", "browser"], highlightID: SettingsTab.downloads.highlightID(for: "Enable Safari Downloads")),
-            SettingsSearchEntry(tab: .downloads, title: "Download indicator style", keywords: ["indicator", "style"], highlightID: SettingsTab.downloads.highlightID(for: "Download indicator style")),
-            SettingsSearchEntry(tab: .downloads, title: "Download icon style", keywords: ["icon", "style"], highlightID: SettingsTab.downloads.highlightID(for: "Download icon style")),
-
             // HUDs
             SettingsSearchEntry(tab: .hud, title: "Show Bluetooth device connections", keywords: ["bluetooth", "hud"], highlightID: SettingsTab.hud.highlightID(for: "Show Bluetooth device connections")),
             SettingsSearchEntry(tab: .hud, title: "Use circular battery indicator", keywords: ["battery", "circular"], highlightID: SettingsTab.hud.highlightID(for: "Use circular battery indicator")),
@@ -714,8 +711,6 @@ struct SettingsView: View {
         switch tab {
         case .timer, .stats, .clipboard, .screenAssistant, .colorPicker, .shelf:
             return !enableMinimalisticUI
-        case .downloads:
-            return extensionManager.installedExtensions.contains { $0.bundleIdentifier == downloadManagerExtension }
         default:
             return true
         }
@@ -809,10 +804,6 @@ struct SettingsView: View {
         case .shortcuts:
             SettingsForm(tab: .shortcuts) {
                 Shortcuts()
-            }
-        case .extensions:
-            SettingsForm(tab: .extensions) {
-                Extensions()
             }
         case .about:
             if let controller = updaterController {
@@ -1150,6 +1141,8 @@ struct Downloads: View {
             }
         }
         .navigationTitle("Downloads")
+        .disabled(true)
+        .opacity(0.6)
     }
 }
 
@@ -1925,125 +1918,6 @@ struct Shelf: View {
             }
         }
         .navigationTitle("Shelf")
-    }
-}
-
-struct Extensions: View {
-    @EnvironmentObject var extensionManager: DynamicIslandExtensionManager
-    @State private var effectTrigger: Bool = false
-    var body: some View {
-        Form {
-            //warningBadge("We don't support extensions yet") // Uhhhh You do? <><><> Oori.S
-            Section {
-                List {
-                    ForEach(extensionManager.installedExtensions.indices, id: \.self) { index in
-                        let item = extensionManager.installedExtensions[index]
-                        HStack {
-                            AppIcon(for: item.bundleIdentifier)
-                                .resizable()
-                                .frame(width: 24, height: 24)
-                            Text(item.name)
-                            ListItemPopover {
-                                Text("Description")
-                            }
-                            Spacer(minLength: 0)
-                            HStack(spacing: 6) {
-                                Circle()
-                                    .frame(width: 6, height: 6)
-                                    .foregroundColor(isExtensionRunning(item.bundleIdentifier) ? .green : item.status == .disabled ? .gray : .red)
-                                    .conditionalModifier(isExtensionRunning(item.bundleIdentifier)) { view in
-                                        view
-                                            .shadow(color: .green, radius: 3)
-                                    }
-                                Text(isExtensionRunning(item.bundleIdentifier) ? "Running" : item.status == .disabled ? "Disabled" : "Stopped")
-                                    .contentTransition(.numericText())
-                                    .foregroundStyle(.secondary)
-                                    .font(.footnote)
-                            }
-                            .frame(width: 60, alignment: .leading)
-
-                            Menu(content: {
-                                Button("Restart") {
-                                    let ws = NSWorkspace.shared
-
-                                    if let ext = ws.runningApplications.first(where: { $0.bundleIdentifier == item.bundleIdentifier }) {
-                                        ext.terminate()
-                                    }
-
-                                    if let appURL = ws.urlForApplication(withBundleIdentifier: item.bundleIdentifier) {
-                                        ws.openApplication(at: appURL, configuration: .init(), completionHandler: nil)
-                                    }
-                                }
-                                .keyboardShortcut("R", modifiers: .command)
-                                Button("Disable") {
-                                    if let ext = NSWorkspace.shared.runningApplications.first(where: { $0.bundleIdentifier == item.bundleIdentifier }) {
-                                        ext.terminate()
-                                    }
-                                    extensionManager.installedExtensions[index].status = .disabled
-                                }
-                                .keyboardShortcut("D", modifiers: .command)
-                                Divider()
-                                Button("Uninstall", role: .destructive) {
-                                    //
-                                }
-                            }, label: {
-                                Image(systemName: "ellipsis.circle")
-                                    .foregroundStyle(.secondary)
-                            })
-                            .controlSize(.regular)
-                        }
-                        .buttonStyle(PlainButtonStyle())
-                        .padding(.vertical, 5)
-                    }
-                }
-                .frame(minHeight: 120)
-                .actionBar {
-                    Button {} label: {
-                        HStack(spacing: 3) {
-                            Image(systemName: "plus")
-                            Text("Add manually")
-                        }
-                        .foregroundStyle(.secondary)
-                    }
-                    .disabled(true)
-                    Spacer()
-                    Button {
-                        withAnimation(.linear(duration: 1)) {
-                            effectTrigger.toggle()
-                        } completion: {
-                            effectTrigger.toggle()
-                        }
-                        extensionManager.checkIfExtensionsAreInstalled()
-                    } label: {
-                        HStack(spacing: 3) {
-                            Image(systemName: "arrow.triangle.2.circlepath")
-                                .rotationEffect(effectTrigger ? .degrees(360) : .zero)
-                        }
-                        .foregroundStyle(.secondary)
-                    }
-                }
-                .controlSize(.small)
-                .buttonStyle(PlainButtonStyle())
-                .overlay {
-                    if extensionManager.installedExtensions.isEmpty {
-                        Text("No extension installed")
-                            .foregroundStyle(Color(.secondaryLabelColor))
-                            .padding(.bottom, 22)
-                    }
-                }
-            } header: {
-                HStack(spacing: 0) {
-                    Text("Installed extensions")
-                    if !extensionManager.installedExtensions.isEmpty {
-                        Text(" – \(extensionManager.installedExtensions.count)")
-                            .foregroundStyle(.secondary)
-                    }
-                }
-            }
-        }
-        .navigationTitle("Extensions")
-        // TipsView()
-        // .padding(.horizontal, 19)
     }
 }
 
