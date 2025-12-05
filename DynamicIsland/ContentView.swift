@@ -28,7 +28,7 @@ struct ContentView: View {
     @ObservedObject var privacyManager = PrivacyIndicatorManager.shared
     @ObservedObject var doNotDisturbManager = DoNotDisturbManager.shared
     @ObservedObject var lockScreenManager = LockScreenManager.shared
-    @ObservedObject var downloadManager = DownloadManager.shared
+    @State private var downloadManager = DownloadManager.shared
     
     @Default(.enableStatsFeature) var enableStatsFeature
     @Default(.showCpuGraph) var showCpuGraph

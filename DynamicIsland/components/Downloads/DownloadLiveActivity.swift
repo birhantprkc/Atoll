@@ -11,7 +11,7 @@ import Defaults
 
 struct DownloadLiveActivity: View {
     @EnvironmentObject var vm: DynamicIslandViewModel
-    @ObservedObject var downloadManager = DownloadManager.shared
+    @State private var downloadManager = DownloadManager.shared
     
     @State private var isHovering: Bool = false
     @State private var gestureProgress: CGFloat = 0
