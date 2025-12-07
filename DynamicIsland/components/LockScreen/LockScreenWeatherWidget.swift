@@ -25,7 +25,7 @@ struct LockScreenWeatherWidget: View {
 				chargingSegment(for: charging)
 			}
 
-			if !isInline, let battery = snapshot.battery {
+			if let battery = snapshot.battery {
 				batterySegment(for: battery)
 			}
 
@@ -101,7 +101,7 @@ struct LockScreenWeatherWidget: View {
 	private func batterySegment(for info: LockScreenWeatherSnapshot.BatteryInfo) -> some View {
 		switch snapshot.widgetStyle {
 		case .inline:
-			EmptyView()
+            inlineBatterySegment(for: info)
 		case .circular:
 			circularBatterySegment(for: info)
 		}
@@ -205,6 +205,24 @@ struct LockScreenWeatherWidget: View {
 		}
 		.layoutPriority(1)
 	}
+    
+    private func inlineBatterySegment(for info: LockScreenWeatherSnapshot.BatteryInfo) -> some View {
+        let level = clampedBatteryLevel(info.batteryLevel)
+
+        return HStack(alignment: .firstTextBaseline, spacing: 6) {
+            // Optional icon (laptop vs battery glyph)
+            Image(systemName: info.usesLaptopSymbol ? "laptopcomputer" : batteryIconName(for: level))
+                .font(.system(size: 20, weight: .semibold))
+                .symbolRenderingMode(.hierarchical)
+
+            // ✅ The actual percentage text you want in inline style
+            Text("\(level)%")
+                .font(inlinePrimaryFont)
+                .lineLimit(1)
+                .minimumScaleFactor(0.85)
+        }
+        .layoutPriority(1)
+    }
 
 	private func circularBluetoothSegment(for info: LockScreenWeatherSnapshot.BluetoothInfo) -> some View {
 		let clamped = clampedBatteryLevel(info.batteryLevel)
