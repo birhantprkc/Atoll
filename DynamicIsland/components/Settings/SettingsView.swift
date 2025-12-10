@@ -3352,8 +3352,10 @@ struct TimerSettings: View {
     @Default(.timerShowsLabel) private var showsLabel
     @Default(.timerShowsProgress) private var showsProgress
     @Default(.timerProgressStyle) private var progressStyle
+    @Default(.showTimerPresetsInNotchTab) private var showTimerPresetsInNotchTab
     @Default(.timerControlWindowEnabled) private var controlWindowEnabled
     @Default(.mirrorSystemTimer) private var mirrorSystemTimer
+    @Default(.timerDisplayMode) private var timerDisplayMode
     @Default(.enableLockScreenTimerWidget) private var enableLockScreenTimerWidget
     @AppStorage("customTimerDuration") private var customTimerDuration: Double = 600
     @State private var customHours: Int = 0
@@ -3390,6 +3392,15 @@ struct TimerSettings: View {
                 Defaults.Toggle("Mirror macOS Clock timers", key: .mirrorSystemTimer)
                     .help("Shows the system Clock timer in the notch when available. Requires Accessibility permission to read the status item.")
                     .settingsHighlight(id: highlightID("Mirror macOS Clock timers"))
+
+                Picker("Timer controls appear as", selection: $timerDisplayMode) {
+                    ForEach(TimerDisplayMode.allCases) { mode in
+                        Text(mode.displayName).tag(mode)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .help(timerDisplayMode.description)
+                .settingsHighlight(id: highlightID("Timer controls appear as"))
             }
         } header: {
             Text("Timer Feature")
@@ -3484,6 +3495,8 @@ struct TimerSettings: View {
             Toggle("Show timer name", isOn: $showsLabel)
             Toggle("Show countdown", isOn: $showsCountdown)
             Toggle("Show progress", isOn: $showsProgress)
+            Toggle("Show preset list in timer tab", isOn: $showTimerPresetsInNotchTab)
+                .settingsHighlight(id: highlightID("Show preset list in timer tab"))
 
             Toggle("Show floating pause/stop controls", isOn: $controlWindowEnabled)
                 .disabled(showsLabel)
