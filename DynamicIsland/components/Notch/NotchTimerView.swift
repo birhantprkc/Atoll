@@ -21,6 +21,7 @@ struct NotchTimerView: View {
     @Default(.timerSolidColor) private var solidColor
     @Default(.timerShowsProgress) private var showsProgress
     @Default(.timerProgressStyle) private var progressStyle
+    @Default(.showTimerPresetsInNotchTab) private var showTimerPresetsInNotchTab
 
     @AppStorage("customTimerDuration") private var customTimerDuration: Double = 600
     @State private var customHours: Int = 0
@@ -249,48 +250,37 @@ struct NotchTimerView: View {
     }
 
     private var customTimerComposer: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            DurationInputRow(hours: $customHours, minutes: $customMinutes, seconds: $customSeconds)
+        Group {
+            if showTimerPresetsInNotchTab {
+                VStack(alignment: .leading, spacing: 12) {
+                    DurationInputRow(
+                        hours: $customHours,
+                        minutes: $customMinutes,
+                        seconds: $customSeconds,
+                        fieldWidth: durationFieldWidth
+                    )
 
-            HStack(spacing: 10) {
-                Button {
-                    withAnimation(.smooth) {
-                        timerManager.startTimer(duration: customDurationInSeconds, name: "Custom Timer")
-                        coordinator.currentView = .timer
+                    HStack(spacing: 10) {
+                        startButton
+                        resetButton
                     }
-                } label: {
-                    Label("Start", systemImage: "play.fill")
-                        .font(.system(size: 15, weight: .semibold))
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 10)
-                        .foregroundStyle(Color.white)
                 }
-                .buttonStyle(.plain)
-                .background(startButtonColor.opacity(isStartDisabled ? 0.5 : 1))
-                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .stroke(Color.white.opacity(0.15), lineWidth: 1)
-                )
-                .opacity(isStartDisabled ? 0.7 : 1)
-                .disabled(isStartDisabled)
+            } else {
+                HStack(alignment: .center, spacing: 16) {
+                    DurationInputRow(
+                        hours: $customHours,
+                        minutes: $customMinutes,
+                        seconds: $customSeconds,
+                        fieldWidth: durationFieldWidth
+                    )
+                    .frame(maxWidth: .infinity, alignment: .leading)
 
-                Button {
-                    resetCustomTimerInputs()
-                } label: {
-                    Label("Reset", systemImage: "arrow.counterclockwise")
-                        .font(.system(size: 15, weight: .semibold))
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 10)
-                        .foregroundStyle(.white.opacity(0.9))
+                    VStack(spacing: 10) {
+                        startButton
+                        resetButton
+                    }
+                    .frame(width: buttonColumnWidth, alignment: .top)
                 }
-                .buttonStyle(.plain)
-                .background(Color.white.opacity(0.16))
-                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .stroke(Color.white.opacity(0.08), lineWidth: 1)
-                )
             }
         }
         .padding(12)
@@ -331,7 +321,7 @@ struct NotchTimerView: View {
     }
 
     private var shouldShowPresetColumn: Bool {
-        !timerManager.isTimerActive
+        !timerManager.isTimerActive && showTimerPresetsInNotchTab
     }
 
     private var resolvedNotchHeight: CGFloat {
@@ -424,6 +414,53 @@ struct NotchTimerView: View {
         customDurationInSeconds == 0
     }
 
+    private var durationFieldWidth: CGFloat {
+        showTimerPresetsInNotchTab ? 64 : 78
+    }
+
+    private var buttonColumnWidth: CGFloat { 210 }
+
+    private var startButton: some View {
+        Button {
+            withAnimation(.smooth) {
+                timerManager.startTimer(duration: customDurationInSeconds, name: "Custom Timer")
+                coordinator.currentView = .timer
+            }
+        } label: {
+            Label("Start", systemImage: "play.fill")
+                .font(.system(size: 15, weight: .semibold))
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 10)
+                .foregroundStyle(Color.white)
+        }
+        .buttonStyle(.plain)
+        .background(startButtonColor.opacity(isStartDisabled ? 0.5 : 1))
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(Color.white.opacity(0.15), lineWidth: 1)
+        )
+        .opacity(isStartDisabled ? 0.7 : 1)
+        .disabled(isStartDisabled)
+    }
+
+    private var resetButton: some View {
+        Button(action: resetCustomTimerInputs) {
+            Label("Reset", systemImage: "arrow.counterclockwise")
+                .font(.system(size: 15, weight: .semibold))
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 10)
+                .foregroundStyle(.white.opacity(0.9))
+        }
+        .buttonStyle(.plain)
+        .background(Color.white.opacity(0.16))
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(Color.white.opacity(0.08), lineWidth: 1)
+        )
+    }
+
     private var customDurationInSeconds: TimeInterval {
         TimeInterval(customHours * 3600 + customMinutes * 60 + customSeconds)
     }
@@ -496,14 +533,27 @@ private struct DurationInputRow: View {
     @Binding var hours: Int
     @Binding var minutes: Int
     @Binding var seconds: Int
+    let fieldWidth: CGFloat
+
+    init(
+        hours: Binding<Int>,
+        minutes: Binding<Int>,
+        seconds: Binding<Int>,
+        fieldWidth: CGFloat = 64
+    ) {
+        _hours = hours
+        _minutes = minutes
+        _seconds = seconds
+        self.fieldWidth = fieldWidth
+    }
 
     var body: some View {
         HStack(alignment: .center, spacing: 8) {
-            DurationField(label: "HH", value: $hours, range: 0...23)
+            DurationField(label: "HH", value: $hours, range: 0...23, width: fieldWidth)
             colon
-            DurationField(label: "MM", value: $minutes, range: 0...59)
+            DurationField(label: "MM", value: $minutes, range: 0...59, width: fieldWidth)
             colon
-            DurationField(label: "SS", value: $seconds, range: 0...59)
+            DurationField(label: "SS", value: $seconds, range: 0...59, width: fieldWidth)
         }
     }
 
@@ -518,6 +568,19 @@ private struct DurationField: View {
     let label: String
     @Binding var value: Int
     let range: ClosedRange<Int>
+    let width: CGFloat
+
+    init(
+        label: String,
+        value: Binding<Int>,
+        range: ClosedRange<Int>,
+        width: CGFloat = 64
+    ) {
+        self.label = label
+        _value = value
+        self.range = range
+        self.width = width
+    }
 
     var body: some View {
         VStack(spacing: 6) {
@@ -525,7 +588,7 @@ private struct DurationField: View {
                 .font(.system(size: 28, weight: .semibold, design: .monospaced))
                 .multilineTextAlignment(.center)
                 .textFieldStyle(.plain)
-                .frame(width: 64, height: 46)
+                .frame(width: width, height: 46)
                 .background(Color.white.opacity(0.08))
                 .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
 

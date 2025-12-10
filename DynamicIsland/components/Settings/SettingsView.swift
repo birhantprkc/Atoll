@@ -3352,6 +3352,7 @@ struct TimerSettings: View {
     @Default(.timerShowsLabel) private var showsLabel
     @Default(.timerShowsProgress) private var showsProgress
     @Default(.timerProgressStyle) private var progressStyle
+    @Default(.showTimerPresetsInNotchTab) private var showTimerPresetsInNotchTab
     @Default(.timerControlWindowEnabled) private var controlWindowEnabled
     @Default(.mirrorSystemTimer) private var mirrorSystemTimer
     @Default(.timerDisplayMode) private var timerDisplayMode
@@ -3494,6 +3495,8 @@ struct TimerSettings: View {
             Toggle("Show timer name", isOn: $showsLabel)
             Toggle("Show countdown", isOn: $showsCountdown)
             Toggle("Show progress", isOn: $showsProgress)
+            Toggle("Show preset list in timer tab", isOn: $showTimerPresetsInNotchTab)
+                .settingsHighlight(id: highlightID("Show preset list in timer tab"))
 
             Toggle("Show floating pause/stop controls", isOn: $controlWindowEnabled)
                 .disabled(showsLabel)
