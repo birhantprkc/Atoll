@@ -99,20 +99,34 @@ struct NotchTimerView: View {
             } else {
                 let computedHeight = CGFloat(timerPresets.count) * 60 + 4
                 let listHeight = min(max(0, maxTabContentHeight - 16), computedHeight)
-                List {
-                    ForEach(timerPresets) { preset in
-                        TimerPresetCard(preset: preset, isActive: timerManager.activePresetId == preset.id) {
-                            timerManager.startTimer(duration: preset.duration, name: preset.name, preset: preset)
-                            coordinator.currentView = .timer
+                ZStack {
+                    List {
+                        ForEach(timerPresets) { preset in
+                            TimerPresetCard(preset: preset, isActive: timerManager.activePresetId == preset.id) {
+                                timerManager.startTimer(duration: preset.duration, name: preset.name, preset: preset)
+                                coordinator.currentView = .timer
+                            }
+                            .listRowInsets(EdgeInsets(top: 2, leading: 0, bottom: 2, trailing: 0))
+                            .listRowBackground(Color.clear)
+                            .listRowSeparator(.hidden)
                         }
-                        .listRowInsets(EdgeInsets(top: 2, leading: 0, bottom: 2, trailing: 0))
-                        .listRowBackground(Color.clear)
-                        .listRowSeparator(.hidden)
                     }
+                    .listStyle(.plain)
+                    .scrollContentBackground(.hidden)
+                    .scrollIndicators(.never)
+
+                    LinearGradient(colors: [Color.black.opacity(0.65), .clear], startPoint: .top, endPoint: .bottom)
+                        .frame(height: 16)
+                        .allowsHitTesting(false)
+                        .alignmentGuide(.top) { d in d[.top] }
+                        .frame(maxHeight: .infinity, alignment: .top)
+
+                    LinearGradient(colors: [.clear, Color.black.opacity(0.65)], startPoint: .top, endPoint: .bottom)
+                        .frame(height: 16)
+                        .allowsHitTesting(false)
+                        .alignmentGuide(.bottom) { d in d[.bottom] }
+                        .frame(maxHeight: .infinity, alignment: .bottom)
                 }
-                .listStyle(.plain)
-                .scrollContentBackground(.hidden)
-                .scrollIndicators(.never)
                 .frame(height: listHeight)
             }
         }
@@ -201,6 +215,8 @@ struct NotchTimerView: View {
                 .foregroundStyle(timerManager.isOvertime ? Color.red : .white)
                 .contentTransition(.numericText())
                 .animation(.smooth(duration: 0.25), value: timerManager.remainingTime)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
 
             if timerManager.isOvertime {
                 Text("Overtime")
@@ -208,7 +224,7 @@ struct NotchTimerView: View {
                     .foregroundStyle(.red)
             }
         }
-        .frame(width: 150, alignment: .trailing)
+        .frame(width: 190, alignment: .trailing)
     }
 
     @ViewBuilder
