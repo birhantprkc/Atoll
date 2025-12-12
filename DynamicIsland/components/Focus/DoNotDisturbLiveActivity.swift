@@ -13,6 +13,7 @@ struct DoNotDisturbLiveActivity: View {
     @EnvironmentObject var vm: DynamicIslandViewModel
     @ObservedObject var manager = DoNotDisturbManager.shared
     @Default(.showDoNotDisturbLabel) private var showLabelSetting
+    @Default(.focusIndicatorNonPersistent) private var focusToastMode
 
     @State private var isExpanded = false
     @State private var showInactiveIcon = false
@@ -53,10 +54,15 @@ struct DoNotDisturbLiveActivity: View {
     }
 
     private var labelWingWidth: CGFloat {
-        if shouldShowLabel {
-            return max(desiredLabelWidth, minimalWingWidth)
+        guard shouldShowLabel else {
+            return focusToastMode ? 0 : ((isExpanded || showInactiveIcon) ? minimalWingWidth : 0)
         }
-        return (isExpanded || showInactiveIcon) ? minimalWingWidth : 0
+
+        if focusToastMode {
+            return max(labelIntrinsicWidth + 26, minimalWingWidth)
+        }
+
+        return max(desiredLabelWidth, minimalWingWidth)
     }
 
     private var minimalWingWidth: CGFloat {
@@ -76,7 +82,7 @@ struct DoNotDisturbLiveActivity: View {
     }
 
     private var shouldShowLabel: Bool {
-        showLabelSetting && isExpanded && !labelText.isEmpty
+        focusToastMode ? (isExpanded && !labelText.isEmpty) : (showLabelSetting && isExpanded && !labelText.isEmpty)
     }
 
     // MARK: - Focus metadata
@@ -93,16 +99,23 @@ struct DoNotDisturbLiveActivity: View {
     }
 
     private var labelText: String {
-        let trimmed = manager.currentFocusModeName.trimmingCharacters(in: .whitespacesAndNewlines)
-        if !trimmed.isEmpty {
-            return trimmed
+        if focusToastMode {
+            return manager.isDoNotDisturbActive ? "On" : "Off"
         }
 
-        let fallback = focusMode.displayName
-        if focusMode == .doNotDisturb {
-            return "Do Not Disturb"
+        let trimmed = manager.currentFocusModeName.trimmingCharacters(in: .whitespacesAndNewlines)
+        if showLabelSetting {
+            if !trimmed.isEmpty {
+                return trimmed
+            } else if focusMode == .doNotDisturb {
+                return "Do Not Disturb"
+            } else {
+                let fallback = focusMode.displayName
+                return fallback.isEmpty ? "Focus" : fallback
+            }
         }
-        return fallback.isEmpty ? "Focus" : fallback
+
+        return ""
     }
 
     private var accessibilityDescription: String {
@@ -158,6 +171,7 @@ struct DoNotDisturbLiveActivity: View {
                         .font(.system(size: 12, weight: .semibold, design: .rounded))
                         .foregroundColor(activeAccentColor)
                         .lineLimit(1)
+                        .minimumScaleFactor(0.8)
                         .contentTransition(.opacity)
                         .background(
                             GeometryReader { proxy in
@@ -181,12 +195,15 @@ struct DoNotDisturbLiveActivity: View {
             withAnimation(.spring(response: 0.35, dampingFraction: 0.85)) {
                 isExpanded = true
             }
+            if focusToastMode {
+                scheduleTransientCollapse()
+            }
         }
     }
 
     private func handleFocusStateChange(_ oldValue: Bool, _ isActive: Bool) {
+        cancelPendingTasks()
         if isActive {
-            cancelPendingTasks()
             withAnimation(.smooth(duration: 0.2)) {
                 showInactiveIcon = false
             }
@@ -194,12 +211,18 @@ struct DoNotDisturbLiveActivity: View {
                 iconScale = 1.0
                 isExpanded = true
             }
+            if focusToastMode {
+                scheduleTransientCollapse()
+            }
         } else {
             triggerInactiveAnimation()
         }
     }
 
     private func triggerInactiveAnimation() {
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.9)) {
+            isExpanded = true
+        }
         withAnimation(.smooth(duration: 0.2)) {
             showInactiveIcon = true
         }
@@ -208,9 +231,16 @@ struct DoNotDisturbLiveActivity: View {
             iconScale = 1.2
         }
 
+        let toastMode = focusToastMode
         scaleResetTask?.cancel()
         scaleResetTask = Task { @MainActor in
-            try? await Task.sleep(for: .milliseconds(650))
+            try? await Task.sleep(for: .milliseconds(toastMode ? 650 : 450))
+            withAnimation(.interpolatingSpring(stiffness: 180, damping: 18)) {
+                iconScale = 1.0
+            }
+            if toastMode {
+                return
+            }
             withAnimation(.smooth(duration: 0.2)) {
                 showInactiveIcon = false
             }
@@ -218,16 +248,33 @@ struct DoNotDisturbLiveActivity: View {
 
         collapseTask?.cancel()
         collapseTask = Task { @MainActor in
-            try? await Task.sleep(for: .milliseconds(320))
+            try? await Task.sleep(for: .milliseconds(focusToastMode ? 900 : 320))
             withAnimation(.smooth(duration: 0.32)) {
                 isExpanded = false
+                if focusToastMode {
+                    showInactiveIcon = false
+                }
             }
         }
 
         cleanupTask?.cancel()
+        guard !focusToastMode else { return }
         cleanupTask = Task { @MainActor in
             try? await Task.sleep(for: .milliseconds(650))
             withAnimation(.smooth(duration: 0.2)) {
+                showInactiveIcon = false
+            }
+        }
+    }
+
+    private func scheduleTransientCollapse() {
+        collapseTask?.cancel()
+        cleanupTask?.cancel()
+
+        collapseTask = Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(1150))
+            withAnimation(.smooth(duration: 0.32)) {
+                isExpanded = false
                 showInactiveIcon = false
             }
         }

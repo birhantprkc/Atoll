@@ -2056,6 +2056,7 @@ struct LiveActivitiesSettings: View {
 
     @Default(.enableScreenRecordingDetection) var enableScreenRecordingDetection
     @Default(.enableDoNotDisturbDetection) var enableDoNotDisturbDetection
+    @Default(.focusIndicatorNonPersistent) var focusIndicatorNonPersistent
 
     private func highlightID(_ title: String) -> String {
         SettingsTab.liveActivities.highlightID(for: title)
@@ -2104,8 +2105,14 @@ struct LiveActivitiesSettings: View {
                     .settingsHighlight(id: highlightID("Show Focus Indicator"))
 
                 Defaults.Toggle("Show Focus Label", key: .showDoNotDisturbLabel)
-                    .disabled(!enableDoNotDisturbDetection)
+                    .disabled(!enableDoNotDisturbDetection || focusIndicatorNonPersistent)
+                    .help(focusIndicatorNonPersistent ? "Labels are forced to compact on/off text while brief toast mode is enabled." : "Show the active Focus name inside the indicator.")
                     .settingsHighlight(id: highlightID("Show Focus Label"))
+
+                Defaults.Toggle("Show Focus as brief toast", key: .focusIndicatorNonPersistent)
+                    .disabled(!enableDoNotDisturbDetection)
+                    .settingsHighlight(id: highlightID("Show Focus as brief toast"))
+                    .help("When enabled, Focus appears briefly (on/off) and then collapses instead of staying visible.")
 
                 if doNotDisturbManager.isMonitoring {
                     HStack {
