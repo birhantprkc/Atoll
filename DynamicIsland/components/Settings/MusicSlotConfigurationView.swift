@@ -6,6 +6,9 @@ struct MusicSlotConfigurationView: View {
     @Default(.musicControlSlots) private var musicControlSlots
     @Default(.showMediaOutputControl) private var showMediaOutputControl
     @ObservedObject private var musicManager = MusicManager.shared
+    @State private var selectedSlotIndex: Int? = nil
+    @State private var targetedSlotIndex: Int? = nil
+    @State private var trashDropIsTargeted: Bool = false
 
     private let slotCount = MusicControlButton.slotCount
 
@@ -37,7 +40,7 @@ struct MusicSlotConfigurationView: View {
     }
 
     private var layoutPreview: some View {
-        HStack(alignment: .center, spacing: 12) {
+        HStack(alignment: .top, spacing: 12) {
             HStack(spacing: 8) {
                 ForEach(0..<slotCount, id: \.self) { index in
                     slotPreview(for: index)
@@ -50,21 +53,28 @@ struct MusicSlotConfigurationView: View {
             VStack(spacing: 8) {
                 ZStack {
                     RoundedRectangle(cornerRadius: 10)
-                        .fill(Color(nsColor: .controlBackgroundColor))
+                        .fill(trashDropIsTargeted ? Color.red.opacity(0.2) : Color(nsColor: .controlBackgroundColor))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 10)
+                                .stroke(trashDropIsTargeted ? Color.red : .clear, lineWidth: trashDropIsTargeted ? 2 : 0)
+                        )
                         .frame(width: 56, height: 56)
+
                     Image(systemName: "trash")
                         .font(.system(size: 16, weight: .medium))
+                        .foregroundStyle(trashDropIsTargeted ? Color.red : Color.primary)
                 }
-                .onDrop(of: [UTType.plainText.identifier], isTargeted: nil) { providers in
-                    handleDropOnTrash(providers)
+                .onDrop(of: [UTType.plainText.identifier], isTargeted: $trashDropIsTargeted) { providers in
+                    return handleDropOnTrash(providers)
                 }
 
                 Text("Clear slot")
                     .font(.caption2)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
-                    .frame(width: 72)
+                    .frame(maxWidth: .infinity)
             }
+            .frame(width: 72)
         }
     }
 
@@ -101,44 +111,46 @@ struct MusicSlotConfigurationView: View {
 
     private func slotPreview(for index: Int) -> some View {
         let slot = slotValue(at: index)
-        return Group {
-            if slot != .none {
-                slotPreview(for: slot)
-                    .frame(width: 48, height: 48)
-                    .contentShape(RoundedRectangle(cornerRadius: 10))
-                    .onDrag {
-                        NSItemProvider(object: NSString(string: "slot:\(index)"))
-                    }
-                    .onDrop(of: [UTType.plainText.identifier], isTargeted: nil) { providers in
-                        handleDrop(providers, toIndex: index)
-                    }
-            } else {
-                slotPreview(for: slot)
-                    .frame(width: 48, height: 48)
-                    .contentShape(RoundedRectangle(cornerRadius: 10))
-                    .onDrop(of: [UTType.plainText.identifier], isTargeted: nil) { providers in
-                        handleDrop(providers, toIndex: index)
-                    }
+        let isSelected = selectedSlotIndex == index
+        let isDropTarget = targetedSlotIndex == index
+
+        return ZStack {
+            RoundedRectangle(cornerRadius: 10)
+                .fill(slotBackgroundColor(isSelected: isSelected, isTargeted: isDropTarget))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10)
+                        .stroke(slotBorderColor(isSelected: isSelected, isTargeted: isDropTarget), lineWidth: borderWidth(isSelected: isSelected, isTargeted: isDropTarget))
+                )
+
+            slotContent(for: slot)
+        }
+        .frame(width: 48, height: 48)
+        .contentShape(RoundedRectangle(cornerRadius: 10))
+        .onTapGesture {
+            withAnimation(.easeInOut(duration: 0.15)) {
+                selectedSlotIndex = index
             }
+        }
+        .onDrag {
+            selectedSlotIndex = index
+            return NSItemProvider(object: NSString(string: "slot:\(index)"))
+        }
+        .onDrop(of: [UTType.plainText.identifier], isTargeted: dropTargetBinding(for: index)) { providers in
+            return handleDrop(providers, toIndex: index)
         }
     }
 
     @ViewBuilder
-    private func slotPreview(for slot: MusicControlButton) -> some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 10)
-                .fill(Color(nsColor: .controlBackgroundColor))
-
-            if slot == .none {
-                RoundedRectangle(cornerRadius: 6)
-                    .stroke(style: StrokeStyle(lineWidth: 1, dash: [4, 4]))
-                    .foregroundStyle(.secondary.opacity(0.35))
-                    .frame(width: 26, height: 26)
-            } else {
-                Image(systemName: slot.iconName)
-                    .font(.system(size: slot.prefersLargeScale ? 18 : 15, weight: .medium))
-                    .foregroundStyle(previewIconColor(for: slot))
-            }
+    private func slotContent(for slot: MusicControlButton) -> some View {
+        if slot == .none {
+            RoundedRectangle(cornerRadius: 6)
+                .stroke(style: StrokeStyle(lineWidth: 1, dash: [4, 4]))
+                .foregroundStyle(.secondary.opacity(0.35))
+                .frame(width: 26, height: 26)
+        } else {
+            Image(systemName: slot.iconName)
+                .font(.system(size: slot.prefersLargeScale ? 18 : 15, weight: .medium))
+                .foregroundStyle(previewIconColor(for: slot))
         }
     }
 
@@ -270,5 +282,42 @@ struct MusicSlotConfigurationView: View {
         if showMediaOutputControl { return }
         let filtered = musicControlSlots.map { $0 == .mediaOutput ? .none : $0 }
         musicControlSlots = filtered
+    }
+
+    private func slotBackgroundColor(isSelected: Bool, isTargeted: Bool) -> Color {
+        if isTargeted {
+            return Color.accentColor.opacity(0.25)
+        } else if isSelected {
+            return Color.accentColor.opacity(0.15)
+        }
+        return Color(nsColor: .controlBackgroundColor)
+    }
+
+    private func slotBorderColor(isSelected: Bool, isTargeted: Bool) -> Color {
+        if isTargeted {
+            return Color.accentColor
+        } else if isSelected {
+            return Color.accentColor.opacity(0.8)
+        }
+        return .clear
+    }
+
+    private func borderWidth(isSelected: Bool, isTargeted: Bool) -> CGFloat {
+        if isTargeted { return 2 }
+        if isSelected { return 1.5 }
+        return 0
+    }
+
+    private func dropTargetBinding(for index: Int) -> Binding<Bool> {
+        Binding(
+            get: { targetedSlotIndex == index },
+            set: { newValue in
+                if newValue {
+                    targetedSlotIndex = index
+                } else if targetedSlotIndex == index {
+                    targetedSlotIndex = nil
+                }
+            }
+        )
     }
 }
