@@ -749,8 +749,13 @@ struct LockScreenMusicPanel: View {
 
     @available(macOS 26.0, *)
     private func clearLiquidGlassSurface(cornerRadius: CGFloat) -> some View {
+//        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+//            .fill(.clear) // Keep surface true to Apple's "Clear" glass guidance
+//            .glassEffect(
+//                .clear.interactive(),
+//                in: .rect(cornerRadius: cornerRadius)
+//            )
         RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-            .fill(.clear) // Keep surface true to Apple's "Clear" glass guidance
             .glassEffect(
                 .clear.interactive(),
                 in: .rect(cornerRadius: cornerRadius)
