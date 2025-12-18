@@ -48,6 +48,10 @@ struct LockScreenMusicPanel: View {
     private let collapsedLyricsExtraHeight: CGFloat = 64
     private let expandedLyricsExtraHeight: CGFloat = 96
 
+    private var shouldUseFrostedBlur: Bool {
+        enableBlur && !usesLiquidGlass
+    }
+
     private var currentSize: CGSize {
         let base = isExpanded ? Self.expandedSize : Self.collapsedSize
         return CGSize(width: base.width, height: base.height + totalExtraHeight)
@@ -680,12 +684,10 @@ struct LockScreenMusicPanel: View {
 
     @ViewBuilder
     private var panelBackground: some View {
-        if enableBlur {
-            if usesLiquidGlass {
-                liquidPanelBackground
-            } else {
-                frostedPanelBackground
-            }
+        if usesLiquidGlass {
+            liquidPanelBackground
+        } else if shouldUseFrostedBlur {
+            frostedPanelBackground
         } else {
             RoundedRectangle(cornerRadius: panelCornerRadius)
                 .fill(Color.black.opacity(0.45))
@@ -695,13 +697,7 @@ struct LockScreenMusicPanel: View {
     @ViewBuilder
     private var liquidPanelBackground: some View {
         if #available(macOS 26.0, *) {
-            RoundedRectangle(cornerRadius: panelCornerRadius)
-                .glassEffect(
-                    .clear
-                        //.tint(Color.white.opacity(0.12))
-                        .interactive(),
-                    in: .rect(cornerRadius: panelCornerRadius)
-                )
+            clearLiquidGlassSurface(cornerRadius: panelCornerRadius)
         }
     }
 
@@ -720,24 +716,13 @@ struct LockScreenMusicPanel: View {
 
     @ViewBuilder
     private func albumArtBackground(cornerRadius: CGFloat) -> some View {
-        if enableBlur {
-            if usesLiquidGlass {
-                if #available(macOS 26.0, *) {
-                    RoundedRectangle(cornerRadius: cornerRadius)
-                        .glassEffect(
-                            .clear
-                                //.tint(Color.white.opacity(0.16))
-                                .interactive(),
-                            in: .rect(cornerRadius: cornerRadius)
-                        )
-                } else {
-                    RoundedRectangle(cornerRadius: cornerRadius)
-                        .fill(.ultraThinMaterial)
-                }
-            } else {
-                RoundedRectangle(cornerRadius: cornerRadius)
-                    .fill(.ultraThinMaterial)
+        if usesLiquidGlass {
+            if #available(macOS 26.0, *) {
+                clearLiquidGlassSurface(cornerRadius: cornerRadius)
             }
+        } else if shouldUseFrostedBlur {
+            RoundedRectangle(cornerRadius: cornerRadius)
+                .fill(.ultraThinMaterial)
         } else {
             RoundedRectangle(cornerRadius: cornerRadius)
                 .fill(Color.black.opacity(0.35))
@@ -760,6 +745,16 @@ struct LockScreenMusicPanel: View {
 
     private var appIconOffset: CGFloat {
         isExpanded ? 18 : 12
+    }
+
+    @available(macOS 26.0, *)
+    private func clearLiquidGlassSurface(cornerRadius: CGFloat) -> some View {
+        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+            .fill(.clear) // Keep surface true to Apple's "Clear" glass guidance
+            .glassEffect(
+                .clear.interactive(),
+                in: .rect(cornerRadius: cornerRadius)
+            )
     }
 
     private func logPanelAppearance(event: String = "✅ View appeared") {

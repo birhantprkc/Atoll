@@ -1364,6 +1364,7 @@ struct Media: View {
     @Default(.musicControlWindowEnabled) private var musicControlWindowEnabled
     @Default(.enableLockScreenMediaWidget) private var enableLockScreenMediaWidget
     @Default(.showSneakPeekOnTrackChange) private var showSneakPeekOnTrackChange
+    @Default(.lockScreenGlassStyle) private var lockScreenGlassStyle
 
     private func highlightID(_ title: String) -> String {
         SettingsTab.media.highlightID(for: title)
@@ -1493,8 +1494,15 @@ struct Media: View {
                     .disabled(!enableLockScreenMediaWidget)
                 Defaults.Toggle("Show panel border", key: .lockScreenPanelShowsBorder)
                     .disabled(!enableLockScreenMediaWidget)
-                Defaults.Toggle("Enable media panel blur", key: .lockScreenPanelUsesBlur)
-                    .disabled(!enableLockScreenMediaWidget)
+                if lockScreenGlassStyle == .frosted {
+                    Defaults.Toggle("Enable media panel blur", key: .lockScreenPanelUsesBlur)
+                        .disabled(!enableLockScreenMediaWidget)
+                        .settingsHighlight(id: highlightID("Enable media panel blur"))
+                } else {
+                    unavailableBlurRow
+                        .opacity(enableLockScreenMediaWidget ? 1 : 0.5)
+                        .settingsHighlight(id: highlightID("Enable media panel blur"))
+                }
             } header: {
                 Text("Lock Screen Integration")
             } footer: {
@@ -1524,6 +1532,17 @@ struct Media: View {
         } else {
             return MediaControllerType.allCases
         }
+    }
+
+    private var unavailableBlurRow: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("Enable media panel blur")
+                .foregroundStyle(.secondary)
+            Text("Only applies when Material is set to Frosted Glass.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 
@@ -2506,9 +2525,15 @@ struct LockScreenSettings: View {
                 Defaults.Toggle("Show panel border", key: .lockScreenPanelShowsBorder)
                     .disabled(!enableLockScreenMediaWidget)
                     .settingsHighlight(id: highlightID("Show panel border"))
-                Defaults.Toggle("Enable media panel blur", key: .lockScreenPanelUsesBlur)
-                    .disabled(!enableLockScreenMediaWidget)
-                    .settingsHighlight(id: highlightID("Enable media panel blur"))
+                if lockScreenGlassStyle == .frosted {
+                    Defaults.Toggle("Enable media panel blur", key: .lockScreenPanelUsesBlur)
+                        .disabled(!enableLockScreenMediaWidget)
+                        .settingsHighlight(id: highlightID("Enable media panel blur"))
+                } else {
+                    blurSettingUnavailableRow
+                        .opacity(enableLockScreenMediaWidget ? 1 : 0.5)
+                        .settingsHighlight(id: highlightID("Enable media panel blur"))
+                }
             } header: {
                 Text("Media Panel")
             } footer: {
@@ -2630,6 +2655,19 @@ struct LockScreenSettings: View {
             }
         }
         .navigationTitle("Lock Screen")
+    }
+}
+
+extension LockScreenSettings {
+    private var blurSettingUnavailableRow: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("Enable media panel blur")
+                .foregroundStyle(.secondary)
+            Text("Only available when Material is set to Frosted Glass.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 
