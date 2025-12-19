@@ -715,7 +715,7 @@ struct LockScreenMusicPanel: View {
     @ViewBuilder
     private var liquidPanelBackdrop: some View {
         if #available(macOS 26.0, *) {
-            clearLiquidGlassSurface(cornerRadius: panelCornerRadius)
+            GlassTextBackdrop(cornerRadius: panelCornerRadius)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .allowsHitTesting(false)
                 .accessibilityHidden(true)
@@ -948,5 +948,27 @@ private struct PanelControlButton: View {
     enum WiggleDirection {
         case clockwise
         case counterClockwise
+    }
+}
+
+@available(macOS 26.0, *)
+private struct GlassTextBackdrop: View {
+    let cornerRadius: CGFloat
+
+    var body: some View {
+        GeometryReader { proxy in
+            let dynamicFontSize = max(min(proxy.size.width, proxy.size.height) / 8, 42)
+
+            Text("Lock Screen Liquid Glass")
+                .font(.system(size: dynamicFontSize, weight: .semibold, design: .rounded))
+                .foregroundStyle(Color.clear)
+                .frame(width: proxy.size.width, height: proxy.size.height)
+                .glassEffect(
+                    .clear.interactive(),
+                    in: .rect(cornerRadius: cornerRadius)
+                )
+        }
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
     }
 }
