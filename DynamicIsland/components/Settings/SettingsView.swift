@@ -301,12 +301,7 @@ struct SettingsView: View {
         }
         .navigationSplitViewStyle(.balanced)
         .toolbar(removing: .sidebarToggle)
-        .toolbar {
-            Button("") {} // Empty label, does nothing
-                .controlSize(.extraLarge)
-                .opacity(0) // Invisible, but reserves space for a consistent look between tabs
-                .disabled(true)
-        }
+        .toolbar { toolbarSpacingShim }
         .environmentObject(highlightCoordinator)
         .formStyle(.grouped)
         .frame(width: 700)
@@ -341,6 +336,28 @@ struct SettingsView: View {
 
     private var resolvedSelection: SettingsTab {
         availableTabs.contains(selectedTab) ? selectedTab : (availableTabs.first ?? .general)
+    }
+
+    @ToolbarContentBuilder
+    private var toolbarSpacingShim: some ToolbarContent {
+        if #available(macOS 26.0, *) {
+            ToolbarItem(placement: .primaryAction) {
+                toolbarSpacerView
+            }
+            .sharedBackgroundVisibility(.hidden)
+        } else {
+            ToolbarItem(placement: .primaryAction) {
+                toolbarSpacerView
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var toolbarSpacerView: some View {
+        Color.clear
+            .frame(width: 96, height: 32)
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
     }
 
     private var filteredTabs: [SettingsTab] {
