@@ -9,6 +9,11 @@ import SwiftUI
 import Defaults
 
 struct LockScreenMusicPanel: View {
+    private struct GlassLogSnapshot: Equatable {
+        let style: LockScreenGlassStyle
+        let usesLiquidGlass: Bool
+    }
+
     static let collapsedSize = CGSize(width: 420, height: 180)
     static let expandedSize = CGSize(width: 720, height: 340)
 
@@ -23,6 +28,7 @@ struct LockScreenMusicPanel: View {
     @State private var isExpanded = false
     @State private var isVolumeSliderVisible = false
     @State private var collapseWorkItem: DispatchWorkItem?
+    @State private var lastLoggedGlassSnapshot: GlassLogSnapshot?
     @Default(.lockScreenGlassStyle) var lockScreenGlassStyle
     @Default(.lockScreenShowAppIcon) var showAppIcon
     @Default(.lockScreenPanelShowsBorder) var showPanelBorder
@@ -47,6 +53,10 @@ struct LockScreenMusicPanel: View {
     private let expandedSliderExtraHeight: CGFloat = 88
     private let collapsedLyricsExtraHeight: CGFloat = 64
     private let expandedLyricsExtraHeight: CGFloat = 96
+
+    private var shouldUseFrostedBlur: Bool {
+        enableBlur && !usesLiquidGlass
+    }
 
     private var currentSize: CGSize {
         let base = isExpanded ? Self.expandedSize : Self.collapsedSize
@@ -74,45 +84,61 @@ struct LockScreenMusicPanel: View {
     }
     
     private var panelContent: some View {
-        panelCore
-            .frame(width: currentSize.width, height: currentSize.height)
-            .animation(.spring(response: 0.48, dampingFraction: 0.82, blendDuration: 0.18), value: isExpanded)
-            .animation(.spring(response: 0.45, dampingFraction: 0.85, blendDuration: 0.18), value: shouldShowVolumeSlider)
-            .onAppear {
-                sliderValue = musicManager.elapsedTime
-                isActive = true
-                logPanelAppearance()
-                updatePanelSize(animated: false)
-                routeManager.refreshDevices()
+        ZStack(alignment: .topLeading) {
+            panelBackgroundLayer
+            panelForeground
+        }
+        .frame(width: currentSize.width, height: currentSize.height, alignment: .topLeading)
+        .clipShape(RoundedRectangle(cornerRadius: panelCornerRadius, style: .continuous))
+        .overlay {
+            if showPanelBorder && !usesLiquidGlass {
+                RoundedRectangle(cornerRadius: panelCornerRadius)
+                    .stroke(Color.white.opacity(0.35), lineWidth: 1.4)
             }
-            .onDisappear {
-                isActive = false
-                cancelCollapseTimer()
-                isVolumeSliderVisible = false
-            }
-            .onChange(of: isExpanded) { _, expanded in
-                updatePanelSize()
-            }
-            .onChange(of: showMediaOutputControl) { _, enabled in
-                if !enabled {
-                    withAnimation(.spring(response: 0.45, dampingFraction: 0.85)) {
-                        isVolumeSliderVisible = false
-                    }
-                }
-                updatePanelSize()
-            }
-            .onChange(of: enableLyrics) { _, _ in
+        }
+        .shadow(color: Color.black.opacity(0.3), radius: 20, x: 0, y: 10)
+        .contentShape(RoundedRectangle(cornerRadius: panelCornerRadius, style: .continuous))
+        .animation(.spring(response: 0.48, dampingFraction: 0.82, blendDuration: 0.18), value: isExpanded)
+        .animation(.spring(response: 0.45, dampingFraction: 0.85, blendDuration: 0.18), value: shouldShowVolumeSlider)
+        .onAppear {
+            sliderValue = musicManager.elapsedTime
+            isActive = true
+            logPanelAppearance()
+            updatePanelSize(animated: false)
+            routeManager.refreshDevices()
+            logGlassState(reason: "Panel appeared")
+        }
+        .onDisappear {
+            isActive = false
+            cancelCollapseTimer()
+            isVolumeSliderVisible = false
+        }
+        .onChange(of: isExpanded) { _, expanded in
+            updatePanelSize()
+        }
+        .onChange(of: showMediaOutputControl) { _, enabled in
+            if !enabled {
                 withAnimation(.spring(response: 0.45, dampingFraction: 0.85)) {
-                    updatePanelSize()
+                    isVolumeSliderVisible = false
                 }
             }
-            .scaleEffect(animator.isPresented ? 1 : 0.9, anchor: .center)
-            .opacity(animator.isPresented ? 1 : 0)
-            .animation(.spring(response: 0.52, dampingFraction: 0.8), value: animator.isPresented)
+            updatePanelSize()
+        }
+        .onChange(of: enableLyrics) { _, _ in
+            withAnimation(.spring(response: 0.45, dampingFraction: 0.85)) {
+                updatePanelSize()
+            }
+        }
+        .onChange(of: lockScreenGlassStyle) { _, _ in
+            logGlassState(reason: "Glass style updated")
+        }
+        .scaleEffect(animator.isPresented ? 1 : 0.9, anchor: .center)
+        .opacity(animator.isPresented ? 1 : 0)
+        .animation(.spring(response: 0.52, dampingFraction: 0.8), value: animator.isPresented)
     }
 
     @ViewBuilder
-    private var panelCore: some View {
+    private var panelForeground: some View {
         Group {
             if isExpanded {
                 expandedLayout
@@ -122,17 +148,7 @@ struct LockScreenMusicPanel: View {
         }
         .padding(.horizontal, isExpanded ? 24 : 20)
         .padding(.vertical, isExpanded ? 22 : 16)
-        .frame(width: currentSize.width, height: currentSize.height, alignment: .topLeading)
-        .background(panelBackground)
-        .clipShape(RoundedRectangle(cornerRadius: panelCornerRadius, style: .continuous))
-        .overlay {
-            if showPanelBorder {
-                RoundedRectangle(cornerRadius: panelCornerRadius)
-                    .stroke(Color.white.opacity(0.35), lineWidth: 1.4)
-            }
-        }
-        .shadow(color: Color.black.opacity(0.3), radius: 20, x: 0, y: 10)
-        .contentShape(RoundedRectangle(cornerRadius: panelCornerRadius, style: .continuous))
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 
     private var collapsedLayout: some View {
@@ -601,8 +617,15 @@ struct LockScreenMusicPanel: View {
         .padding(.horizontal, 12)
         .background(
             RoundedRectangle(cornerRadius: isExpanded ? 16 : 12, style: .continuous)
-                .fill(Color.white.opacity(0.08))
+                .fill(sliderBackgroundFill)
         )
+    }
+
+    private var sliderBackgroundFill: Color {
+        if usesLiquidGlass {
+            return Color.white.opacity(0.05)
+        }
+        return Color.white.opacity(0.08)
     }
 
     private var shouldShowVolumeSlider: Bool {
@@ -679,35 +702,40 @@ struct LockScreenMusicPanel: View {
     }
 
     @ViewBuilder
-    private var panelBackground: some View {
-        if enableBlur {
-            if usesLiquidGlass {
-                liquidPanelBackground
-            } else {
-                frostedPanelBackground
-            }
+    private var panelBackgroundLayer: some View {
+        if usesLiquidGlass {
+            liquidPanelBackdrop
+        } else if shouldUseFrostedBlur {
+            frostedPanelBackground
         } else {
-            RoundedRectangle(cornerRadius: panelCornerRadius)
-                .fill(Color.black.opacity(0.45))
+            opaquePanelBackground
         }
     }
 
     @ViewBuilder
-    private var liquidPanelBackground: some View {
+    private var liquidPanelBackdrop: some View {
         if #available(macOS 26.0, *) {
-            RoundedRectangle(cornerRadius: panelCornerRadius)
-                .glassEffect(
-                    .clear
-                        //.tint(Color.white.opacity(0.12))
-                        .interactive(),
-                    in: .rect(cornerRadius: panelCornerRadius)
-                )
+            GlassTextBackdrop(cornerRadius: panelCornerRadius)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
         }
     }
 
     private var frostedPanelBackground: some View {
         RoundedRectangle(cornerRadius: panelCornerRadius)
             .fill(.ultraThinMaterial)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+    }
+
+    private var opaquePanelBackground: some View {
+        RoundedRectangle(cornerRadius: panelCornerRadius)
+            .fill(Color.black.opacity(0.45))
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
     }
 
     private func albumArtImage(size: CGFloat, cornerRadius: CGFloat) -> some View {
@@ -720,24 +748,13 @@ struct LockScreenMusicPanel: View {
 
     @ViewBuilder
     private func albumArtBackground(cornerRadius: CGFloat) -> some View {
-        if enableBlur {
-            if usesLiquidGlass {
-                if #available(macOS 26.0, *) {
-                    RoundedRectangle(cornerRadius: cornerRadius)
-                        .glassEffect(
-                            .clear
-                                //.tint(Color.white.opacity(0.16))
-                                .interactive(),
-                            in: .rect(cornerRadius: cornerRadius)
-                        )
-                } else {
-                    RoundedRectangle(cornerRadius: cornerRadius)
-                        .fill(.ultraThinMaterial)
-                }
-            } else {
-                RoundedRectangle(cornerRadius: cornerRadius)
-                    .fill(.ultraThinMaterial)
+        if usesLiquidGlass {
+            if #available(macOS 26.0, *) {
+                clearLiquidGlassSurface(cornerRadius: cornerRadius)
             }
+        } else if shouldUseFrostedBlur {
+            RoundedRectangle(cornerRadius: cornerRadius)
+                .fill(.ultraThinMaterial)
         } else {
             RoundedRectangle(cornerRadius: cornerRadius)
                 .fill(Color.black.opacity(0.35))
@@ -760,6 +777,50 @@ struct LockScreenMusicPanel: View {
 
     private var appIconOffset: CGFloat {
         isExpanded ? 18 : 12
+    }
+
+    @available(macOS 26.0, *)
+    private func clearLiquidGlassSurface(cornerRadius: CGFloat) -> some View {
+        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+            .fill(.clear)
+            .glassEffect(
+                .clear.interactive(),
+                in: .rect(cornerRadius: cornerRadius)
+            )
+    }
+
+    private func logGlassState(reason: String) {
+        let snapshot = GlassLogSnapshot(style: lockScreenGlassStyle, usesLiquidGlass: usesLiquidGlass)
+        guard snapshot != lastLoggedGlassSnapshot else { return }
+        lastLoggedGlassSnapshot = snapshot
+
+        struct ComponentState {
+            let name: String
+            let isLiquid: Bool
+        }
+
+        let states = [
+            ComponentState(name: "Panel Shell", isLiquid: usesLiquidGlass),
+            ComponentState(name: "Control Capsules", isLiquid: usesLiquidGlass),
+            ComponentState(name: "Volume Slider", isLiquid: usesLiquidGlass),
+            ComponentState(name: "Album Art Plate", isLiquid: usesLiquidGlass)
+        ]
+
+        let componentSummary = states.map { entry -> String in
+            let mode = entry.isLiquid ? "Liquid" : "Frosted"
+            return "\(entry.name)=\(mode)"
+        }.joined(separator: ", ")
+
+        print("[LockScreenMusicPanel] \(reason) – style=\(lockScreenGlassStyle.rawValue), usesLiquidGlass=\(usesLiquidGlass), components[\(componentSummary)], macOS \(currentOSVersionDescription())")
+
+        if lockScreenGlassStyle == .liquid && !usesLiquidGlass {
+            print("[LockScreenMusicPanel] Liquid Glass requested but unavailable on this macOS build. Falling back to frosted visuals.")
+        }
+    }
+
+    private func currentOSVersionDescription() -> String {
+        let version = ProcessInfo.processInfo.operatingSystemVersion
+        return "\(version.majorVersion).\(version.minorVersion).\(version.patchVersion)"
     }
 
     private func logPanelAppearance(event: String = "✅ View appeared") {
@@ -887,5 +948,27 @@ private struct PanelControlButton: View {
     enum WiggleDirection {
         case clockwise
         case counterClockwise
+    }
+}
+
+@available(macOS 26.0, *)
+private struct GlassTextBackdrop: View {
+    let cornerRadius: CGFloat
+
+    var body: some View {
+        GeometryReader { proxy in
+            let dynamicFontSize = max(min(proxy.size.width, proxy.size.height) / 8, 42)
+
+            Text("Lock Screen Liquid Glass")
+                .font(.system(size: dynamicFontSize, weight: .semibold, design: .rounded))
+                .foregroundStyle(Color.clear)
+                .frame(width: proxy.size.width, height: proxy.size.height)
+                .glassEffect(
+                    .clear.interactive(),
+                    in: .rect(cornerRadius: cornerRadius)
+                )
+        }
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
     }
 }
