@@ -10,6 +10,14 @@ final class SystemChangesObserver: MediaKeyInterceptorDelegate {
     private let keyboardBacklightController = SystemKeyboardBacklightController.shared
     private let mediaKeyInterceptor = MediaKeyInterceptor.shared
 
+    private static let headsetIconSymbols: Set<String> = [
+        "airpods",
+        "airpodspro",
+        "airpodsmax",
+        "beats.headphones",
+        "headphones"
+    ]
+
     private let standardVolumeStep: Float = 1.0 / 16.0
     private let standardBrightnessStep: Float = 1.0 / 16.0
     private let fineStepDivisor: Float = 4.0
@@ -30,11 +38,16 @@ final class SystemChangesObserver: MediaKeyInterceptorDelegate {
         volumeController.onVolumeChange = { [weak self] volume, muted in
             guard let self, self.volumeEnabled else { return }
             let value = muted ? 0 : volume
-            self.sendVolumeNotification(value: value)
+            Task { @MainActor in
+                self.sendVolumeNotification(value: value, isMuted: muted)
+            }
         }
         volumeController.onRouteChange = { [weak self] in
             guard let self, self.volumeEnabled else { return }
-            self.sendVolumeNotification(value: self.volumeController.isMuted ? 0 : self.volumeController.currentVolume)
+            let muted = self.volumeController.isMuted
+            Task { @MainActor in
+                self.sendVolumeNotification(value: muted ? 0 : self.volumeController.currentVolume, isMuted: muted)
+            }
         }
         volumeController.start()
 
@@ -162,7 +175,8 @@ final class SystemChangesObserver: MediaKeyInterceptorDelegate {
 
     // MARK: - HUD Dispatch
 
-    private func sendVolumeNotification(value: Float) {
+    @MainActor
+    private func sendVolumeNotification(value: Float, isMuted: Bool) {
         if HUDSuppressionCoordinator.shared.shouldSuppressVolumeHUD {
             return
         }
@@ -177,10 +191,8 @@ final class SystemChangesObserver: MediaKeyInterceptorDelegate {
         
         // Send to Vertical HUD if enabled
         if Defaults[.enableVerticalHUD] {
-            Task { @MainActor in
-                let icon = BluetoothAudioManager.shared.activeDeviceIconSymbol() ?? ""
-                VerticalHUDWindowManager.shared.show(type: .volume, value: CGFloat(value), icon: icon)
-            }
+            let icon = resolvedVolumeIcon(isMuted: isMuted)
+            VerticalHUDWindowManager.shared.show(type: .volume, value: CGFloat(value), icon: icon)
             return
         }
         
@@ -203,6 +215,15 @@ final class SystemChangesObserver: MediaKeyInterceptorDelegate {
                 )
             }
         }
+    }
+
+    @MainActor
+    private func resolvedVolumeIcon(isMuted: Bool) -> String {
+        guard let icon = BluetoothAudioManager.shared.activeDeviceIconSymbol() else { return "" }
+        if isMuted && Self.headsetIconSymbols.contains(icon) {
+            return "headphones.slash"
+        }
+        return icon
     }
 
     private func sendBrightnessNotification(value: Float) {

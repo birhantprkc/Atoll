@@ -2294,6 +2294,7 @@ struct About: View {
                     .padding(.horizontal, 10)
             }
             .frame(maxWidth: .infinity, alignment: .center)
+            .background(Color(nsColor: .controlBackgroundColor))
         }
         .toolbar {
 //            Button("Welcome window") {
