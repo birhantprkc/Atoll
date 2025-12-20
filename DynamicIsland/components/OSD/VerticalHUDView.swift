@@ -203,7 +203,7 @@ struct VerticalHUDView: View {
         case .brightness:
             return "sun.max.fill"
         case .backlight:
-            return "keyboard"
+            return state.value >= 0.5 ? "light.max" : "light.min"
         default:
             return "questionmark"
         }

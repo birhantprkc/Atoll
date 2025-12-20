@@ -92,7 +92,7 @@ private enum SettingsTab: String, CaseIterable, Identifiable {
         case .appearance: return .purple
         case .lockScreen: return .orange
         case .media: return .green
-        case .devices: return .cyan
+        case .devices: return Color(red: 0.1, green: 0.11, blue: 0.12)
         case .timer: return .red
         case .calendar: return .cyan
         case .hudAndOSD: return .indigo
@@ -260,7 +260,7 @@ struct SettingsView: View {
                         HStack(spacing: 10) {
                             sidebarIcon(for: tab)
                             Text(tab.title)
-                            if tab == .downloads {
+                            if tab == .downloads || tab == .hudAndOSD {
                                 Spacer()
                                 Text("BETA")
                                     .font(.system(size: 9, weight: .bold))
@@ -1288,6 +1288,10 @@ private struct HUDAndOSDSettingsView: View {
         var id: String { rawValue }
     }
 
+    private var paneBackgroundColor: Color {
+        Color(nsColor: .controlBackgroundColor)
+    }
+
     var body: some View {
         VStack(spacing: 20) {
             HStack(spacing: 16) {
@@ -1533,7 +1537,6 @@ private struct HUDAndOSDSettingsView: View {
                         Text("Dimensions")
                     }
                 }
-                .padding(.top, 10)
 
             case .circular:
                 Form {
@@ -1578,9 +1581,10 @@ private struct HUDAndOSDSettingsView: View {
                         Text("Dimensions")
                     }
                 }
-                .padding(.top, 10)
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .background(paneBackgroundColor)
         .navigationTitle("Controls")
     }
 }
@@ -1690,7 +1694,6 @@ private struct DevicesSettingsView: View {
                 }
             }
         }
-        .padding(.top, 10)
         .navigationTitle("Devices")
     }
 }
