@@ -20,32 +20,55 @@ struct CircularHUDView: View {
     
     var body: some View {
         ZStack {
-            // Background circle
+            // Background circle (SOLO OPAQUE - No transparency)
             Circle()
-                .fill(.ultraThinMaterial)
+                .fill(Color(white: 0.1))
                 .overlay {
                     Circle()
-                        .stroke(.white.opacity(0.1), lineWidth: 1)
+                        .stroke(Color(white: 0.2), lineWidth: 1)
                 }
             
-            // Native Gauge Ring
-            Gauge(value: value) {
-                Text("")
+            // 1. Static Background Track (Empty binario)
+            Circle()
+                .trim(from: 0.15, to: 0.85)
+                .stroke(Color(white: 0.15), style: StrokeStyle(lineWidth: strokeWidth * 1.5, lineCap: .round))
+                .rotationEffect(.degrees(90))
+                .frame(width: size, height: size)
+            
+            // 2. Animated Progress Arc (Filled part)
+            Circle()
+                .trim(from: 0.15, to: 0.15 + (0.7 * value))
+                .stroke(strokeStyle, style: StrokeStyle(lineWidth: strokeWidth * 1.5, lineCap: .round))
+                .rotationEffect(.degrees(90))
+                .frame(width: size, height: size)
+                .animation(.interactiveSpring(response: 0.35, dampingFraction: 0.85, blendDuration: 0), value: value)
+            
+            // 3. The "Ball" Indicator (Oversized White Pallino)
+            GeometryReader { geometry in
+                let radius = size / 2
+                let trackWidth = strokeWidth * 1.5
+                let startAngle = 144.0
+                let currentAngle = startAngle + (252.0 * value)
+                
+                let x = radius + radius * cos(currentAngle * .pi / 180)
+                let y = radius + radius * sin(currentAngle * .pi / 180)
+                
+                Circle()
+                    .fill(.white)
+                    .frame(width: trackWidth * 1.45, height: trackWidth * 1.45)
+                    .shadow(color: .black.opacity(0.45), radius: 2, x: 0, y: 1.2)
+                    .position(x: x, y: y)
+                    .animation(.interactiveSpring(response: 0.35, dampingFraction: 0.85, blendDuration: 0), value: value)
             }
-            .gaugeStyle(.accessoryCircular)
-            .labelsHidden()
-            .tint(strokeStyle)
-            .scaleEffect(size / 60)
-            .animation(.spring(response: 0.4, dampingFraction: 0.7, blendDuration: 0), value: value)
+            .frame(width: size, height: size)
             
             // Central Icon
             Image(systemName: symbolName)
                 .font(.system(size: size * 0.32, weight: .bold))
                 .symbolRenderingMode(.hierarchical)
                 .foregroundStyle(.white)
-                .contentTransition(.symbolEffect(.replace)) // Smooth icon switching
+                .contentTransition(.symbolEffect(.replace))
                 .animation(.spring(response: 0.3, dampingFraction: 0.6), value: symbolName)
-
             
             // Bottom Value Label
             if showValue {
@@ -53,9 +76,9 @@ struct CircularHUDView: View {
                     Spacer()
                     Text("\(Int(value * 100))")
                         .font(.system(size: size * 0.15, weight: .bold, design: .rounded))
-                        .foregroundStyle(.white.opacity(0.9))
+                        .foregroundStyle(.white.opacity(0.65))
                         .contentTransition(.numericText())
-                        .padding(.bottom, size * 0.03) // Adjusted to align perfectly with the bottom gap
+                        .padding(.bottom, size * 0.03)
                 }
             }
 
@@ -72,7 +95,12 @@ struct CircularHUDView: View {
             return ColorCodedProgressBar.shapeStyle(for: value, mode: .volume, smoothGradient: useSmoothGradient)
         }
         
-        return AnyShapeStyle(useAccentColor ? Color.accentColor : Color.white)
+        if useAccentColor {
+            return AnyShapeStyle(Color.accentColor)
+        }
+        
+        // Default to the approved solid dark gray to match reference when not colored
+        return AnyShapeStyle(Color(white: 0.25))
     }
     
     private var symbolName: String {
