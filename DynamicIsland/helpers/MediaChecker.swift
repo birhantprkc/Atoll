@@ -19,7 +19,11 @@ final class MediaChecker: Sendable {
         guard let scriptURL = Bundle.main.url(forResource: "mediaremote-adapter", withExtension: "pl"),
               let nowPlayingTestClientPath = Bundle.main.url(forResource: "MediaRemoteAdapterTestClient", withExtension: nil)?.path,
               //let frameworkPath = Bundle.main.privateFrameworksPath?.appending("/MediaRemoteAdapter.framework")
-              let frameworkPath = Optional("/System/Library/PrivateFrameworks/MediaRemoteAdapter.framework")
+              //let frameworkPath = Optional("/System/Library/PrivateFrameworks/MediaRemoteAdapter.framework")
+                let frameworkPath =
+                    Bundle.main.resourceURL?
+                        .appendingPathComponent("MediaRemoteAdapter.framework")
+                        .path
         else {
             throw MediaCheckerError.missingResources
         }
