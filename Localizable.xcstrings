@@ -87546,8 +87546,8 @@
         },
         "fi" : {
           "stringUnit" : {
-            "state" : "new",
-            "value" : ""
+            "state" : "translated",
+            "value" : "Määritä esikatselu, sanoitukset ja kelluvat mediatoiminnot Media-välilehdessä."
           }
         },
         "fr" : {
@@ -87938,8 +87938,8 @@
         },
         "fi" : {
           "stringUnit" : {
-            "state" : "new",
-            "value" : ""
+            "state" : "translated",
+            "value" : "Käyttää tapahtumapohjaista yksityistä sovellusliittymää reaaliaikaiseen näytön tallennuksen tunnistamiseen"
           }
         },
         "fr" : {
@@ -88589,8 +88589,8 @@
         },
         "fi" : {
           "stringUnit" : {
-            "state" : "new",
-            "value" : ""
+            "state" : "translated",
+            "value" : "Katso GitHubissa: th-ch/youtube-music"
           }
         },
         "fr" : {
@@ -89079,6 +89079,12 @@
             "state" : "translated",
             "value" : "Wir benötigen Ihre Kamera für den Spiegelmodus."
           }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tarvitsemme kamerasi peilikuva-tilaan"
+          }
         }
       }
     },
@@ -89123,8 +89129,8 @@
         },
         "fi" : {
           "stringUnit" : {
-            "state" : "new",
-            "value" : ""
+            "state" : "translated",
+            "value" : "Sää"
           }
         },
         "fr" : {
@@ -90004,6 +90010,12 @@
             "state" : "translated",
             "value" : "Wenn diese Option deaktiviert ist, sind alle Tastaturkürzel inaktiv. Sie können weiterhin die UI-Steuerelemente verwenden."
           }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kun tämä toiminto on pois käytöstä, kaikki pikanäppäimet ovat passiivisia. Voit kuitenkin edelleen käyttää käyttöliittymän ohjaimia."
+          }
         }
       }
     },
@@ -90471,6 +90483,12 @@
             "value" : ""
           }
         },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "सक्रिय होने पर, स्टैट्स टैब वास्तविक समय में सिस्टम प्रदर्शन के ग्राफ़ दिखाएगा। इस सुविधा के लिए सिस्टम अनुमतियों की आवश्यकता होती है और यह अतिरिक्त बैटरी उपयोग कर सकता है।"
+          }
+        },
         "hu" : {
           "stringUnit" : {
             "state" : "new",
@@ -90552,6 +90570,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Breitenanpassungen gelten nur für das Standard-Notch-Layout. Deaktivieren Sie die minimalistische Benutzeroberfläche, um diesen Wert zu bearbeiten."
+          }
+        },
+        "fi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Leveysasetukset koskevat vain vakiomallista lovijärjestystä. Poista Minimalistinen käyttöliittymä käytöstä, jos haluat muokata tätä arvoa."
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "चौड़ाई समायोजन केवल मानक नॉच लेआउट पर लागू होते हैं। इस मान को संपादित करने के लिए मिनिमलिस्टिक यूआई को अक्षम करें।"
           }
         }
       }
@@ -90740,6 +90770,12 @@
           "stringUnit" : {
             "state" : "new",
             "value" : ""
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld ग्राफ़ सक्षम होने पर, डायनामिक आइलैंड सभी ग्राफ़ को एक ही पंक्ति में समायोजित करने के लिए क्षैतिज रूप से फैल जाएगा।"
           }
         },
         "hu" : {
