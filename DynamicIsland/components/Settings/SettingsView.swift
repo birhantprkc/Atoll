@@ -2423,7 +2423,7 @@ struct Shelf: View {
                     SettingsPermissionCallout(
                         title: "Full Disk Access required",
                         message: "Grant Full Disk Access so the Shelf can index and move files outside the app sandbox.",
-                        icon: "internaldrive.badge.exclamationmark",
+                        icon: "externaldrive.fill",
                         iconColor: .purple,
                         requestButtonTitle: "Request Full Disk Access",
                         openSettingsButtonTitle: "Open Privacy & Security",
@@ -2582,7 +2582,7 @@ struct LiveActivitiesSettings: View {
                     SettingsPermissionCallout(
                         title: "Custom Focus metadata",
                         message: "Full Disk Access unlocks custom Focus icons, colors, and labels. Standard Focus detection still works without it—grant access only if you need personalized indicators.",
-                        icon: "internaldrive.badge.exclamationmark",
+                        icon: "externaldrive.fill",
                         iconColor: .purple,
                         requestButtonTitle: "Request Full Disk Access",
                         openSettingsButtonTitle: "Open Privacy & Security",
