@@ -1,6 +1,9 @@
 import SwiftUI
 import AppKit
 import AtollExtensionKit
+import Lottie
+import LottieUI
+import CryptoKit
 
 // MARK: - Color Conversion
 
@@ -130,7 +133,15 @@ struct ExtensionIconView: View {
             } else {
                 fallbackSymbol
             }
-        case .lottie, .none:
+        case let .lottie(animationData, targetSize):
+            let resolvedSize = CGSize(width: min(targetSize.width, size.width), height: min(targetSize.height, size.height))
+            ExtensionLottieView(data: animationData, size: resolvedSize)
+                .frame(width: size.width, height: size.height)
+                .background(
+                    RoundedRectangle(cornerRadius: cornerRadius(for: descriptor), style: .continuous)
+                        .fill(Color.white.opacity(0.08))
+                )
+        case .none:
             fallbackSymbol
         }
     }
@@ -187,6 +198,69 @@ struct ExtensionCompositeIconView: View {
     }
 }
 
+// MARK: - Lottie Rendering
+
+struct ExtensionLottieView: View {
+    let data: Data
+    let size: CGSize
+    var loopMode: LottieLoopMode = .loop
+    @State private var cachedURL: URL?
+
+    var body: some View {
+        Group {
+            if let cachedURL {
+                LottieView(
+                    state: LUStateData(
+                        type: .loadedFrom(cachedURL),
+                        speed: 1.0,
+                        loopMode: loopMode
+                    )
+                )
+            } else {
+                ProgressView()
+                    .controlSize(.small)
+                    .tint(.white.opacity(0.7))
+            }
+        }
+        .frame(width: size.width, height: size.height)
+        .task {
+            if cachedURL == nil {
+                cachedURL = ExtensionLottieCache.shared.url(for: data)
+            }
+        }
+    }
+}
+
+private final class ExtensionLottieCache {
+    static let shared = ExtensionLottieCache()
+    private let queue = DispatchQueue(label: "com.atoll.extension-lottie-cache")
+    private var cache: [String: URL] = [:]
+
+    func url(for data: Data) -> URL? {
+        queue.sync {
+            let key = Self.hash(data: data)
+            if let existing = cache[key], FileManager.default.fileExists(atPath: existing.path) {
+                return existing
+            }
+
+            let url = FileManager.default.temporaryDirectory.appendingPathComponent("extension-lottie-\(key).json", conformingTo: .json)
+            do {
+                try data.write(to: url, options: .atomic)
+                cache[key] = url
+                return url
+            } catch {
+                cache.removeValue(forKey: key)
+                return nil
+            }
+        }
+    }
+
+    private static func hash(data: Data) -> String {
+        let digest = SHA256.hash(data: data)
+        return digest.map { String(format: "%02x", $0) }.joined()
+    }
+}
+
 // MARK: - Progress Rendering
 
 struct ExtensionProgressIndicatorView: View {
@@ -194,39 +268,59 @@ struct ExtensionProgressIndicatorView: View {
     let progress: Double
     let accent: Color
     let estimatedDuration: TimeInterval?
+    let maxVisualHeight: CGFloat?
+
+    init(
+        indicator: AtollProgressIndicator,
+        progress: Double,
+        accent: Color,
+        estimatedDuration: TimeInterval?,
+        maxVisualHeight: CGFloat? = nil
+    ) {
+        self.indicator = indicator
+        self.progress = progress
+        self.accent = accent
+        self.estimatedDuration = estimatedDuration
+        self.maxVisualHeight = maxVisualHeight
+    }
 
     var body: some View {
         switch indicator {
-        case let .ring(diameter, strokeWidth):
+        case let .ring(diameter, strokeWidth, color):
+            let ringColor = color?.swiftUIColor ?? accent
+            let resolvedDiameter = resolvedRingDiameter(requested: diameter)
             ZStack {
                 Circle()
                     .stroke(Color.white.opacity(0.15), lineWidth: strokeWidth)
                 Circle()
                     .trim(from: 0, to: CGFloat(max(0, min(progress, 1))))
-                    .stroke(accent, style: StrokeStyle(lineWidth: strokeWidth, lineCap: .round))
+                    .stroke(ringColor, style: StrokeStyle(lineWidth: strokeWidth, lineCap: .round))
                     .rotationEffect(.degrees(-90))
                     .animation(.smooth(duration: 0.25), value: progress)
             }
-            .frame(width: diameter, height: diameter)
-        case let .bar(width, height, cornerRadius):
+            .frame(width: resolvedDiameter, height: resolvedDiameter)
+        case let .bar(width, height, cornerRadius, color):
+            let barColor = color?.swiftUIColor ?? accent
             Capsule()
                 .fill(Color.white.opacity(0.18))
                 .frame(width: width ?? 80, height: height)
                 .overlay(alignment: .leading) {
                     Capsule()
-                        .fill(accent)
+                        .fill(barColor)
                         .frame(width: (width ?? 80) * CGFloat(max(0, min(progress, 1))), height: height)
                         .animation(.smooth(duration: 0.25), value: progress)
                 }
-        case let .percentage(font):
+        case let .percentage(font, color):
+            let textColor = color?.swiftUIColor ?? accent
             Text("\(Int(progress * 100))%")
                 .font(font.swiftUIFont())
-                .foregroundStyle(accent)
+                .foregroundStyle(textColor)
                 .monospacedDigit()
-        case let .countdown(font):
+        case let .countdown(font, color):
+            let textColor = color?.swiftUIColor ?? accent
             Text(countdownText)
                 .font(font.swiftUIFont())
-                .foregroundStyle(accent)
+                .foregroundStyle(textColor)
                 .monospacedDigit()
         case .lottie:
             Image(systemName: "sparkles")
@@ -252,6 +346,12 @@ struct ExtensionProgressIndicatorView: View {
     private var formatPercent: String {
         "\(Int(progress * 100))%"
     }
+
+    private func resolvedRingDiameter(requested: CGFloat) -> CGFloat {
+        guard let maxVisualHeight else { return requested }
+        let clamped = min(requested, max(maxVisualHeight - 6, 18))
+        return max(18, clamped)
+    }
 }
 
 // MARK: - Edge Content Rendering
@@ -264,23 +364,23 @@ struct ExtensionEdgeContentView: View {
 
     var body: some View {
         switch content {
-        case let .text(value, font: font):
+        case let .text(value, font: font, color: color):
             Text(value)
                 .font(font.swiftUIFont())
-                .foregroundStyle(accent)
+                .foregroundStyle(resolvedColor(color))
                 .lineLimit(1)
                 .frame(maxWidth: .infinity, alignment: alignment)
-        case let .marquee(value, font: font, minDuration: duration):
+        case let .marquee(value, font: font, minDuration: duration, color: color):
             MarqueeText(
                 .constant(value),
                 font: font.swiftUIFont(),
                 nsFont: .body,
-                textColor: accent,
+                textColor: resolvedColor(color),
                 minDuration: duration,
                 frameWidth: max(24, availableWidth - 12)
             )
-        case let .countdownText(targetDate, font: font):
-            ExtensionCountdownTextView(targetDate: targetDate, font: font, accent: accent)
+        case let .countdownText(targetDate, font: font, color: color):
+            ExtensionCountdownTextView(targetDate: targetDate, font: font, accent: accent, customColor: color?.swiftUIColor)
                 .frame(maxWidth: .infinity, alignment: alignment)
         case let .icon(descriptor):
             ExtensionIconView(
@@ -297,13 +397,16 @@ struct ExtensionEdgeContentView: View {
                     AudioSpectrumView(isPlaying: .constant(true))
                         .frame(width: 16, height: 12)
                 }
-        case .animation:
-            Image(systemName: "sparkles")
-                .font(.system(size: 14, weight: .medium))
-                .foregroundStyle(accent)
+        case let .animation(data, size):
+            let resolvedWidth = min(size.width, availableWidth)
+            ExtensionLottieView(data: data, size: CGSize(width: resolvedWidth, height: size.height))
         case .none:
             EmptyView()
         }
+    }
+
+    private func resolvedColor(_ descriptorColor: AtollColorDescriptor?) -> Color {
+        descriptorColor?.swiftUIColor ?? accent
     }
 }
 
@@ -311,12 +414,13 @@ struct ExtensionCountdownTextView: View {
     let targetDate: Date
     let font: AtollFontDescriptor
     let accent: Color
+    let customColor: Color?
 
     var body: some View {
         TimelineView(.periodic(from: .now, by: 1)) { context in
             Text(formattedRemaining(since: context.date))
                 .font(font.swiftUIFont())
-                .foregroundStyle(accent)
+                .foregroundStyle(customColor ?? accent)
                 .monospacedDigit()
         }
     }
@@ -337,8 +441,13 @@ struct ExtensionCountdownTextView: View {
 
 enum ExtensionLayoutMetrics {
     static func trailingWidth(for payload: ExtensionLiveActivityPayload, baseWidth: CGFloat, maxWidth: CGFloat? = nil) -> CGFloat {
-        var width = edgeWidth(for: payload.descriptor.trailingContent, baseWidth: baseWidth, maxWidth: maxWidth)
-        if let indicator = payload.descriptor.progressIndicator {
+        let renderable = resolvedExtensionTrailingRenderable(for: payload.descriptor)
+        var width: CGFloat
+        switch renderable {
+        case let .content(content):
+            width = edgeWidth(for: content, baseWidth: baseWidth, maxWidth: maxWidth)
+        case let .indicator(indicator):
+            width = edgeWidth(for: .none, baseWidth: baseWidth, maxWidth: maxWidth)
             width = max(width, widthForProgress(indicator))
         }
         if let maxWidth {
@@ -357,13 +466,13 @@ enum ExtensionLayoutMetrics {
 
     private static func widthForContent(_ content: AtollTrailingContent, baseWidth: CGFloat) -> CGFloat {
         switch content {
-        case let .text(text, font: font):
+        case let .text(text, font: font, color: _):
             let measured = ExtensionTextMeasurer.width(for: text, font: font.nsFont())
             return max(baseWidth, measured + 32)
-        case let .marquee(text, font: font, _):
+        case let .marquee(text, font: font, minDuration: _, color: _):
             let measured = ExtensionTextMeasurer.width(for: text, font: font.nsFont())
             return max(baseWidth, min(measured + 40, baseWidth * 2))
-        case let .countdownText(targetDate, font: font):
+        case let .countdownText(targetDate, font: font, color: _):
             let sample = targetDate.timeIntervalSinceNow >= 3600 ? "00:00:00" : "00:00"
             let measured = ExtensionTextMeasurer.width(for: sample, font: font.nsFont())
             return max(baseWidth, measured + 24)
@@ -380,13 +489,13 @@ enum ExtensionLayoutMetrics {
 
     private static func widthForProgress(_ indicator: AtollProgressIndicator) -> CGFloat {
         switch indicator {
-        case let .ring(diameter, _):
+        case let .ring(diameter, _, _):
             return diameter + 20
-        case let .bar(width, _, _):
+        case let .bar(width, _, _, _):
             return (width ?? 72) + 12
-        case .percentage:
+        case .percentage(_, _):
             return 60
-        case .countdown:
+        case .countdown(_, _):
             return 74
         case let .lottie(_, size):
             return size.width + 16
@@ -400,5 +509,43 @@ enum ExtensionTextMeasurer {
     static func width(for text: String, font: NSFont) -> CGFloat {
         let attributes: [NSAttributedString.Key: Any] = [.font: font]
         return max(1, text.size(withAttributes: attributes).width)
+    }
+}
+
+enum ExtensionTrailingRenderable {
+    case content(AtollTrailingContent)
+    case indicator(AtollProgressIndicator)
+}
+
+func resolvedExtensionLeadingContent(for descriptor: AtollLiveActivityDescriptor) -> AtollTrailingContent {
+    guard let override = descriptor.leadingContent else {
+        return .icon(descriptor.leadingIcon)
+    }
+
+    switch override {
+    case .icon, .animation:
+        return override
+    default:
+        return .icon(descriptor.leadingIcon)
+    }
+}
+
+func resolvedExtensionTrailingRenderable(for descriptor: AtollLiveActivityDescriptor) -> ExtensionTrailingRenderable {
+    if let indicator = descriptor.progressIndicator,
+       indicator.isRenderable,
+       descriptor.trailingContent == .none {
+        return .indicator(indicator)
+    }
+    return .content(descriptor.trailingContent)
+}
+
+private extension AtollProgressIndicator {
+    var isRenderable: Bool {
+        switch self {
+        case .none:
+            return false
+        default:
+            return true
+        }
     }
 }

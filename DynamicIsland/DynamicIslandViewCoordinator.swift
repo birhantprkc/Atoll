@@ -9,7 +9,7 @@ import Combine
 import Defaults
 import SwiftUI
 
-enum SneakContentType {
+enum SneakContentType: Equatable {
     case brightness
     case volume
     case backlight
@@ -25,6 +25,34 @@ enum SneakContentType {
     case privacy
     case lockScreen
     case capsLock
+    case extensionLiveActivity(bundleID: String, activityID: String)
+}
+
+extension SneakContentType {
+    static func == (lhs: SneakContentType, rhs: SneakContentType) -> Bool {
+        switch (lhs, rhs) {
+        case (.brightness, .brightness),
+             (.volume, .volume),
+             (.backlight, .backlight),
+             (.music, .music),
+             (.mic, .mic),
+             (.battery, .battery),
+             (.download, .download),
+             (.timer, .timer),
+             (.reminder, .reminder),
+             (.recording, .recording),
+             (.doNotDisturb, .doNotDisturb),
+             (.bluetoothAudio, .bluetoothAudio),
+             (.privacy, .privacy),
+             (.lockScreen, .lockScreen),
+             (.capsLock, .capsLock):
+            return true
+        case let (.extensionLiveActivity(lb, la), .extensionLiveActivity(rb, ra)):
+            return lb == rb && la == ra
+        default:
+            return false
+        }
+    }
 }
 
 struct sneakPeek {
@@ -32,6 +60,10 @@ struct sneakPeek {
     var type: SneakContentType = .music
     var value: CGFloat = 0
     var icon: String = ""
+    var title: String = ""
+    var subtitle: String = ""
+    var accentColor: Color?
+    var styleOverride: SneakPeekStyle? = nil
 }
 
 enum BrowserType {
@@ -175,19 +207,40 @@ class DynamicIslandViewCoordinator: ObservableObject {
         }
     }
     
-    func toggleSneakPeek(status: Bool, type: SneakContentType, duration: TimeInterval = 1.5, value: CGFloat = 0, icon: String = "") {
+    func toggleSneakPeek(
+        status: Bool,
+        type: SneakContentType,
+        duration: TimeInterval = 1.5,
+        value: CGFloat = 0,
+        icon: String = "",
+        title: String = "",
+        subtitle: String = "",
+        accentColor: Color? = nil,
+        styleOverride: SneakPeekStyle? = nil
+    ) {
         let resolvedDuration: TimeInterval
         switch type {
         case .timer:
             resolvedDuration = 10
         case .reminder:
             resolvedDuration = Defaults[.reminderSneakPeekDuration]
+        case .extensionLiveActivity:
+            resolvedDuration = duration
         default:
             resolvedDuration = duration
         }
         sneakPeekDuration = resolvedDuration
         let bypassedTypes: [SneakContentType] = [.music, .timer, .reminder, .bluetoothAudio]
-        if !bypassedTypes.contains(type) && !Defaults[.enableSystemHUD] {
+        
+        // Check if it's an extension type
+        let isExtensionType: Bool
+        if case .extensionLiveActivity = type {
+            isExtensionType = true
+        } else {
+            isExtensionType = false
+        }
+        
+        if !isExtensionType && !bypassedTypes.contains(type) && !Defaults[.enableSystemHUD] {
             return
         }
         DispatchQueue.main.async {
@@ -196,6 +249,10 @@ class DynamicIslandViewCoordinator: ObservableObject {
                 self.sneakPeek.type = type
                 self.sneakPeek.value = value
                 self.sneakPeek.icon = icon
+                self.sneakPeek.title = title
+                self.sneakPeek.subtitle = subtitle
+                self.sneakPeek.accentColor = accentColor
+                self.sneakPeek.styleOverride = styleOverride
             }
         }
     }

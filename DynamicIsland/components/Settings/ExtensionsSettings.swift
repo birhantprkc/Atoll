@@ -143,8 +143,11 @@ struct ExtensionsSettingsView: View {
     }
 }
 
+@MainActor
 private struct ExtensionEntryRow: View {
     @ObservedObject private var authManager = ExtensionAuthorizationManager.shared
+    @ObservedObject private var liveActivityManager = ExtensionLiveActivityManager.shared
+    @ObservedObject private var widgetManager = ExtensionLockScreenWidgetManager.shared
     let entry: ExtensionAuthorizationEntry
     let onRemove: () -> Void
     
@@ -395,6 +398,8 @@ private struct ExtensionEntryRow: View {
             
             Spacer()
             
+            resetMenu
+
             Button("Remove") {
                 onRemove()
             }
@@ -402,6 +407,32 @@ private struct ExtensionEntryRow: View {
             .controlSize(.small)
             .tint(.red)
         }
+    }
+
+    private var resetMenu: some View {
+        Menu {
+            Button("Reset Live Activities") {
+                liveActivityManager.dismissAll(for: entry.bundleIdentifier)
+            }
+            .disabled(!hasLiveActivities)
+
+            Button("Reset Lock Screen Widgets") {
+                widgetManager.dismissAll(for: entry.bundleIdentifier)
+            }
+            .disabled(!hasWidgets)
+        } label: {
+            Label("Reset", systemImage: "arrow.counterclockwise.circle")
+        }
+        .menuStyle(.borderlessButton)
+        .controlSize(.small)
+    }
+
+    private var hasLiveActivities: Bool {
+        liveActivityManager.activeActivities.contains { $0.bundleIdentifier == entry.bundleIdentifier }
+    }
+
+    private var hasWidgets: Bool {
+        widgetManager.activeWidgets.contains { $0.bundleIdentifier == entry.bundleIdentifier }
     }
     
     private func infoRow(label: String, value: String) -> some View {

@@ -495,6 +495,7 @@ struct ContentView: View {
                       let musicSecondary = resolveMusicSecondaryLiveActivity(isMusicPairingEligible: musicPairingEligible)
                       let extensionSecondaryPayloadID = extensionSecondaryPayloadID(for: musicSecondary)
                       let extensionStandalonePayload = resolvedExtensionStandalonePayload(excluding: extensionSecondaryPayloadID)
+                      let activeSneakPeekStyle = resolvedSneakPeekStyle()
                       let expansionMatchesSecondary: Bool = {
                           guard let musicSecondary else { return false }
                           switch musicSecondary {
@@ -540,6 +541,23 @@ struct ContentView: View {
                             .frame(width: 76, alignment: .trailing)
                         }
                         .frame(height: vm.effectiveClosedNotchHeight + (isHovering ? 8 : 0), alignment: .center)
+                      } else if coordinator.sneakPeek.show,
+                                case let .extensionLiveActivity(bundleID, activityID) = coordinator.sneakPeek.type,
+                                activeSneakPeekStyle == .inline,
+                                vm.notchState == .closed,
+                                !vm.hideOnClosed {
+                          let inlinePayload = extensionLiveActivityManager.payload(bundleIdentifier: bundleID, activityID: activityID)
+                          ExtensionInlineSneakPeekView(
+                              payload: inlinePayload,
+                              title: coordinator.sneakPeek.title,
+                              subtitle: coordinator.sneakPeek.subtitle,
+                              accentColor: coordinator.sneakPeek.accentColor ?? .gray,
+                              notchHeight: vm.effectiveClosedNotchHeight,
+                              closedNotchWidth: vm.closedNotchSize.width,
+                              isHovering: isHovering,
+                              gestureProgress: gestureProgress
+                          )
+                          .transition(.move(edge: .trailing).combined(with: .opacity))
                       } else if coordinator.sneakPeek.show && Defaults[.inlineHUD] && (coordinator.sneakPeek.type != .music) && (coordinator.sneakPeek.type != .battery) && (coordinator.sneakPeek.type != .timer) && (coordinator.sneakPeek.type != .reminder) && (coordinator.sneakPeek.type != .volume || vm.notchState == .closed) {
                           InlineHUD(type: $coordinator.sneakPeek.type, value: $coordinator.sneakPeek.value, icon: $coordinator.sneakPeek.icon, hoverAnimation: $isHovering, gestureProgress: $gestureProgress)
                               .transition(
@@ -568,17 +586,19 @@ struct ContentView: View {
                     } else if (!coordinator.expandingView.show || coordinator.expandingView.type == .privacy) && vm.notchState == .closed && privacyManager.hasAnyIndicator && (Defaults[.enableCameraDetection] || Defaults[.enableMicrophoneDetection]) && !vm.hideOnClosed {
                         PrivacyLiveActivity()
                       } else if let extensionPayload = extensionStandalonePayload {
+                          let suppressingCenterText = shouldSuppressExtensionCenter(for: extensionPayload)
                           let layout = extensionStandaloneLayout(
                               for: extensionPayload,
                               notchHeight: vm.effectiveClosedNotchHeight,
-                              isHovering: isHovering
+                              isHovering: isHovering,
+                              suppressingCenterText: suppressingCenterText
                           )
                           ExtensionLiveActivityStandaloneView(
                               payload: extensionPayload,
                               layout: layout,
-                              isHovering: isHovering
+                              isHovering: isHovering,
+                              notchState: vm.notchState
                           )
-                          .transition(.opacity.combined(with: .scale))
                       } else if !coordinator.expandingView.show && vm.notchState == .closed && (!musicManager.isPlaying && musicManager.isPlayerIdle) && Defaults[.showNotHumanFace] && !vm.hideOnClosed  {
                           DynamicIslandFaceAnimation().animation(.interactiveSpring, value: musicManager.isPlayerIdle)
                       } else if vm.notchState == .open {
@@ -599,7 +619,7 @@ struct ContentView: View {
                           }
                           // Old sneak peek music
                           else if coordinator.sneakPeek.type == .music {
-                              if vm.notchState == .closed && !vm.hideOnClosed && Defaults[.sneakPeekStyles] == .standard {
+                              if vm.notchState == .closed && !vm.hideOnClosed && activeSneakPeekStyle == .standard {
                                   HStack(alignment: .center) {
                                       Image(systemName: "music.note")
                                       GeometryReader { geo in
@@ -612,7 +632,7 @@ struct ContentView: View {
                           }
                           // Timer sneak peek
                           else if coordinator.sneakPeek.type == .timer {
-                              if !vm.hideOnClosed && Defaults[.sneakPeekStyles] == .standard {
+                              if !vm.hideOnClosed && activeSneakPeekStyle == .standard {
                                   HStack(alignment: .center) {
                                       Image(systemName: "timer")
                                       GeometryReader { geo in
@@ -624,7 +644,7 @@ struct ContentView: View {
                               }
                           }
                           else if coordinator.sneakPeek.type == .reminder {
-                              if !vm.hideOnClosed && Defaults[.sneakPeekStyles] == .standard, let reminder = reminderManager.activeReminder {
+                              if !vm.hideOnClosed && activeSneakPeekStyle == .standard, let reminder = reminderManager.activeReminder {
                                   GeometryReader { geo in
                                       let chipColor = Color(nsColor: reminder.event.calendar.color).ensureMinimumBrightness(factor: 0.7)
                                       HStack(spacing: 6) {
@@ -642,10 +662,33 @@ struct ContentView: View {
                                   .padding(.bottom, 10)
                               }
                           }
+                          // Extension live activity sneak peek
+                          else if case .extensionLiveActivity = coordinator.sneakPeek.type {
+                              if !vm.hideOnClosed && activeSneakPeekStyle == .standard {
+                                  HStack(alignment: .center, spacing: 6) {
+                                      if !coordinator.sneakPeek.icon.isEmpty {
+                                          Image(systemName: coordinator.sneakPeek.icon)
+                                      }
+                                      GeometryReader { geo in
+                                          let combinedText = coordinator.sneakPeek.subtitle.isEmpty ?
+                                              coordinator.sneakPeek.title :
+                                              "\(coordinator.sneakPeek.title) - \(coordinator.sneakPeek.subtitle)"
+                                          MarqueeText(
+                                              .constant(combinedText),
+                                              textColor: coordinator.sneakPeek.accentColor ?? .gray,
+                                              minDuration: 1,
+                                              frameWidth: geo.size.width
+                                          )
+                                      }
+                                  }
+                                  .foregroundStyle(coordinator.sneakPeek.accentColor ?? .gray)
+                                  .padding(.bottom, 10)
+                              }
+                          }
                       }
                   }
               }
-              .conditionalModifier((coordinator.sneakPeek.show && coordinator.sneakPeek.type == .music && vm.notchState == .closed && !vm.hideOnClosed && Defaults[.sneakPeekStyles] == .standard) || (coordinator.sneakPeek.show && coordinator.sneakPeek.type == .timer && !vm.hideOnClosed && Defaults[.sneakPeekStyles] == .standard) || (coordinator.sneakPeek.show && (coordinator.sneakPeek.type != .music && coordinator.sneakPeek.type != .timer) && (vm.notchState == .closed))) { view in
+              .conditionalModifier(shouldFixSizeForSneakPeek()) { view in
                   view
                       .fixedSize()
               }
@@ -1224,11 +1267,17 @@ struct ContentView: View {
         return payload
     }
 
-    private func extensionStandaloneLayout(for payload: ExtensionLiveActivityPayload, notchHeight: CGFloat, isHovering: Bool) -> ExtensionStandaloneLayout {
+    private func extensionStandaloneLayout(for payload: ExtensionLiveActivityPayload, notchHeight: CGFloat, isHovering: Bool, suppressingCenterText: Bool) -> ExtensionStandaloneLayout {
         let outerHeight = notchHeight
         let contentHeight = max(0, notchHeight - (isHovering ? 0 : 12))
         let leadingWidth = max(contentHeight, 44)
-        let centerWidth = max(vm.closedNotchSize.width + (isHovering ? 8 : 0), 96)
+        let centerWidth: CGFloat = {
+            if suppressingCenterText {
+                let base = vm.closedNotchSize.width * 0.35
+                return max(64, min(base, 96))
+            }
+            return max(vm.closedNotchSize.width + (isHovering ? 8 : 0), 96)
+        }()
         let trailingWidth = ExtensionLayoutMetrics.trailingWidth(
             for: payload,
             baseWidth: leadingWidth,
@@ -1241,8 +1290,20 @@ struct ContentView: View {
             contentHeight: contentHeight,
             leadingWidth: leadingWidth,
             centerWidth: centerWidth,
-            trailingWidth: trailingWidth
+            trailingWidth: trailingWidth,
+            suppressingCenterText: suppressingCenterText
         )
+    }
+
+    private func shouldSuppressExtensionCenter(for payload: ExtensionLiveActivityPayload) -> Bool {
+        guard vm.notchState == .closed else { return false }
+        let descriptor = payload.descriptor
+        guard descriptor.sneakPeekConfig?.enabled ?? true else { return false }
+        guard coordinator.sneakPeek.show else { return false }
+        guard case let .extensionLiveActivity(bundleID, activityID) = coordinator.sneakPeek.type else { return false }
+        guard bundleID == payload.bundleIdentifier && activityID == descriptor.id else { return false }
+        let style = coordinator.sneakPeek.styleOverride ?? Defaults[.sneakPeekStyles]
+        return style == .inline
     }
 
     @MainActor
@@ -1771,6 +1832,28 @@ struct ContentView: View {
 
     private func hideMusicControlWindow() {}
     #endif
+    
+    private func shouldFixSizeForSneakPeek() -> Bool {
+        guard coordinator.sneakPeek.show else { return false }
+        let style = resolvedSneakPeekStyle()
+        
+        // Check for extension sneak peek
+        if case .extensionLiveActivity = coordinator.sneakPeek.type {
+            return vm.notchState == .closed && style == .standard
+        }
+        
+        // Original logic for other types
+        let isMusicSneak = coordinator.sneakPeek.type == .music && vm.notchState == .closed && !vm.hideOnClosed && style == .standard
+        let isTimerSneak = coordinator.sneakPeek.type == .timer && !vm.hideOnClosed && style == .standard
+        let isReminderSneak = coordinator.sneakPeek.type == .reminder && !vm.hideOnClosed && style == .standard
+        let isOtherSneak = coordinator.sneakPeek.type != .music && coordinator.sneakPeek.type != .timer && coordinator.sneakPeek.type != .reminder && vm.notchState == .closed
+        
+        return isMusicSneak || isTimerSneak || isReminderSneak || isOtherSneak
+    }
+
+    private func resolvedSneakPeekStyle() -> SneakPeekStyle {
+        coordinator.sneakPeek.styleOverride ?? Defaults[.sneakPeekStyles]
+    }
 }
 
 private enum MusicSecondaryLiveActivity: Equatable {

@@ -1,6 +1,7 @@
 import Foundation
 import Defaults
 import AtollExtensionKit
+import SwiftUI
 
 @MainActor
 final class ExtensionLiveActivityManager: ObservableObject {
@@ -39,6 +40,7 @@ final class ExtensionLiveActivityManager: ObservableObject {
             throw ExtensionValidationError.invalidDescriptor("Structure validation failed")
         }
 
+        let isUpdate: Bool
         if let index = activeActivities.firstIndex(where: { $0.descriptor.id == descriptor.id && $0.bundleIdentifier == bundleIdentifier }) {
             let payload = ExtensionLiveActivityPayload(
                 bundleIdentifier: bundleIdentifier,
@@ -49,25 +51,35 @@ final class ExtensionLiveActivityManager: ObservableObject {
             sortActivities()
             authorizationManager.recordActivity(for: bundleIdentifier, scope: .liveActivities)
             Logger.log("Replaced extension live activity \(descriptor.id) for \(bundleIdentifier)", category: .extensions)
-            broadcastSnapshot()
-            return
-        }
+            isUpdate = true
+        } else {
+            guard activeActivities.count < Defaults[maxCapacityKey] else {
+                logDiagnostics("Rejected live activity \(descriptor.id) from \(bundleIdentifier): capacity limit \(Defaults[maxCapacityKey]) reached")
+                throw ExtensionValidationError.exceedsCapacity
+            }
 
-        guard activeActivities.count < Defaults[maxCapacityKey] else {
-            logDiagnostics("Rejected live activity \(descriptor.id) from \(bundleIdentifier): capacity limit \(Defaults[maxCapacityKey]) reached")
-            throw ExtensionValidationError.exceedsCapacity
+            let payload = ExtensionLiveActivityPayload(
+                bundleIdentifier: bundleIdentifier,
+                descriptor: descriptor,
+                receivedAt: .now
+            )
+            activeActivities.append(payload)
+            sortActivities()
+            authorizationManager.recordActivity(for: bundleIdentifier, scope: .liveActivities)
+            logDiagnostics("Queued live activity \(descriptor.id) for \(bundleIdentifier); total activities: \(activeActivities.count)")
+            isUpdate = false
         }
-
-        let payload = ExtensionLiveActivityPayload(
-            bundleIdentifier: bundleIdentifier,
-            descriptor: descriptor,
-            receivedAt: .now
-        )
-        activeActivities.append(payload)
-        sortActivities()
-        authorizationManager.recordActivity(for: bundleIdentifier, scope: .liveActivities)
-        logDiagnostics("Queued live activity \(descriptor.id) for \(bundleIdentifier); total activities: \(activeActivities.count)")
+        
         broadcastSnapshot()
+        
+        // Trigger sneak peek (defaulting to enabled for legacy descriptors)
+        let resolvedConfig = descriptor.sneakPeekConfig ?? .default
+        if resolvedConfig.enabled {
+            let shouldShow = !isUpdate || resolvedConfig.showOnUpdate
+            if shouldShow {
+                triggerSneakPeek(for: descriptor, bundleIdentifier: bundleIdentifier, config: resolvedConfig)
+            }
+        }
     }
 
     func update(descriptor: AtollLiveActivityDescriptor, bundleIdentifier: String) throws {
@@ -92,7 +104,9 @@ final class ExtensionLiveActivityManager: ObservableObject {
 
     func dismiss(activityID: String, bundleIdentifier: String) {
         let previousCount = activeActivities.count
-        activeActivities.removeAll { $0.descriptor.id == activityID && $0.bundleIdentifier == bundleIdentifier }
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.9)) {
+            activeActivities.removeAll { $0.descriptor.id == activityID && $0.bundleIdentifier == bundleIdentifier }
+        }
         if previousCount != activeActivities.count {
             Logger.log("Dismissed extension live activity \(activityID) from \(bundleIdentifier)", category: .extensions)
             ExtensionXPCServiceHost.shared.notifyActivityDismiss(bundleIdentifier: bundleIdentifier, activityID: activityID)
@@ -105,7 +119,9 @@ final class ExtensionLiveActivityManager: ObservableObject {
         let ids = activeActivities
             .filter { $0.bundleIdentifier == bundleIdentifier }
             .map { $0.descriptor.id }
-        activeActivities.removeAll { $0.bundleIdentifier == bundleIdentifier }
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.9)) {
+            activeActivities.removeAll { $0.bundleIdentifier == bundleIdentifier }
+        }
         ids.forEach { ExtensionXPCServiceHost.shared.notifyActivityDismiss(bundleIdentifier: bundleIdentifier, activityID: $0) }
         if !ids.isEmpty {
             logDiagnostics("Removed all live activities for \(bundleIdentifier); ids: \(ids.joined(separator: ", "))")
@@ -117,6 +133,10 @@ final class ExtensionLiveActivityManager: ObservableObject {
         activeActivities
             .filter { coexistence ? $0.descriptor.allowsMusicCoexistence : true }
             .sorted(by: descriptorComparator)
+    }
+
+    func payload(bundleIdentifier: String, activityID: String) -> ExtensionLiveActivityPayload? {
+        activeActivities.first { $0.bundleIdentifier == bundleIdentifier && $0.descriptor.id == activityID }
     }
 
     private func descriptorComparator(lhs: ExtensionLiveActivityPayload, rhs: ExtensionLiveActivityPayload) -> Bool {
@@ -142,6 +162,39 @@ final class ExtensionLiveActivityManager: ObservableObject {
         activeActivities = payloads.sorted(by: descriptorComparator)
         suppressBroadcast = false
         logDiagnostics("Applied external live activity snapshot from PID \(sourcePID) (count: \(payloads.count))")
+    }
+
+    private func triggerSneakPeek(for descriptor: AtollLiveActivityDescriptor, bundleIdentifier: String, config: AtollSneakPeekConfig) {
+        let coordinator = DynamicIslandViewCoordinator.shared
+        let duration = config.duration ?? 2.5
+        let accentColor = descriptor.accentColor.swiftUIColor
+        let styleOverride: SneakPeekStyle? = {
+            guard let requestedStyle = config.style else { return nil }
+            switch requestedStyle {
+            case .inline:
+                return .inline
+            case .standard:
+                return .standard
+            }
+        }()
+        
+        let resolvedTitle = descriptor.sneakPeekTitle?.isEmpty == false ? descriptor.sneakPeekTitle! : descriptor.title
+        let resolvedSubtitle = descriptor.sneakPeekSubtitle ?? descriptor.subtitle ?? ""
+        
+        // Pass the activity's id and bundleID to the sneak peek so the specialized view can look up details if needed
+        coordinator.toggleSneakPeek(
+            status: true,
+            type: .extensionLiveActivity(bundleID: bundleIdentifier, activityID: descriptor.id),
+            duration: duration,
+            value: 0,
+            icon: "",
+            title: resolvedTitle,
+            subtitle: resolvedSubtitle,
+            accentColor: accentColor,
+            styleOverride: styleOverride
+        )
+        
+        logDiagnostics("Triggered sneak peek for \(descriptor.id) from \(bundleIdentifier) with duration \(duration)s")
     }
 
     private func logDiagnostics(_ message: String) {
