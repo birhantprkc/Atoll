@@ -834,7 +834,9 @@ struct ContentView: View {
         )
         let effectiveCenterWidth = inlineSneakPeekActive ? 380 : centerBaseWidth
         let notchWidth = wingBaseWidth + effectiveCenterWidth + rightWingWidth
-        let badgeSize = max(16, notchContentHeight * 0.45)
+        let badgeBaseSize = max(13, notchContentHeight * 0.36)
+        let badgeDisplaySize = badgeDisplaySize(for: secondary, baseSize: badgeBaseSize)
+        let badgeOffset = badgeOverlayOffset(for: secondary, badgeSize: badgeDisplaySize)
 
         HStack(spacing: 0) {
             ZStack(alignment: .bottomTrailing) {
@@ -849,8 +851,8 @@ struct ContentView: View {
                     .clipShape(RoundedRectangle(cornerRadius: MusicPlayerImageSizes.cornerRadiusInset.closed))
                     .matchedGeometryEffect(id: "albumArt", in: albumArtNamespace)
                     .albumArtFlip(angle: musicManager.flipAngle)
-                albumArtBadge(for: secondary, badgeSize: badgeSize)
-                    .offset(x: badgeSize * 0.2, y: badgeSize * 0.25)
+                albumArtBadge(for: secondary, badgeSize: badgeDisplaySize)
+                    .offset(x: badgeOffset.width, y: badgeOffset.height)
                     .id(secondary?.id ?? "music-badge")
                     .contentTransition(.symbolEffect(.replace))
             }
@@ -1063,6 +1065,26 @@ struct ContentView: View {
             .transition(.opacity.combined(with: .scale))
         } else {
             EmptyView()
+        }
+    }
+
+    private func badgeDisplaySize(for secondary: MusicSecondaryLiveActivity?, baseSize: CGFloat) -> CGFloat {
+        guard let secondary else { return baseSize }
+        switch secondary {
+        case .extensionPayload:
+            return max(11, baseSize * 0.86)
+        default:
+            return baseSize
+        }
+    }
+
+    private func badgeOverlayOffset(for secondary: MusicSecondaryLiveActivity?, badgeSize: CGFloat) -> CGSize {
+        guard let secondary else { return CGSize(width: badgeSize * 0.2, height: badgeSize * 0.25) }
+        switch secondary {
+        case .extensionPayload:
+            return CGSize(width: badgeSize * 0.14, height: badgeSize * 0.12)
+        default:
+            return CGSize(width: badgeSize * 0.2, height: badgeSize * 0.25)
         }
     }
 

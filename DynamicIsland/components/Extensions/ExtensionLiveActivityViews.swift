@@ -314,7 +314,10 @@ struct ExtensionInlineSneakPeekView: View {
     private let wingPadding: CGFloat = 16
 
     private var descriptor: AtollLiveActivityDescriptor? { payload?.descriptor }
-    private var resolvedAccent: Color { descriptor?.accentColor.swiftUIColor ?? accentColor }
+    private var resolvedAccent: Color {
+        guard let descriptor else { return accentColor }
+        return descriptor.accentColor.resolvedColor(fallback: accentColor)
+    }
     private var trailingRenderable: ExtensionTrailingRenderable? {
         descriptor.map { resolvedExtensionTrailingRenderable(for: $0) }
     }

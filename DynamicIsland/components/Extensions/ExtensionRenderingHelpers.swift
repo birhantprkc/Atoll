@@ -21,6 +21,10 @@ extension AtollColorDescriptor {
         }
         return NSColor(red: red, green: green, blue: blue, alpha: alpha)
     }
+
+    func resolvedColor(fallback accent: Color) -> Color {
+        isAccent ? accent : swiftUIColor
+    }
 }
 
 // MARK: - Font Conversion
@@ -287,7 +291,7 @@ struct ExtensionProgressIndicatorView: View {
     var body: some View {
         switch indicator {
         case let .ring(diameter, strokeWidth, color):
-            let ringColor = color?.swiftUIColor ?? accent
+            let ringColor = color?.resolvedColor(fallback: accent) ?? accent
             let resolvedDiameter = resolvedRingDiameter(requested: diameter)
             ZStack {
                 Circle()
@@ -300,7 +304,7 @@ struct ExtensionProgressIndicatorView: View {
             }
             .frame(width: resolvedDiameter, height: resolvedDiameter)
         case let .bar(width, height, cornerRadius, color):
-            let barColor = color?.swiftUIColor ?? accent
+            let barColor = color?.resolvedColor(fallback: accent) ?? accent
             Capsule()
                 .fill(Color.white.opacity(0.18))
                 .frame(width: width ?? 80, height: height)
@@ -311,13 +315,13 @@ struct ExtensionProgressIndicatorView: View {
                         .animation(.smooth(duration: 0.25), value: progress)
                 }
         case let .percentage(font, color):
-            let textColor = color?.swiftUIColor ?? accent
+            let textColor = color?.resolvedColor(fallback: accent) ?? accent
             Text("\(Int(progress * 100))%")
                 .font(font.swiftUIFont())
                 .foregroundStyle(textColor)
                 .monospacedDigit()
         case let .countdown(font, color):
-            let textColor = color?.swiftUIColor ?? accent
+            let textColor = color?.resolvedColor(fallback: accent) ?? accent
             let text = countdownText
             Text(text)
                 .font(font.swiftUIFont())
@@ -383,7 +387,7 @@ struct ExtensionEdgeContentView: View {
                 frameWidth: max(24, availableWidth - 12)
             )
         case let .countdownText(targetDate, font: font, color: color):
-            ExtensionCountdownTextView(targetDate: targetDate, font: font, accent: accent, customColor: color?.swiftUIColor)
+            ExtensionCountdownTextView(targetDate: targetDate, font: font, accent: accent, customColor: color?.resolvedColor(fallback: accent))
                 .frame(maxWidth: .infinity, alignment: alignment)
         case let .icon(descriptor):
             ExtensionIconView(
@@ -409,7 +413,7 @@ struct ExtensionEdgeContentView: View {
     }
 
     private func resolvedColor(_ descriptorColor: AtollColorDescriptor?) -> Color {
-        descriptorColor?.swiftUIColor ?? accent
+        descriptorColor?.resolvedColor(fallback: accent) ?? accent
     }
 }
 
