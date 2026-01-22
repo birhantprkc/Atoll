@@ -178,25 +178,33 @@ private struct SettingsHighlightModifier: ViewModifier {
     func body(content: Content) -> some View {
         content
             .id(id)
-            .background(
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .fill(Color.accentColor.opacity(0.08))
-                    .padding(.horizontal, -8)
-                    .opacity(isActive ? 1 : 0)
-                    .animation(.easeInOut(duration: 0.25), value: isActive)
-            )
-            .overlay {
+            .background(highlightBackground)
+            .onChange(of: isActive) { _, active in
+                animatePulse = active
+            }
+            .onAppear {
                 if isActive {
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .stroke(Color.accentColor.opacity(0.85), lineWidth: 2)
-                        .padding(.vertical, -4)
-                        .padding(.horizontal, -8)
-                        .opacity(animatePulse ? 0.25 : 0.9)
-                        .animation(.easeInOut(duration: 0.6).repeatForever(autoreverses: true), value: animatePulse)
-                        .onAppear { animatePulse = true }
-                        .onDisappear { animatePulse = false }
+                    animatePulse = true
                 }
             }
+    }
+
+    private var highlightBackground: some View {
+        RoundedRectangle(cornerRadius: 12, style: .continuous)
+            .stroke(
+                Color.accentColor.opacity(isActive ? (animatePulse ? 0.95 : 0.4) : 0),
+                lineWidth: 2
+            )
+            .background(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(Color.accentColor.opacity(isActive ? 0.08 : 0))
+            )
+            .padding(-4)
+            .shadow(color: Color.accentColor.opacity(isActive ? 0.25 : 0), radius: animatePulse ? 8 : 2)
+            .animation(
+                isActive ? .easeInOut(duration: 0.8).repeatForever(autoreverses: true) : .default,
+                value: animatePulse
+            )
     }
 }
 
@@ -679,7 +687,10 @@ struct SettingsView: View {
             SettingsSearchEntry(tab: .lockScreen, title: "Show panel border", keywords: ["panel border"], highlightID: SettingsTab.lockScreen.highlightID(for: "Show panel border")),
             SettingsSearchEntry(tab: .lockScreen, title: "Enable media panel blur", keywords: ["blur", "media panel"], highlightID: SettingsTab.lockScreen.highlightID(for: "Enable media panel blur")),
             SettingsSearchEntry(tab: .lockScreen, title: "Show lock screen timer", keywords: ["timer widget", "lock screen timer"], highlightID: SettingsTab.lockScreen.highlightID(for: "Show lock screen timer")),
-            SettingsSearchEntry(tab: .lockScreen, title: "Enable timer blur", keywords: ["timer blur"], highlightID: SettingsTab.lockScreen.highlightID(for: "Enable timer blur")),
+            SettingsSearchEntry(tab: .lockScreen, title: "Timer surface", keywords: ["timer glass", "classic", "blur"], highlightID: SettingsTab.lockScreen.highlightID(for: "Timer surface")),
+            SettingsSearchEntry(tab: .lockScreen, title: "Timer glass material", keywords: ["frosted", "liquid", "timer material"], highlightID: SettingsTab.lockScreen.highlightID(for: "Timer glass material")),
+            SettingsSearchEntry(tab: .lockScreen, title: "Timer liquid mode", keywords: ["timer", "standard", "custom"], highlightID: SettingsTab.lockScreen.highlightID(for: "Timer liquid mode")),
+            SettingsSearchEntry(tab: .lockScreen, title: "Timer widget variant", keywords: ["timer variant", "liquid"], highlightID: SettingsTab.lockScreen.highlightID(for: "Timer widget variant")),
             SettingsSearchEntry(tab: .lockScreen, title: "Show lock screen weather", keywords: ["weather widget"], highlightID: SettingsTab.lockScreen.highlightID(for: "Show lock screen weather")),
             SettingsSearchEntry(tab: .lockScreen, title: "Layout", keywords: ["inline", "circular", "weather layout"], highlightID: SettingsTab.lockScreen.highlightID(for: "Layout")),
             SettingsSearchEntry(tab: .lockScreen, title: "Weather data provider", keywords: ["wttr", "open meteo"], highlightID: SettingsTab.lockScreen.highlightID(for: "Weather data provider")),
@@ -708,7 +719,10 @@ struct SettingsView: View {
             SettingsSearchEntry(tab: .timer, title: "Enable timer feature", keywords: ["timer", "enable"], highlightID: SettingsTab.timer.highlightID(for: "Enable timer feature")),
             SettingsSearchEntry(tab: .timer, title: "Mirror macOS Clock timers", keywords: ["system timer", "clock app"], highlightID: SettingsTab.timer.highlightID(for: "Mirror macOS Clock timers")),
             SettingsSearchEntry(tab: .timer, title: "Show lock screen timer widget", keywords: ["lock screen", "timer widget"], highlightID: SettingsTab.timer.highlightID(for: "Show lock screen timer widget")),
-            SettingsSearchEntry(tab: .timer, title: "Enable timer blur", keywords: ["timer blur", "lock screen"], highlightID: SettingsTab.timer.highlightID(for: "Enable timer blur")),
+            SettingsSearchEntry(tab: .timer, title: "Timer surface", keywords: ["timer glass", "classic", "blur"], highlightID: SettingsTab.timer.highlightID(for: "Timer surface")),
+            SettingsSearchEntry(tab: .timer, title: "Timer glass material", keywords: ["frosted", "liquid", "timer material"], highlightID: SettingsTab.timer.highlightID(for: "Timer glass material")),
+            SettingsSearchEntry(tab: .timer, title: "Timer liquid mode", keywords: ["timer", "standard", "custom"], highlightID: SettingsTab.timer.highlightID(for: "Timer liquid mode")),
+            SettingsSearchEntry(tab: .timer, title: "Timer widget variant", keywords: ["timer variant", "liquid"], highlightID: SettingsTab.timer.highlightID(for: "Timer widget variant")),
             SettingsSearchEntry(tab: .timer, title: "Timer tint", keywords: ["timer colour", "preset"], highlightID: SettingsTab.timer.highlightID(for: "Timer tint")),
             SettingsSearchEntry(tab: .timer, title: "Solid colour", keywords: ["timer colour", "custom"], highlightID: SettingsTab.timer.highlightID(for: "Solid colour")),
             SettingsSearchEntry(tab: .timer, title: "Progress style", keywords: ["progress", "bar", "ring"], highlightID: SettingsTab.timer.highlightID(for: "Progress style")),
@@ -1936,6 +1950,7 @@ struct Media: View {
     @Default(.enableLockScreenMediaWidget) private var enableLockScreenMediaWidget
     @Default(.showSneakPeekOnTrackChange) private var showSneakPeekOnTrackChange
     @Default(.lockScreenGlassStyle) private var lockScreenGlassStyle
+    @Default(.lockScreenGlassCustomizationMode) private var lockScreenGlassCustomizationMode
     @Default(.lockScreenMusicAlbumParallaxEnabled) private var lockScreenMusicAlbumParallaxEnabled
 
     private func highlightID(_ title: String) -> String {
@@ -2079,7 +2094,11 @@ struct Media: View {
                     .disabled(!enableLockScreenMediaWidget)
                 Defaults.Toggle("Show panel border", key: .lockScreenPanelShowsBorder)
                     .disabled(!enableLockScreenMediaWidget)
-                if lockScreenGlassStyle == .frosted {
+                if lockScreenGlassCustomizationMode == .customLiquid {
+                    customLiquidBlurRow
+                        .opacity(enableLockScreenMediaWidget ? 1 : 0.5)
+                        .settingsHighlight(id: highlightID("Enable media panel blur"))
+                } else if lockScreenGlassStyle == .frosted {
                     Defaults.Toggle("Enable media panel blur", key: .lockScreenPanelUsesBlur)
                         .disabled(!enableLockScreenMediaWidget)
                         .settingsHighlight(id: highlightID("Enable media panel blur"))
@@ -2124,6 +2143,16 @@ struct Media: View {
             Text("Enable media panel blur")
                 .foregroundStyle(.secondary)
             Text("Only applies when Material is set to Frosted Glass.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+    private var customLiquidBlurRow: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("Enable media panel blur")
+                .foregroundStyle(.secondary)
+            Text("Custom liquid glass already renders with Apple's liquid material, so this option is managed automatically.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
@@ -2762,6 +2791,15 @@ struct Appearance: View {
     @Default(.selectedVisualizer) var selectedVisualizer
     @Default(.openNotchWidth) var openNotchWidth
     @Default(.enableMinimalisticUI) var enableMinimalisticUI
+    @Default(.lockScreenGlassCustomizationMode) private var lockScreenGlassCustomizationMode
+    @Default(.lockScreenGlassStyle) private var lockScreenGlassStyle
+    @Default(.lockScreenMusicLiquidGlassVariant) private var lockScreenMusicLiquidGlassVariant
+    @Default(.lockScreenTimerLiquidGlassVariant) private var lockScreenTimerLiquidGlassVariant
+    @Default(.lockScreenTimerGlassStyle) private var lockScreenTimerGlassStyle
+    @Default(.lockScreenTimerGlassCustomizationMode) private var lockScreenTimerGlassCustomizationMode
+    @Default(.lockScreenTimerWidgetUsesBlur) private var timerGlassModeIsGlass
+    @Default(.enableLockScreenMediaWidget) private var enableLockScreenMediaWidget
+    @Default(.enableLockScreenTimerWidget) private var enableLockScreenTimerWidget
     let icons: [String] = ["logo2"]
     @State private var selectedIcon: String = "logo2"
     @State private var selectedListVisualizer: CustomVisualizer? = nil
@@ -2776,6 +2814,37 @@ struct Appearance: View {
 
     private func highlightID(_ title: String) -> String {
         SettingsTab.appearance.highlightID(for: title)
+    }
+
+    private var liquidVariantRange: ClosedRange<Double> {
+        Double(LiquidGlassVariant.supportedRange.lowerBound)...Double(LiquidGlassVariant.supportedRange.upperBound)
+    }
+
+    private var appearanceMusicVariantBinding: Binding<Double> {
+        Binding(
+            get: { Double(lockScreenMusicLiquidGlassVariant.rawValue) },
+            set: { newValue in
+                let raw = Int(newValue.rounded())
+                lockScreenMusicLiquidGlassVariant = LiquidGlassVariant.clamped(raw)
+            }
+        )
+    }
+
+    private var appearanceTimerVariantBinding: Binding<Double> {
+        Binding(
+            get: { Double(lockScreenTimerLiquidGlassVariant.rawValue) },
+            set: { newValue in
+                let raw = Int(newValue.rounded())
+                lockScreenTimerLiquidGlassVariant = LiquidGlassVariant.clamped(raw)
+            }
+        )
+    }
+
+    private var timerSurfaceBinding: Binding<LockScreenTimerSurfaceMode> {
+        Binding(
+            get: { timerGlassModeIsGlass ? .glass : .classic },
+            set: { mode in timerGlassModeIsGlass = (mode == .glass) }
+        )
     }
 
     var body: some View {
@@ -2795,6 +2864,80 @@ struct Appearance: View {
             }
 
             notchWidthControls()
+
+            Section {
+                if #available(macOS 26.0, *) {
+                    Picker("Material", selection: $lockScreenGlassStyle) {
+                        ForEach(LockScreenGlassStyle.allCases) { style in
+                            Text(style.rawValue).tag(style)
+                        }
+                    }
+                    .settingsHighlight(id: highlightID("Lock screen material"))
+                } else {
+                    Picker("Material", selection: $lockScreenGlassStyle) {
+                        ForEach(LockScreenGlassStyle.allCases) { style in
+                            Text(style.rawValue).tag(style)
+                        }
+                    }
+                    .disabled(true)
+                    .settingsHighlight(id: highlightID("Lock screen material"))
+                    Text("Liquid Glass requires macOS 26 or later.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                if lockScreenGlassStyle == .liquid {
+                    Picker("Lock screen glass mode", selection: $lockScreenGlassCustomizationMode) {
+                        ForEach(LockScreenGlassCustomizationMode.allCases) { mode in
+                            Text(mode.rawValue).tag(mode)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    .settingsHighlight(id: highlightID("Lock screen glass mode"))
+
+                    if lockScreenGlassCustomizationMode == .customLiquid {
+                        Text("Pick per-widget liquid-glass variants below. Changes mirror the Lock Screen tab.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+
+                        VStack(alignment: .leading, spacing: 6) {
+                            HStack {
+                                Text("Music panel variant")
+                                Spacer()
+                                Text("v\(lockScreenMusicLiquidGlassVariant.rawValue)")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            Slider(value: appearanceMusicVariantBinding, in: liquidVariantRange, step: 1)
+                        }
+                        .settingsHighlight(id: highlightID("Music panel variant (appearance)"))
+                        .disabled(!enableLockScreenMediaWidget)
+                        .opacity(enableLockScreenMediaWidget ? 1 : 0.4)
+
+                        VStack(alignment: .leading, spacing: 6) {
+                            HStack {
+                                Text("Timer widget variant")
+                                Spacer()
+                                Text("v\(lockScreenTimerLiquidGlassVariant.rawValue)")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            Slider(value: appearanceTimerVariantBinding, in: liquidVariantRange, step: 1)
+                        }
+                        .settingsHighlight(id: highlightID("Timer widget variant (appearance)"))
+                        .disabled(!enableLockScreenTimerWidget)
+                        .opacity(enableLockScreenTimerWidget ? 1 : 0.4)
+                    }
+                } else {
+                    Text("Custom Liquid settings require the Liquid Glass material.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            } header: {
+                Text("Lock Screen Glass")
+            } footer: {
+                Text("Configure lock screen materials from the Appearance tab. Custom Liquid unlocks variant sliders for both widgets whenever Liquid Glass is selected.")
+            }
 
             Section {
                 Defaults.Toggle("Enable colored spectrograms", key: .coloredSpectrogram)
@@ -3047,6 +3190,9 @@ struct Appearance: View {
                 }
             }
         }
+        .onAppear(perform: enforceLockScreenGlassConsistency)
+        .onChange(of: lockScreenGlassStyle) { _, _ in enforceLockScreenGlassConsistency() }
+        .onChange(of: lockScreenGlassCustomizationMode) { _, _ in enforceLockScreenGlassConsistency() }
         .navigationTitle("Appearance")
     }
 
@@ -3112,10 +3258,25 @@ struct Appearance: View {
             }
         }
     }
+
+    private func enforceLockScreenGlassConsistency() {
+        if lockScreenGlassStyle == .frosted && lockScreenGlassCustomizationMode != .standard {
+            lockScreenGlassCustomizationMode = .standard
+        }
+        if lockScreenGlassCustomizationMode == .customLiquid && lockScreenGlassStyle != .liquid {
+            lockScreenGlassStyle = .liquid
+        }
+    }
 }
 
 struct LockScreenSettings: View {
     @Default(.lockScreenGlassStyle) private var lockScreenGlassStyle
+    @Default(.lockScreenGlassCustomizationMode) private var lockScreenGlassCustomizationMode
+    @Default(.lockScreenMusicLiquidGlassVariant) private var lockScreenMusicLiquidGlassVariant
+    @Default(.lockScreenTimerLiquidGlassVariant) private var lockScreenTimerLiquidGlassVariant
+    @Default(.lockScreenTimerGlassStyle) private var lockScreenTimerGlassStyle
+    @Default(.lockScreenTimerGlassCustomizationMode) private var lockScreenTimerGlassCustomizationMode
+    @Default(.lockScreenTimerWidgetUsesBlur) private var timerGlassModeIsGlass
     @Default(.enableLockScreenMediaWidget) private var enableLockScreenMediaWidget
     @Default(.enableLockScreenTimerWidget) private var enableLockScreenTimerWidget
     @Default(.enableLockScreenWeatherWidget) private var enableLockScreenWeatherWidget
@@ -3131,6 +3292,37 @@ struct LockScreenSettings: View {
 
     private func highlightID(_ title: String) -> String {
         SettingsTab.lockScreen.highlightID(for: title)
+    }
+
+    private var liquidVariantRange: ClosedRange<Double> {
+        Double(LiquidGlassVariant.supportedRange.lowerBound)...Double(LiquidGlassVariant.supportedRange.upperBound)
+    }
+
+    private var musicVariantBinding: Binding<Double> {
+        Binding(
+            get: { Double(lockScreenMusicLiquidGlassVariant.rawValue) },
+            set: { newValue in
+                let raw = Int(newValue.rounded())
+                lockScreenMusicLiquidGlassVariant = LiquidGlassVariant.clamped(raw)
+            }
+        )
+    }
+
+    private var timerVariantBinding: Binding<Double> {
+        Binding(
+            get: { Double(lockScreenTimerLiquidGlassVariant.rawValue) },
+            set: { newValue in
+                let raw = Int(newValue.rounded())
+                lockScreenTimerLiquidGlassVariant = LiquidGlassVariant.clamped(raw)
+            }
+        )
+    }
+
+    private var timerSurfaceBinding: Binding<LockScreenTimerSurfaceMode> {
+        Binding(
+            get: { timerGlassModeIsGlass ? .glass : .classic },
+            set: { mode in timerGlassModeIsGlass = (mode == .glass) }
+        )
     }
 
     var body: some View {
@@ -3166,6 +3358,33 @@ struct LockScreenSettings: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
+
+                if lockScreenGlassStyle == .liquid {
+                    Picker("Glass mode", selection: $lockScreenGlassCustomizationMode) {
+                        ForEach(LockScreenGlassCustomizationMode.allCases) { mode in
+                            Text(mode.rawValue).tag(mode)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    .settingsHighlight(id: highlightID("Glass mode"))
+
+                    if lockScreenGlassCustomizationMode == .customLiquid {
+                        Text("Use the sliders below to pick unique Apple liquid-glass variants for each widget.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                } else {
+                    Text("Custom Liquid settings require the Liquid Glass material.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            } header: {
+                Text("Lock Screen Glass")
+            } footer: {
+                Text("Choose the global material mode for lock screen widgets. Custom Liquid unlocks per-widget variant sliders while Standard sticks to the classic frosted/liquid options.")
+            }
+
+            Section {
                 Defaults.Toggle("Show lock screen media panel", key: .enableLockScreenMediaWidget)
                     .settingsHighlight(id: highlightID("Show lock screen media panel"))
                 Defaults.Toggle("Show media app icon", key: .lockScreenShowAppIcon)
@@ -3174,7 +3393,15 @@ struct LockScreenSettings: View {
                 Defaults.Toggle("Show panel border", key: .lockScreenPanelShowsBorder)
                     .disabled(!enableLockScreenMediaWidget)
                     .settingsHighlight(id: highlightID("Show panel border"))
-                if lockScreenGlassStyle == .frosted {
+                if lockScreenGlassCustomizationMode == .customLiquid {
+                    variantSlider(
+                        title: "Music panel variant",
+                        value: musicVariantBinding,
+                        currentValue: lockScreenMusicLiquidGlassVariant.rawValue,
+                        isEnabled: enableLockScreenMediaWidget,
+                        highlight: highlightID("Music panel variant")
+                    )
+                } else if lockScreenGlassStyle == .frosted {
                     Defaults.Toggle("Enable media panel blur", key: .lockScreenPanelUsesBlur)
                         .disabled(!enableLockScreenMediaWidget)
                         .settingsHighlight(id: highlightID("Enable media panel blur"))
@@ -3192,13 +3419,63 @@ struct LockScreenSettings: View {
             Section {
                 Defaults.Toggle("Show lock screen timer", key: .enableLockScreenTimerWidget)
                     .settingsHighlight(id: highlightID("Show lock screen timer"))
-                Defaults.Toggle("Enable timer blur", key: .lockScreenTimerWidgetUsesBlur)
+                Picker("Timer surface", selection: timerSurfaceBinding) {
+                    ForEach(LockScreenTimerSurfaceMode.allCases) { mode in
+                        Text(mode.rawValue).tag(mode)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .disabled(!enableLockScreenTimerWidget)
+                .opacity(enableLockScreenTimerWidget ? 1 : 0.5)
+                .settingsHighlight(id: highlightID("Timer surface"))
+
+                if timerGlassModeIsGlass {
+                    Picker("Timer glass material", selection: $lockScreenTimerGlassStyle) {
+                        ForEach(LockScreenGlassStyle.allCases) { style in
+                            Text(style.rawValue).tag(style)
+                        }
+                    }
                     .disabled(!enableLockScreenTimerWidget)
-                    .settingsHighlight(id: highlightID("Enable timer blur"))
+                    .opacity(enableLockScreenTimerWidget ? 1 : 0.5)
+                    .settingsHighlight(id: highlightID("Timer glass material"))
+
+                    if lockScreenTimerGlassStyle == .liquid {
+                        Picker("Timer liquid mode", selection: $lockScreenTimerGlassCustomizationMode) {
+                            ForEach(LockScreenGlassCustomizationMode.allCases) { mode in
+                                Text(mode.rawValue).tag(mode)
+                            }
+                        }
+                        .pickerStyle(.segmented)
+                        .disabled(!enableLockScreenTimerWidget)
+                        .opacity(enableLockScreenTimerWidget ? 1 : 0.5)
+                        .settingsHighlight(id: highlightID("Timer liquid mode"))
+
+                        if lockScreenTimerGlassCustomizationMode == .customLiquid {
+                            variantSlider(
+                                title: "Timer widget variant",
+                                value: timerVariantBinding,
+                                currentValue: lockScreenTimerLiquidGlassVariant.rawValue,
+                                isEnabled: enableLockScreenTimerWidget,
+                                highlight: highlightID("Timer widget variant")
+                            )
+                        }
+                    } else {
+                        Text("Uses the frosted blur treatment while glass mode is enabled.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                } else {
+                    Text("Classic mode keeps the original translucent black background.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .opacity(enableLockScreenTimerWidget ? 1 : 0.5)
+                }
             } header: {
                 Text("Timer Widget")
             } footer: {
-                Text("Controls the optional timer widget that floats above the media panel. Blur adds a frosted finish behind the compact view.")
+                Text("Controls the optional timer widget that floats above the media panel, including its classic, frosted, or liquid glass surface independent of the global material setting.")
             }
 
             Section {
@@ -3315,11 +3592,23 @@ struct LockScreenSettings: View {
                 Text("Collect the latest crash report to share with the developer when reporting lock screen or overlay issues.")
             }
         }
+        .onAppear(perform: enforceLockScreenGlassConsistency)
+        .onChange(of: lockScreenGlassStyle) { _, _ in enforceLockScreenGlassConsistency() }
+        .onChange(of: lockScreenGlassCustomizationMode) { _, _ in enforceLockScreenGlassConsistency() }
         .navigationTitle("Lock Screen")
     }
 }
 
 extension LockScreenSettings {
+    private func enforceLockScreenGlassConsistency() {
+        if lockScreenGlassStyle == .frosted && lockScreenGlassCustomizationMode != .standard {
+            lockScreenGlassCustomizationMode = .standard
+        }
+        if lockScreenGlassCustomizationMode == .customLiquid && lockScreenGlassStyle != .liquid {
+            lockScreenGlassStyle = .liquid
+        }
+    }
+
     private var blurSettingUnavailableRow: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text("Enable media panel blur")
@@ -3329,6 +3618,29 @@ extension LockScreenSettings {
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    @ViewBuilder
+    private func variantSlider(
+        title: String,
+        value: Binding<Double>,
+        currentValue: Int,
+        isEnabled: Bool,
+        highlight: String
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                Text(title)
+                Spacer()
+                Text("v\(currentValue)")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            Slider(value: value, in: liquidVariantRange, step: 1)
+        }
+        .settingsHighlight(id: highlight)
+        .disabled(!isEnabled)
+        .opacity(isEnabled ? 1 : 0.4)
     }
 }
 
@@ -3954,6 +4266,10 @@ struct TimerSettings: View {
     @Default(.mirrorSystemTimer) private var mirrorSystemTimer
     @Default(.timerDisplayMode) private var timerDisplayMode
     @Default(.enableLockScreenTimerWidget) private var enableLockScreenTimerWidget
+    @Default(.lockScreenTimerWidgetUsesBlur) private var timerGlassModeIsGlass
+    @Default(.lockScreenTimerGlassStyle) private var lockScreenTimerGlassStyle
+    @Default(.lockScreenTimerGlassCustomizationMode) private var lockScreenTimerGlassCustomizationMode
+    @Default(.lockScreenTimerLiquidGlassVariant) private var lockScreenTimerLiquidGlassVariant
     @AppStorage("customTimerDuration") private var customTimerDuration: Double = 600
     @State private var customHours: Int = 0
     @State private var customMinutes: Int = 10
@@ -3962,6 +4278,27 @@ struct TimerSettings: View {
     
     private func highlightID(_ title: String) -> String {
         SettingsTab.timer.highlightID(for: title)
+    }
+
+    private var liquidVariantRange: ClosedRange<Double> {
+        Double(LiquidGlassVariant.supportedRange.lowerBound)...Double(LiquidGlassVariant.supportedRange.upperBound)
+    }
+
+    private var timerVariantBinding: Binding<Double> {
+        Binding(
+            get: { Double(lockScreenTimerLiquidGlassVariant.rawValue) },
+            set: { newValue in
+                let raw = Int(newValue.rounded())
+                lockScreenTimerLiquidGlassVariant = LiquidGlassVariant.clamped(raw)
+            }
+        )
+    }
+
+    private var timerSurfaceBinding: Binding<LockScreenTimerSurfaceMode> {
+        Binding(
+            get: { timerGlassModeIsGlass ? .glass : .classic },
+            set: { mode in timerGlassModeIsGlass = (mode == .glass) }
+        )
     }
     
     var body: some View {
@@ -4037,9 +4374,65 @@ struct TimerSettings: View {
         Section {
             Defaults.Toggle("Show lock screen timer widget", key: .enableLockScreenTimerWidget)
                 .settingsHighlight(id: highlightID("Show lock screen timer widget"))
-            Defaults.Toggle("Enable timer blur", key: .lockScreenTimerWidgetUsesBlur)
+            Picker("Timer surface", selection: timerSurfaceBinding) {
+                ForEach(LockScreenTimerSurfaceMode.allCases) { mode in
+                    Text(mode.rawValue).tag(mode)
+                }
+            }
+            .pickerStyle(.segmented)
+            .disabled(!enableLockScreenTimerWidget)
+            .opacity(enableLockScreenTimerWidget ? 1 : 0.5)
+            .settingsHighlight(id: highlightID("Timer surface"))
+
+            if timerGlassModeIsGlass {
+                Picker("Timer glass material", selection: $lockScreenTimerGlassStyle) {
+                    ForEach(LockScreenGlassStyle.allCases) { style in
+                        Text(style.rawValue).tag(style)
+                    }
+                }
                 .disabled(!enableLockScreenTimerWidget)
-                .settingsHighlight(id: highlightID("Enable timer blur"))
+                .opacity(enableLockScreenTimerWidget ? 1 : 0.5)
+                .settingsHighlight(id: highlightID("Timer glass material"))
+
+                if lockScreenTimerGlassStyle == .liquid {
+                    Picker("Timer liquid mode", selection: $lockScreenTimerGlassCustomizationMode) {
+                        ForEach(LockScreenGlassCustomizationMode.allCases) { mode in
+                            Text(mode.rawValue).tag(mode)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    .disabled(!enableLockScreenTimerWidget)
+                    .opacity(enableLockScreenTimerWidget ? 1 : 0.5)
+                    .settingsHighlight(id: highlightID("Timer liquid mode"))
+
+                    if lockScreenTimerGlassCustomizationMode == .customLiquid {
+                        VStack(alignment: .leading, spacing: 6) {
+                            HStack {
+                                Text("Timer widget variant")
+                                Spacer()
+                                Text("v\(lockScreenTimerLiquidGlassVariant.rawValue)")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            Slider(value: timerVariantBinding, in: liquidVariantRange, step: 1)
+                        }
+                        .settingsHighlight(id: highlightID("Timer widget variant"))
+                        .disabled(!enableLockScreenTimerWidget)
+                        .opacity(enableLockScreenTimerWidget ? 1 : 0.4)
+                    }
+                } else {
+                    Text("Uses the frosted blur treatment while glass mode is enabled.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+            } else {
+                Text("Classic mode keeps the original translucent black background.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .opacity(enableLockScreenTimerWidget ? 1 : 0.5)
+            }
         } header: {
             Text("Lock Screen Integration")
         } footer: {

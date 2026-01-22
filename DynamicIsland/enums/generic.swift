@@ -100,6 +100,24 @@ enum LockScreenGlassStyle: String, CaseIterable, Defaults.Serializable, Identifi
     var id: String { rawValue }
 }
 
+enum LockScreenGlassCustomizationMode: String, CaseIterable, Defaults.Serializable, Identifiable {
+    case standard = "Standard"
+    case customLiquid = "Custom Liquid"
+
+    var id: String { rawValue }
+
+    var allowsVariantSelection: Bool {
+        self == .customLiquid
+    }
+}
+
+enum LockScreenTimerSurfaceMode: String, CaseIterable, Defaults.Serializable, Identifiable {
+    case classic = "Classic"
+    case glass = "Glass"
+
+    var id: String { rawValue }
+}
+
 enum LockScreenWeatherWidgetStyle: String, CaseIterable, Defaults.Serializable, Identifiable {
     case inline = "Inline"
     case circular = "Circular"

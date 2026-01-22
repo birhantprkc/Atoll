@@ -703,6 +703,23 @@ extension Defaults.Keys {
     static let lockScreenMusicAlbumParallaxEnabled = Key<Bool>("lockScreenMusicAlbumParallaxEnabled", default: false)
     static let lockScreenTimerVerticalOffset = Key<Double>("lockScreenTimerVerticalOffset", default: 0)
     static let lockScreenGlassStyle = Key<LockScreenGlassStyle>("lockScreenGlassStyle", default: .liquid)
+    static let lockScreenGlassCustomizationMode = Key<LockScreenGlassCustomizationMode>(
+        "lockScreenGlassCustomizationMode",
+        default: .standard
+    )
+    static let lockScreenTimerGlassStyle = Key<LockScreenGlassStyle>("lockScreenTimerGlassStyle", default: .frosted)
+    static let lockScreenTimerGlassCustomizationMode = Key<LockScreenGlassCustomizationMode>(
+        "lockScreenTimerGlassCustomizationMode",
+        default: .standard
+    )
+    static let lockScreenMusicLiquidGlassVariant = Key<LiquidGlassVariant>(
+        "lockScreenMusicLiquidGlassVariant",
+        default: .defaultVariant
+    )
+    static let lockScreenTimerLiquidGlassVariant = Key<LiquidGlassVariant>(
+        "lockScreenTimerLiquidGlassVariant",
+        default: .defaultVariant
+    )
     static let lockScreenShowAppIcon = Key<Bool>("lockScreenShowAppIcon", default: false)
     static let lockScreenPanelShowsBorder = Key<Bool>("lockScreenPanelShowsBorder", default: false)
     static let lockScreenPanelUsesBlur = Key<Bool>("lockScreenPanelUsesBlur", default: true)
