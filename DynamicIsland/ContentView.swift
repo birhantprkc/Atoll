@@ -1043,15 +1043,10 @@ struct ContentView: View {
                         .font(.system(size: badgeSize * 0.5, weight: .semibold))
                         .foregroundStyle(capsLockTintMode.color)
                 case .extensionPayload(let payload):
-                    ExtensionCompositeIconView(
-                        leading: payload.descriptor.leadingIcon,
-                        badge: payload.descriptor.badgeIcon,
+                    ExtensionBadgeIconView(
+                        descriptor: payload.descriptor.leadingIcon,
                         accent: payload.descriptor.accentColor.swiftUIColor,
                         size: badgeSize
-                    )
-                    .background(
-                        Circle()
-                            .fill(Color.black.opacity(0.85))
                     )
                 }
             }
@@ -1066,8 +1061,6 @@ struct ContentView: View {
     private func badgeDisplaySize(for secondary: MusicSecondaryLiveActivity?, baseSize: CGFloat) -> CGFloat {
         guard let secondary else { return baseSize }
         switch secondary {
-        case .extensionPayload:
-            return max(11, baseSize * 0.86)
         default:
             return baseSize
         }
@@ -1076,8 +1069,6 @@ struct ContentView: View {
     private func badgeOverlayOffset(for secondary: MusicSecondaryLiveActivity?, badgeSize: CGFloat) -> CGSize {
         guard let secondary else { return CGSize(width: badgeSize * 0.2, height: badgeSize * 0.25) }
         switch secondary {
-        case .extensionPayload:
-            return CGSize(width: badgeSize * 0.14, height: badgeSize * 0.12)
         default:
             return CGSize(width: badgeSize * 0.2, height: badgeSize * 0.25)
         }
@@ -1189,10 +1180,10 @@ struct ContentView: View {
             return nil
         }
 
-        guard standardMediaControlsActive else {
+        guard closedMusicContentEnabled else {
             ExtensionRoutingDiagnostics.shared.logSuppression(
                 .music,
-                reason: "standard media controls disabled",
+                reason: "music content disabled",
                 pendingCount: candidates.count
             )
             return nil
