@@ -21,7 +21,7 @@
   <a href="https://github.com/sponsors/Ebullioscopic">
     <img src="https://img.shields.io/badge/Sponsor-Ebullioscopic-ff69b4?style=for-the-badge&logo=github" alt="Sponsor Ebullioscopic"/>
   </a>
-  <a href="https://github.com/Ebullioscopic/Atoll/releases/download/v1.2.2-beta/Atoll.1.2.2-beta.dmg">
+  <a href="https://github.com/Ebullioscopic/Atoll/releases/download/v1.3.0-beta/Atoll.1.3.0-beta.dmg">
     <img src="https://img.shields.io/badge/Download-Atoll%20for%20macOS-0A84FF?style=for-the-badge&logo=apple" alt="Download Atoll for macOS"/>
   </a>
   <a href="https://www.buymeacoffee.com/kryoscopic">
@@ -39,85 +39,26 @@
 
 Atoll turns the MacBook notch into a focused command surface for media, system insight, and quick utilities. It stays out of the way until needed, then expands with responsive, native SwiftUI animations.
 
-## UI Modes
-
-### Minimalistic Mode
-- Compact layout focused on core actions and quick glance info.
-- Ideal when you want media and essentials without wider panels.
-
 <p align="center">
-  <img src=".github/assets/Minimalistic-v1.2.gif" alt="Minimalistic UI" width="520">
+  <img src="https://private-user-images.githubusercontent.com/83903166/543312936-5c06c4ac-ef8a-4161-83fc-25bc591161b6.png?jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3Njk4ODU3MDcsIm5iZiI6MTc2OTg4NTQwNywicGF0aCI6Ii84MzkwMzE2Ni81NDMzMTI5MzYtNWMwNmM0YWMtZWY4YS00MTYxLTgzZmMtMjViYzU5MTE2MWI2LnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNjAxMzElMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjYwMTMxVDE4NTAwN1omWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPTc5NGFlMjA0MWY4M2JkMGVjMjAzM2IxMjI4MGJhYzA1MmRjMTAxOThlY2RlNzRkZWE2ZjMzZDViZjVjOTk3M2ImWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0In0.xoufdFoZwh-dteE7JNpm8KFDZX1SMDAaFJfQB9WROMU" alt="Atoll preview" width="920">
 </p>
 
-### Standard Mode
-- Full-width experience with richer layouts, panels, and context.
-- Best for deep control of media, stats, and productivity tools.
-
-<p align="center">
-  <img src=".github/assets/Non-minimalistic-v1.2.gif" alt="Standard UI" width="520">
-</p>
-
-## Calendar & Reminders
-- Clean calendar panel with upcoming events and reminders.
-- Efficient EventKit usage to minimise refreshes and background churn.
-- Clear timeline of upcoming items; grants only when you approve Calendar access.
-
-<p align="center">
-  <img src=".github/assets/Calendar-v1.2.gif" alt="Calendar and reminders" width="520">
-</p>
-
-## Timers
-- Named timers with live activity state, clear progress, and alerts.
-- Choose circular ring or linear bar; pick tints that match your setup.
-- Controls live both in the notch and via menu bar for quick access.
-
-<p align="center">
-  <img src=".github/assets/Timer-v1.2.gif" alt="Timers" width="520">
-</p>
-
-## Do Not Disturb
-- One-tap Focus toggle with immediate visual feedback near the notch.
-- See current status at a glance without digging through menus.
-
-<p align="center">
-  <img src=".github/assets/DND-v1.2.gif" alt="Do Not Disturb" width="520">
-</p>
-
-## Lock Screen Widgets
-- Media playback controls with artwork and transport.
-- Active timer progress with visual feedback.
-- Device charging status and battery levels.
-- Connected Bluetooth devices and their battery states.
-- Current weather conditions and forecast.
-
-<p align="center">
-  <img src=".github/assets/lockscreen-v1.2.gif" alt="Do Not Disturb" width="520">
-</p>
-
-## Live Activities
-
-- Media Playback
-- Focus Mode
-- Screen Recording
-- Microphone, Camera Privacy Indicators
-- Connected Bluetooth Devices
-- Download progress `beta`
-- Low Battery status, Charging
-
-## Overview
+## Highlights
 - Media controls for Apple Music, Spotify, and more with inline previews.
-- Live system insight (CPU, GPU, memory, network, disk) with lightweight graphs.
-- Productivity tools: clipboard history, colour picker, timers, calendar.
-- Optional minimalistic layout for a compact 420px notch footprint.
+- Live Activities for media playback, Focus, screen recording, privacy indicators, downloads (beta), and battery/charging.
+- Lock screen widgets for media, timers, charging, Bluetooth devices, and weather.
+- Lightweight system insight for CPU, GPU, memory, network, and disk usage.
+- Productivity tools including timers, clipboard history, color picker, and calendar previews.
+- Customization for layouts, animations, hover behavior, and shortcut remapping.
 
-## Features
-- Media: artwork and transport controls, inline sneak-peek, adaptive lighting that subtly echoes album colours.
-- System: lightweight CPU/GPU/memory/network/disk graphs; drill into quick popovers when you need details.
-- Productivity: rich timers with live activity, precise colour picker with formats, and a searchable clipboard history.
-- Calendar: streamlined agenda with snapshot-driven updates to keep EventKit usage lean.
-- Lock Screen: weather, media, charging, and Bluetooth battery widgets that respect system accessory styles.
-- Parallax interactions: hover tilt now stays responsive while clicks fire immediately, and the lock screen album art suspends the effect mid-animation for smooth expansions.
-- Customisation: minimalistic/standard layouts, animation styles, hover behaviour, and full shortcut remapping.
+## Other Features
+- Gesture controls for opening/closing the notch and media navigation.
+- Parallax hover interactions with smooth transitions.
+- Lock screen appearance and positioning controls for panels and widgets.
+
+<p align="center">
+  <img src="https://private-user-images.githubusercontent.com/83903166/543312791-e9a351bf-ac52-4d7c-8ab2-a3fecd3177c6.png?jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3Njk4ODU3MDcsIm5iZiI6MTc2OTg4NTQwNywicGF0aCI6Ii84MzkwMzE2Ni81NDMzMTI3OTEtZTlhMzUxYmYtYWM1Mi00ZDdjLThhYjItYTNmZWNkMzE3N2M2LnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNjAxMzElMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjYwMTMxVDE4NTAwN1omWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPTRkZjYxZmIxYjkxMDgxMDA3NzNlY2IxNDFjZmM1NjdlNWUzZTMzM2Q3YzhlYjIzNDI3OTdmNjUwM2VlYmZlNWImWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0In0.G9xDJ4Ul9kvb7F7iqcv8BXq4eLn9jMHxgQFOfF63ei8" alt="Atoll lock screen" width="920">
+</p>
 
 ## Requirements
 - macOS 14.0 or later (optimised for macOS 15+).
@@ -126,19 +67,14 @@ Atoll turns the MacBook notch into a focused command surface for media, system i
 - Permissions as needed: Accessibility, Camera, Calendar, Screen Recording, Music.
 
 ## Installation
-1) Clone and open the project
-```bash
-git clone https://github.com/Ebullioscopic/Atoll.git
-cd Atoll
-open DynamicIsland.xcodeproj
-```
-2) Select your Mac as the run destination, then build and run (⌘R).
-3) Grant prompted permissions. The menu bar icon appears and the notch activates on hover.
+1) Download the latest DMG: https://github.com/Ebullioscopic/Atoll/releases/download/v1.3.0-beta/Atoll.1.3.0-beta.dmg
+2) Open the DMG and drag Atoll into Applications.
+3) Launch Atoll and grant the requested permissions.
 
 ## Quick Start
 - Hover near the notch to expand; click to enter controls.
 - Use tabs for Media, Stats, Timers, Clipboard, and more.
-- Toggle Minimalistic Mode from Settings for a smaller layout.
+- Adjust layout, appearance, and shortcuts from Settings.
 
 ## Settings
 - Choose appearance, animation style, and per‑feature toggles.
@@ -205,4 +141,12 @@ A heartfelt thanks to [TheBoredTeam](https://github.com/TheBoredTeam) for being 
   Powered by Apple and Infosys
   <br>
   SRM Institute of Science and Technology, Chennai, India
+</p>
+
+<p align="center">
+  <img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" width="200" />
+</p>
+
+<p align="center">
+  Your support helps fund teaching children software development.
 </p>
