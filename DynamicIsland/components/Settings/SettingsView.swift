@@ -5884,7 +5884,7 @@ struct StatsSettings: View {
     var body: some View {
         Form {
             Section {
-                Defaults.Toggle("Enable system stats monitoring", key: .enableStatsFeature)
+                Defaults.Toggle(String(localized: "Enable system stats monitoring"), key: .enableStatsFeature)
                     .settingsHighlight(id: highlightID("Enable system stats monitoring"))
                     .onChange(of: enableStatsFeature) { _, newValue in
                         if !newValue {
@@ -5904,7 +5904,7 @@ struct StatsSettings: View {
             
             if enableStatsFeature {
                 Section {
-                    Defaults.Toggle("Stop monitoring after closing the notch", key: .statsStopWhenNotchCloses)
+                    Defaults.Toggle(String(localized: "Stop monitoring after closing the notch"), key: .statsStopWhenNotchCloses)
                         .settingsHighlight(id: highlightID("Stop monitoring after closing the notch"))
                         .help("When enabled, stats monitoring stops a few seconds after the notch closes.")
 
@@ -5944,15 +5944,15 @@ struct StatsSettings: View {
                 }
 
                 Section {
-                    Defaults.Toggle("CPU Usage", key: .showCpuGraph)
+                    Defaults.Toggle(String(localized: "CPU Usage"), key: .showCpuGraph)
                         .settingsHighlight(id: highlightID("CPU Usage"))
-                    Defaults.Toggle("Memory Usage", key: .showMemoryGraph)
+                    Defaults.Toggle(String(localized: "Memory Usage"), key: .showMemoryGraph)
                         .settingsHighlight(id: highlightID("Memory Usage"))
-                    Defaults.Toggle("GPU Usage", key: .showGpuGraph)
+                    Defaults.Toggle(String(localized: "GPU Usage"), key: .showGpuGraph)
                         .settingsHighlight(id: highlightID("GPU Usage"))
-                    Defaults.Toggle("Network Activity", key: .showNetworkGraph)
+                    Defaults.Toggle(String(localized: "Network Activity"), key: .showNetworkGraph)
                         .settingsHighlight(id: highlightID("Network Activity"))
-                    Defaults.Toggle("Disk I/O", key: .showDiskGraph)
+                    Defaults.Toggle(String(localized: "Disk I/O"), key: .showDiskGraph)
                         .settingsHighlight(id: highlightID("Disk I/O"))
                 } header: {
                     Text("Graph Visibility")
@@ -5986,7 +5986,7 @@ struct StatsSettings: View {
                     if statsManager.isMonitoring {
                         if showCpuGraph {
                             HStack {
-                                Text("CPU Usage")
+                                Text(String(localized: "CPU Usage"))
                                 Spacer()
                                 Text(statsManager.cpuUsageString)
                                     .foregroundStyle(.secondary)
@@ -5995,7 +5995,7 @@ struct StatsSettings: View {
                         
                         if showMemoryGraph {
                             HStack {
-                                Text("Memory Usage")
+                                Text(String(localized: "Memory Usage"))
                                 Spacer()
                                 Text(statsManager.memoryUsageString)
                                     .foregroundStyle(.secondary)
@@ -6004,7 +6004,7 @@ struct StatsSettings: View {
                         
                         if showGpuGraph {
                             HStack {
-                                Text("GPU Usage")
+                                Text(String(localized: "GPU Usage"))
                                 Spacer()
                                 Text(statsManager.gpuUsageString)
                                     .foregroundStyle(.secondary)
@@ -6013,14 +6013,14 @@ struct StatsSettings: View {
                         
                         if showNetworkGraph {
                             HStack {
-                                Text("Network Download")
+                                Text(String(localized: "Network Download"))
                                 Spacer()
                                 Text(String(format: "%.1f MB/s", statsManager.networkDownload))
                                     .foregroundStyle(.secondary)
                             }
                             
                             HStack {
-                                Text("Network Upload")
+                                Text(String(localized: "Network Upload"))
                                 Spacer()
                                 Text(String(format: "%.1f MB/s", statsManager.networkUpload))
                                     .foregroundStyle(.secondary)
@@ -6029,14 +6029,14 @@ struct StatsSettings: View {
                         
                         if showDiskGraph {
                             HStack {
-                                Text("Disk Read")
+                                Text(String(localized: "Disk Read"))
                                 Spacer()
                                 Text(String(format: "%.1f MB/s", statsManager.diskRead))
                                     .foregroundStyle(.secondary)
                             }
                             
                             HStack {
-                                Text("Disk Write")
+                                Text(String(localized: "Disk Write"))
                                 Spacer()
                                 Text(String(format: "%.1f MB/s", statsManager.diskWrite))
                                     .foregroundStyle(.secondary)
@@ -6044,7 +6044,7 @@ struct StatsSettings: View {
                         }
                         
                         HStack {
-                            Text("Last Updated")
+                            Text(String(localized: "Last Updated"))
                             Spacer()
                             Text(statsManager.lastUpdated, style: .relative)
                                 .foregroundStyle(.secondary)
