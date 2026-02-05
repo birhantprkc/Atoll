@@ -6266,7 +6266,7 @@ struct ScreenAssistantSettings: View {
     var body: some View {
         Form {
             Section {
-                Defaults.Toggle("Enable Screen Assistant", key: .enableScreenAssistant)
+                Defaults.Toggle(String(localized: "Enable Screen Assistant"), key: .enableScreenAssistant)
                     .settingsHighlight(id: highlightID("Enable Screen Assistant"))
             } header: {
                 Text("AI Assistant")
@@ -6452,7 +6452,7 @@ struct ColorPickerSettings: View {
             
             if enableColorPickerFeature {
                 Section {
-                    Defaults.Toggle("Show Color Picker Icon", key: .showColorPickerIcon)
+                    Defaults.Toggle(String(localized: "Show Color Picker Icon"), key: .showColorPickerIcon)
                         .settingsHighlight(id: highlightID("Show Color Picker Icon"))
                     
                     HStack {
@@ -6482,7 +6482,7 @@ struct ColorPickerSettings: View {
                     }
                     .settingsHighlight(id: highlightID("History Size"))
                     
-                    Defaults.Toggle("Show All Color Formats", key: .showColorFormats)
+                    Defaults.Toggle(String(localized: "Show All Color Formats"), key: .showColorFormats)
                         .settingsHighlight(id: highlightID("Show All Color Formats"))
                     
                 } header: {
