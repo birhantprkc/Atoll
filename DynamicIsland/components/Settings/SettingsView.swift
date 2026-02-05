@@ -796,18 +796,77 @@ struct SettingsView: View {
             SettingsSearchEntry(tab: .shelf, title: "Quick Share Service", keywords: ["shelf", "share", "airdrop"], highlightID: SettingsTab.shelf.highlightID(for: "Quick Share Service")),
 
             // Appearance
-            SettingsSearchEntry(tab: .appearance, title: "Settings icon in notch", keywords: ["settings button", "toolbar"], highlightID: SettingsTab.appearance.highlightID(for: "Settings icon in notch")),
-            SettingsSearchEntry(tab: .appearance, title: "Enable window shadow", keywords: ["shadow", "appearance"], highlightID: SettingsTab.appearance.highlightID(for: "Enable window shadow")),
-            SettingsSearchEntry(tab: .appearance, title: "Corner radius scaling", keywords: ["corner radius", "shape"], highlightID: SettingsTab.appearance.highlightID(for: "Corner radius scaling")),
-            SettingsSearchEntry(tab: .appearance, title: "Use simpler close animation", keywords: ["close animation", "notch"], highlightID: SettingsTab.appearance.highlightID(for: "Use simpler close animation")),
-            SettingsSearchEntry(tab: .appearance, title: "Notch Width", keywords: ["expanded notch", "width", "resize"], highlightID: SettingsTab.appearance.highlightID(for: "Expanded notch width")),
-            SettingsSearchEntry(tab: .appearance, title: "Enable colored spectrograms", keywords: ["spectrogram", "audio"], highlightID: SettingsTab.appearance.highlightID(for: "Enable colored spectrograms")),
-            SettingsSearchEntry(tab: .appearance, title: "Enable blur effect behind album art", keywords: ["blur", "album art"], highlightID: SettingsTab.appearance.highlightID(for: "Enable blur effect behind album art")),
-            SettingsSearchEntry(tab: .appearance, title: "Slider color", keywords: ["slider", "accent"], highlightID: SettingsTab.appearance.highlightID(for: "Slider color")),
-            SettingsSearchEntry(tab: .appearance, title: "Enable Dynamic mirror", keywords: ["mirror", "reflection"], highlightID: SettingsTab.appearance.highlightID(for: "Enable Dynamic mirror")),
-            SettingsSearchEntry(tab: .appearance, title: "Mirror shape", keywords: ["mirror shape", "circle", "rectangle"], highlightID: SettingsTab.appearance.highlightID(for: "Mirror shape")),
-            SettingsSearchEntry(tab: .appearance, title: "Show cool face animation while inactivity", keywords: ["face animation", "idle"], highlightID: SettingsTab.appearance.highlightID(for: "Show cool face animation while inactivity")),
-            SettingsSearchEntry(tab: .appearance, title: "App icon", keywords: ["app icon", "custom icon"], highlightID: SettingsTab.appearance.highlightID(for: "App icon")),
+            SettingsSearchEntry(
+                tab: .appearance,
+                title: String(localized: "Settings icon in notch"),
+                keywords: [String(localized: "settings button"), String(localized: "toolbar")],
+                highlightID: SettingsTab.appearance.highlightID(for: "Settings icon in notch")
+            ),
+            SettingsSearchEntry(
+                tab: .appearance,
+                title: String(localized: "Enable window shadow"),
+                keywords: [String(localized: "shadow"), String(localized: "appearance")],
+                highlightID: SettingsTab.appearance.highlightID(for: "Enable window shadow")
+            ),
+            SettingsSearchEntry(
+                tab: .appearance,
+                title: String(localized: "Corner radius scaling"),
+                keywords: [String(localized: "corner radius"), String(localized: "shape")],
+                highlightID: SettingsTab.appearance.highlightID(for: "Corner radius scaling")
+            ),
+            SettingsSearchEntry(
+                tab: .appearance,
+                title: String(localized: "Use simpler close animation"),
+                keywords: [String(localized: "close animation"), String(localized: "notch")],
+                highlightID: SettingsTab.appearance.highlightID(for: "Use simpler close animation")
+            ),
+            SettingsSearchEntry(
+                tab: .appearance,
+                title: String(localized: "Notch Width"),
+                keywords: [String(localized: "expanded notch"), String(localized: "width"), String(localized: "resize")],
+                highlightID: SettingsTab.appearance.highlightID(for: "Expanded notch width")
+            ),
+            SettingsSearchEntry(
+                tab: .appearance,
+                title: String(localized: "Enable colored spectrograms"), keywords: [String(localized: "spectrogram"), String(localized: "audio")],
+                highlightID: SettingsTab.appearance.highlightID(for: "Enable colored spectrograms")
+            ),
+            SettingsSearchEntry(
+                tab: .appearance,
+                title: String(localized: "Enable blur effect behind album art"),
+                keywords: [String(localized: "blur"), String(localized: "album art")],
+                highlightID: SettingsTab.appearance.highlightID(for: "Enable blur effect behind album art")
+            ),
+            SettingsSearchEntry(
+                tab: .appearance,
+                title: String(localized: "Slider color"),
+                keywords: [String(localized: "slider"), String(localized: "accent")],
+                highlightID: SettingsTab.appearance.highlightID(for: "Slider color")
+            ),
+            SettingsSearchEntry(
+                tab: .appearance,
+                title: String(localized: "Enable Dynamic mirror"),
+                keywords: [String(localized: "mirror"), String(localized: "reflection")],
+                highlightID: SettingsTab.appearance.highlightID(for: "Enable Dynamic mirror")
+            ),
+            SettingsSearchEntry(
+                tab: .appearance,
+                title: String(localized: "Mirror shape"),
+                keywords: [String(localized: "mirror shape"), String(localized: "circle"), String(localized: "rectangle")],
+                highlightID: SettingsTab.appearance.highlightID(for: "Mirror shape")
+            ),
+            SettingsSearchEntry(
+                tab: .appearance,
+                title: String(localized: "Show cool face animation while inactivity"),
+                keywords: [String(localized: "face animation"), String(localized: "idle")],
+                highlightID: SettingsTab.appearance.highlightID(for: "Show cool face animation while inactivity")
+            ),
+            SettingsSearchEntry(
+                tab: .appearance,
+                title: String(localized: "App icon"),
+                keywords: [String(localized: "app icon"), String(localized: "custom icon")],
+                highlightID: SettingsTab.appearance.highlightID(for: "App icon")
+            ),
 
             // Lock Screen
             SettingsSearchEntry(tab: .lockScreen, title: "Enable lock screen live activity", keywords: ["lock screen", "live activity"], highlightID: SettingsTab.lockScreen.highlightID(for: "Enable lock screen live activity")),
@@ -3028,13 +3087,13 @@ struct Appearance: View {
         Form {
             Section {
                 Toggle("Always show tabs", isOn: $coordinator.alwaysShowTabs)
-                Defaults.Toggle("Settings icon in notch", key: .settingsIconInNotch)
+                Defaults.Toggle(String(localized:"Settings icon in notch"), key: .settingsIconInNotch)
                     .settingsHighlight(id: highlightID("Settings icon in notch"))
-                Defaults.Toggle("Enable window shadow", key: .enableShadow)
+                Defaults.Toggle(String(localized:"Enable window shadow"), key: .enableShadow)
                     .settingsHighlight(id: highlightID("Enable window shadow"))
-                Defaults.Toggle("Corner radius scaling", key: .cornerRadiusScaling)
+                Defaults.Toggle(String(localized:"Corner radius scaling"), key: .cornerRadiusScaling)
                     .settingsHighlight(id: highlightID("Corner radius scaling"))
-                Defaults.Toggle("Use simpler close animation", key: .useModernCloseAnimation)
+                Defaults.Toggle(String(localized:"Use simpler close animation"), key: .useModernCloseAnimation)
                     .settingsHighlight(id: highlightID("Use simpler close animation"))
             } header: {
                 Text("General")
@@ -3064,9 +3123,9 @@ struct Appearance: View {
                 }
 
                 if lockScreenGlassStyle == .liquid {
-                    Picker("Lock screen glass mode", selection: $lockScreenGlassCustomizationMode) {
+                    Picker(String(localized: "Lock screen glass mode"), selection: $lockScreenGlassCustomizationMode) {
                         ForEach(LockScreenGlassCustomizationMode.allCases) { mode in
-                            Text(mode.rawValue).tag(mode)
+                            Text(mode.localizedName).tag(mode)
                         }
                     }
                     .pickerStyle(.segmented)
@@ -3117,15 +3176,15 @@ struct Appearance: View {
             }
 
             Section {
-                Defaults.Toggle("Enable colored spectrograms", key: .coloredSpectrogram)
+                Defaults.Toggle(String(localized:"Enable colored spectrograms"), key: .coloredSpectrogram)
                     .settingsHighlight(id: highlightID("Enable colored spectrograms"))
-                Defaults
-                    .Toggle("Player tinting", key: .playerColorTinting)
-                Defaults.Toggle("Enable blur effect behind album art", key: .lightingEffect)
+                Defaults.Toggle(String(localized:"Player tinting"), key: .playerColorTinting)
+                Defaults.Toggle(String(localized:"Enable blur effect behind album art"), key: .lightingEffect)
                     .settingsHighlight(id: highlightID("Enable blur effect behind album art"))
-                Picker("Slider color", selection: $sliderColor) {
+                Picker(String(localized: "Slider color"), selection: $sliderColor) {
                     ForEach(SliderColorEnum.allCases, id: \.self) { option in
-                        Text(option.rawValue)
+                        
+                        Text(option.localizedName).tag(option)
                     }
                 }
                 .settingsHighlight(id: highlightID("Slider color"))
@@ -3165,7 +3224,7 @@ struct Appearance: View {
             } header: {
                 HStack {
                     Text("Custom music live activity animation")
-                    customBadge(text: "Coming soon")
+                    customBadge(text: String(localized: "Coming soon"))
                 }
             }
 
@@ -3302,7 +3361,7 @@ struct Appearance: View {
             }
 
             Section {
-                Defaults.Toggle("Enable Dynamic mirror", key: .showMirror)
+                Defaults.Toggle(String(localized:"Enable Dynamic mirror"), key: .showMirror)
                     .disabled(!checkVideoInput())
                     .settingsHighlight(id: highlightID("Enable Dynamic mirror"))
                 Picker("Mirror shape", selection: $mirrorShape) {
@@ -3312,7 +3371,7 @@ struct Appearance: View {
                         .tag(MirrorShapeEnum.rectangle)
                 }
                 .settingsHighlight(id: highlightID("Mirror shape"))
-                Defaults.Toggle("Show cool face animation while inactivity", key: .showNotHumanFace)
+                Defaults.Toggle(String(localized:"Show cool face animation while inactivity"), key: .showNotHumanFace)
                     .settingsHighlight(id: highlightID("Show cool face animation while inactivity"))
             } header: {
                 HStack {
@@ -3328,7 +3387,7 @@ struct Appearance: View {
                     let columns = [GridItem(.adaptive(minimum: 90), spacing: 12)]
                     LazyVGrid(columns: columns, spacing: 12) {
                         appIconCard(
-                            title: "Default",
+                            title: String(localized:"Default"),
                             image: defaultAppIconImage(),
                             isSelected: selectedAppIconID == nil
                         ) {
@@ -3571,8 +3630,8 @@ struct Appearance: View {
                 }
 
                 let description = enableMinimalisticUI
-                    ? "Width adjustments apply only to the standard notch layout. Disable Minimalistic UI to edit this value."
-                    : "Extend the notch span so the clipboard, colour picker, and other trailing icons remain visible on scaled displays (e.g. More Space)."
+                ? String(localized:"Width adjustments apply only to the standard notch layout. Disable Minimalistic UI to edit this value.")
+                : String(localized:"Extend the notch span so the clipboard, colour picker, and other trailing icons remain visible on scaled displays (e.g. More Space).")
 
                 Text(description)
                     .font(.caption)
@@ -3688,9 +3747,9 @@ struct LockScreenSettings: View {
                 }
 
                 if lockScreenGlassStyle == .liquid {
-                    Picker("Glass mode", selection: $lockScreenGlassCustomizationMode) {
+                    Picker(String(localized: "Glass mode"), selection: $lockScreenGlassCustomizationMode) {
                         ForEach(LockScreenGlassCustomizationMode.allCases) { mode in
-                            Text(mode.rawValue).tag(mode)
+                            Text(mode.localizedName).tag(mode)
                         }
                     }
                     .pickerStyle(.segmented)
@@ -3777,9 +3836,9 @@ struct LockScreenSettings: View {
                     .settingsHighlight(id: highlightID("Timer glass material"))
 
                     if lockScreenTimerGlassStyle == .liquid {
-                        Picker("Timer liquid mode", selection: $lockScreenTimerGlassCustomizationMode) {
+                        Picker(String(localized: "Timer liquid mode"), selection: $lockScreenTimerGlassCustomizationMode) {
                             ForEach(LockScreenGlassCustomizationMode.allCases) { mode in
-                                Text(mode.rawValue).tag(mode)
+                                Text(mode.localizedName).tag(mode)
                             }
                         }
                         .pickerStyle(.segmented)
