@@ -231,4 +231,13 @@ enum LockScreenReminderChipStyle: String, CaseIterable, Defaults.Serializable, I
     case monochrome = "White"
 
     var id: String { rawValue }
+    
+    var localizedName: String {
+            switch self {
+            case .eventColor:
+                return String(localized: "Event color")
+            case .monochrome:
+                return String(localized: "White")
+            }
+        }
 }

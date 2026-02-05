@@ -2459,9 +2459,10 @@ struct CalendarSettings: View {
                     Defaults.Toggle(String(localized:"Show lock screen reminder"), key: .enableLockScreenReminderWidget)
                         .settingsHighlight(id: highlightID("Show lock screen reminder"))
 
-                    Picker("Chip color", selection: $lockScreenReminderChipStyle) {
+                    Picker(String(localized: "Chip color"), selection: $lockScreenReminderChipStyle) {
                         ForEach(LockScreenReminderChipStyle.allCases) { style in
-                            Text(style.rawValue).tag(style)
+
+                            Text(style.localizedName).tag(style)
                         }
                     }
                     .pickerStyle(.segmented)
@@ -2499,12 +2500,12 @@ struct CalendarSettings: View {
     
     private func statusText(for status: EKAuthorizationStatus) -> String {
         switch status {
-        case .fullAccess, .authorized: return "Full Access"
-        case .writeOnly: return "Write Only"
-        case .denied: return "Denied"
-        case .restricted: return "Restricted"
-        case .notDetermined: return "Not Determined"
-        @unknown default: return "Unknown"
+        case .fullAccess, .authorized: return String(localized:"Full Access")
+        case .writeOnly: return String(localized:"Write Only")
+        case .denied: return String(localized:"Denied")
+        case .restricted: return String(localized:"Restricted")
+        case .notDetermined: return String(localized:"Not Determined")
+        @unknown default: return String(localized:"Unknown")
         }
     }
     

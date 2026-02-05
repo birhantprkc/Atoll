@@ -438,18 +438,18 @@ enum MusicSkipBehavior: String, CaseIterable, Identifiable, Defaults.Serializabl
     var displayName: String {
         switch self {
         case .track:
-            return "Track Skip"
+            return String(localized: "Track Skip")
         case .tenSecond:
-            return "±10 Seconds"
+            return String(localized: "±10 Seconds")
         }
     }
 
     var description: String {
         switch self {
         case .track:
-            return "Standard previous/next track controls"
+            return String(localized: "Standard previous/next track controls")
         case .tenSecond:
-            return "Skip forward or backward by ten seconds"
+            return String(localized: "Skip forward or backward by ten seconds")
         }
     }
 }
@@ -484,9 +484,12 @@ enum ReminderPresentationStyle: String, CaseIterable, Identifiable, Defaults.Ser
 
     var displayName: String {
         switch self {
-        case .ringCountdown: return "Ring"
-        case .digital: return "Digital"
-        case .minutes: return "Minutes"
+            case .ringCountdown:
+                return String(localized: "Ring")
+            case .digital:
+                return String(localized: "Digital")
+            case .minutes:
+                return String(localized: "Minutes")
         }
     }
 }
