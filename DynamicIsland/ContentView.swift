@@ -126,6 +126,8 @@ struct ContentView: View {
     @State private var hoverTask: Task<Void, Never>?
     @State private var isHovering: Bool = false
     @State private var lastHapticTime: Date = Date()
+    @State private var clickMonitor: Any?
+    @State private var hostingWindow: NSWindow?
 
     @State private var gestureProgress: CGFloat = .zero
     @State private var skipGestureActiveDirection: MusicManager.SkipDirection?
@@ -271,6 +273,7 @@ struct ContentView: View {
                 }
                 .conditionalModifier(interactionsEnabled) { view in
                     view
+                        .contentShape(Rectangle())
                         .onHover { hovering in
                             handleHover(hovering)
                         }
@@ -389,12 +392,37 @@ struct ContentView: View {
 //                    #endif
 //                    .keyboardShortcut("E", modifiers: .command)
                 }
+
+            if interactionsEnabled && vm.notchState == .closed {
+                Color.clear
+                    .frame(height: 8)
+                    .frame(maxWidth: .infinity, alignment: .top)
+                    .contentShape(Rectangle())
+                    .onHover { hovering in
+                        handleHover(hovering)
+                    }
+                    .onTapGesture {
+                        if Defaults[.enableHaptics] {
+                            triggerHapticIfAllowed()
+                        }
+                        openNotch()
+                    }
+            }
         }
-    .frame(
-        maxWidth: dynamicNotchSize.width,
-        maxHeight: dynamicNotchSize.height + currentShadowPadding,
-        alignment: .top
-    )
+        .background(WindowAccessor { window in
+            hostingWindow = window
+        })
+        .onAppear {
+            startGlobalClickMonitor()
+        }
+        .onDisappear {
+            stopGlobalClickMonitor()
+        }
+        .frame(
+            maxWidth: dynamicNotchSize.width,
+            maxHeight: dynamicNotchSize.height + currentShadowPadding,
+            alignment: .top
+        )
         .environmentObject(privacyManager)
         .onChange(of: dynamicNotchSize) { oldSize, newSize in
             guard oldSize != newSize else { return }
@@ -1430,6 +1458,37 @@ struct ContentView: View {
         }
     }
 
+    private func startGlobalClickMonitor() {
+        guard clickMonitor == nil else { return }
+        clickMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDown]) { _ in
+            handleGlobalClick()
+        }
+    }
+
+    private func stopGlobalClickMonitor() {
+        if let clickMonitor {
+            NSEvent.removeMonitor(clickMonitor)
+            self.clickMonitor = nil
+        }
+    }
+
+    private func handleGlobalClick() {
+        guard !lockScreenManager.isLocked else { return }
+        guard vm.notchState == .closed else { return }
+        guard let hostingWindow else { return }
+
+        let cursorLocation = NSEvent.mouseLocation
+        let hitFrame = hostingWindow.frame.insetBy(dx: -2, dy: -2)
+        guard hitFrame.contains(cursorLocation) else { return }
+
+        DispatchQueue.main.async {
+            if Defaults[.enableHaptics] {
+                triggerHapticIfAllowed()
+            }
+            openNotch()
+        }
+    }
+
     // MARK: - Hover Management
     
     /// Handle hover state changes with debouncing
@@ -1989,6 +2048,24 @@ struct ContentView: View {
             return .standard
         }
         return coordinator.sneakPeek.styleOverride ?? Defaults[.sneakPeekStyles]
+    }
+}
+
+private struct WindowAccessor: NSViewRepresentable {
+    let callback: (NSWindow?) -> Void
+
+    func makeNSView(context: Context) -> NSView {
+        let view = NSView(frame: .zero)
+        DispatchQueue.main.async { [weak view] in
+            callback(view?.window)
+        }
+        return view
+    }
+
+    func updateNSView(_ nsView: NSView, context: Context) {
+        DispatchQueue.main.async { [weak nsView] in
+            callback(nsView?.window)
+        }
     }
 }
 
