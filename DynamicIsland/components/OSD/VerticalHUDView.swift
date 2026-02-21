@@ -46,6 +46,9 @@ struct VerticalHUDView: View {
     @Default(.verticalHUDHeight) var hudHeight
     @Default(.verticalHUDWidth) var hudWidth
     @Default(.verticalHUDUseAccentColor) var useAccentColor
+    @Default(.verticalHUDMaterial) var verticalHUDMaterial
+    @Default(.verticalHUDLiquidGlassCustomizationMode) var verticalHUDLiquidGlassCustomizationMode
+    @Default(.verticalHUDLiquidGlassVariant) var verticalHUDLiquidGlassVariant
     @Default(.verticalHUDInteractive) var isInteractive
     
     @Environment(\.colorScheme) var colorScheme
@@ -68,8 +71,8 @@ struct VerticalHUDView: View {
             // The Actual HUD Pill
             ZStack {
                 // Background
-                Capsule()
-                    .fill(.ultraThinMaterial)
+                verticalBackground
+                    .clipShape(Capsule())
                     .overlay {
                         Capsule()
                             .stroke(.white.opacity(0.1), lineWidth: 1)
@@ -252,6 +255,43 @@ struct VerticalHUDView: View {
             return useAccentColor ? .white : .black
         }
         return .secondary
+    }
+
+    @ViewBuilder
+    private var verticalBackground: some View {
+        switch verticalHUDMaterial {
+        case .frosted:
+            Capsule().fill(.ultraThinMaterial)
+        case .liquid:
+            if #available(macOS 26.0, *) {
+                if verticalHUDLiquidGlassCustomizationMode == .customLiquid {
+                    TimelineView(.periodic(from: .now, by: 1.0 / 30.0)) { context in
+                        LiquidGlassBackground(
+                            variant: verticalHUDLiquidGlassVariant,
+                            cornerRadius: max(currentWidth, hudWidth),
+                            trigger: context.date.timeIntervalSinceReferenceDate
+                        ) {
+                            Color.white.opacity(0.04)
+                        }
+                    }
+                } else {
+                    Capsule()
+                        .fill(.clear)
+                        .glassEffect(
+                            .clear.interactive(),
+                            in: .capsule
+                        )
+                }
+            } else {
+                Capsule().fill(.ultraThinMaterial)
+            }
+        case .solidDark:
+            Capsule().fill(Color.black.opacity(0.85))
+        case .solidLight:
+            Capsule().fill(Color.white.opacity(0.85))
+        case .solidAuto:
+            Capsule().fill((colorScheme == .dark ? Color.black : Color.white).opacity(0.85))
+        }
     }
 }
 #endif

@@ -973,6 +973,15 @@ extension Defaults.Keys {
     static let verticalHUDWidth = Key<CGFloat>("verticalHUDWidth", default: 36)
     static let verticalHUDPadding = Key<CGFloat>("verticalHUDPadding", default: 24)
     static let verticalHUDUseAccentColor = Key<Bool>("verticalHUDUseAccentColor", default: false)
+    static let verticalHUDMaterial = Key<OSDMaterial>("verticalHUDMaterial", default: .frosted)
+    static let verticalHUDLiquidGlassCustomizationMode = Key<LockScreenGlassCustomizationMode>(
+        "verticalHUDLiquidGlassCustomizationMode",
+        default: .standard
+    )
+    static let verticalHUDLiquidGlassVariant = Key<LiquidGlassVariant>(
+        "verticalHUDLiquidGlassVariant",
+        default: .defaultVariant
+    )
     
     // Circular HUD Customization
     static let circularHUDShowValue = Key<Bool>("circularHUDShowValue", default: true)
@@ -985,6 +994,14 @@ extension Defaults.Keys {
     static let enableOSDBrightness = Key<Bool>("enableOSDBrightness", default: true)
     static let enableOSDKeyboardBacklight = Key<Bool>("enableOSDKeyboardBacklight", default: true)
     static let osdMaterial = Key<OSDMaterial>("osdMaterial", default: .frosted)
+    static let osdLiquidGlassCustomizationMode = Key<LockScreenGlassCustomizationMode>(
+        "osdLiquidGlassCustomizationMode",
+        default: .standard
+    )
+    static let osdLiquidGlassVariant = Key<LiquidGlassVariant>(
+        "osdLiquidGlassVariant",
+        default: .defaultVariant
+    )
     static let osdIconColorStyle = Key<OSDIconColorStyle>("osdIconColorStyle", default: .white)
     
     // MARK: Screen Recording Detection Feature

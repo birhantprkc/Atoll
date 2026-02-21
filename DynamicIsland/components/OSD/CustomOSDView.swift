@@ -28,6 +28,8 @@ struct CustomOSDView: View {
     @Binding var icon: String
     
     @Default(.osdMaterial) var osdMaterial
+    @Default(.osdLiquidGlassCustomizationMode) var osdLiquidGlassCustomizationMode
+    @Default(.osdLiquidGlassVariant) var osdLiquidGlassVariant
     @Default(.osdIconColorStyle) var osdIconColorStyle
     @Environment(\.colorScheme) var colorScheme
     
@@ -160,11 +162,23 @@ struct CustomOSDView: View {
                 .fill(.ultraThinMaterial)
         case .liquid:
             if #available(macOS 26.0, *) {
-                RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .glassEffect(
-                        .clear.interactive(),
-                        in: .rect(cornerRadius: 18)
-                    )
+                if osdLiquidGlassCustomizationMode == .customLiquid {
+                    TimelineView(.periodic(from: .now, by: 1.0 / 30.0)) { context in
+                        LiquidGlassBackground(
+                            variant: osdLiquidGlassVariant,
+                            cornerRadius: 18,
+                            trigger: context.date.timeIntervalSinceReferenceDate
+                        ) {
+                            Color.white.opacity(0.04)
+                        }
+                    }
+                } else {
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .glassEffect(
+                            .clear.interactive(),
+                            in: .rect(cornerRadius: 18)
+                        )
+                }
             } else {
                 RoundedRectangle(cornerRadius: 18, style: .continuous)
                     .fill(.ultraThinMaterial)

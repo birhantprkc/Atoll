@@ -7618,6 +7618,9 @@
         }
       }
     },
+    "Custom Liquid is available on macOS 26 or later." : {
+
+    },
     "Custom Liquid settings require the Liquid Glass material." : {
       "localizations" : {
         "pt-BR" : {
@@ -7627,6 +7630,9 @@
           }
         }
       }
+    },
+    "Custom liquid variant" : {
+
     },
     "Custom music live activity animation" : {
       "localizations" : {

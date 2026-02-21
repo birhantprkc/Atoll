@@ -1369,6 +1369,9 @@ private struct HUDAndOSDSettingsView: View {
     @Default(.verticalHUDWidth) var verticalHUDWidth
     @Default(.verticalHUDPadding) var verticalHUDPadding
     @Default(.verticalHUDUseAccentColor) var verticalHUDUseAccentColor
+    @Default(.verticalHUDMaterial) var verticalHUDMaterial
+    @Default(.verticalHUDLiquidGlassCustomizationMode) var verticalHUDLiquidGlassCustomizationMode
+    @Default(.verticalHUDLiquidGlassVariant) var verticalHUDLiquidGlassVariant
     
     // Circular HUD Props
     @Default(.circularHUDShowValue) var circularHUDShowValue
@@ -1389,6 +1392,27 @@ private struct HUDAndOSDSettingsView: View {
 
     private var paneBackgroundColor: Color {
         Color(nsColor: .controlBackgroundColor)
+    }
+
+    private var liquidVariantRange: ClosedRange<Double> {
+        Double(LiquidGlassVariant.supportedRange.lowerBound)...Double(LiquidGlassVariant.supportedRange.upperBound)
+    }
+
+    private var availableVerticalMaterials: [OSDMaterial] {
+        if #available(macOS 26.0, *) {
+            return OSDMaterial.allCases
+        }
+        return OSDMaterial.allCases.filter { $0 != .liquid }
+    }
+
+    private var verticalLiquidVariantBinding: Binding<Double> {
+        Binding(
+            get: { Double(verticalHUDLiquidGlassVariant.rawValue) },
+            set: { newValue in
+                let raw = Int(newValue.rounded())
+                verticalHUDLiquidGlassVariant = LiquidGlassVariant.clamped(raw)
+            }
+        )
     }
 
     var body: some View {
@@ -1608,6 +1632,39 @@ private struct HUDAndOSDSettingsView: View {
                         Toggle("Show Percentage", isOn: $verticalHUDShowValue)
                         Toggle("Use Accent Color", isOn: $verticalHUDUseAccentColor)
                         Toggle("Interactive (Drag to Change)", isOn: $verticalHUDInteractive)
+                        Picker("Material", selection: $verticalHUDMaterial) {
+                            ForEach(availableVerticalMaterials, id: \.self) { material in
+                                Text(material.rawValue).tag(material)
+                            }
+                        }
+
+                        if verticalHUDMaterial == .liquid {
+                            if #available(macOS 26.0, *) {
+                                Picker("Glass mode", selection: $verticalHUDLiquidGlassCustomizationMode) {
+                                    ForEach(LockScreenGlassCustomizationMode.allCases) { mode in
+                                        Text(mode.rawValue).tag(mode)
+                                    }
+                                }
+                                .pickerStyle(.segmented)
+
+                                if verticalHUDLiquidGlassCustomizationMode == .customLiquid {
+                                    VStack(alignment: .leading, spacing: 6) {
+                                        HStack {
+                                            Text("Custom liquid variant")
+                                            Spacer()
+                                            Text("v\(verticalHUDLiquidGlassVariant.rawValue)")
+                                                .font(.caption)
+                                                .foregroundStyle(.secondary)
+                                        }
+                                        Slider(value: verticalLiquidVariantBinding, in: liquidVariantRange, step: 1)
+                                    }
+                                }
+                            } else {
+                                Text("Custom Liquid is available on macOS 26 or later.")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
                         Defaults.Toggle("Color-coded Volume", key: .useColorCodedVolumeDisplay)
                         if Defaults[.useColorCodedVolumeDisplay] {
                             Defaults.Toggle("Smooth color transitions", key: .useSmoothColorGradient)
@@ -1719,6 +1776,12 @@ private struct HUDAndOSDSettingsView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .background(paneBackgroundColor)
         .navigationTitle("Controls")
+        .onAppear {
+            if #unavailable(macOS 26.0), verticalHUDMaterial == .liquid {
+                verticalHUDMaterial = .frosted
+                verticalHUDLiquidGlassCustomizationMode = .standard
+            }
+        }
     }
 }
 
@@ -5608,34 +5671,34 @@ struct TimerSettings: View {
         let nextIndex = timerPresets.count + 1
         let defaultColor = Defaults[.accentColor]
         let newPreset = TimerPreset(name: "Preset \(nextIndex)", duration: 5 * 60, color: defaultColor)
-        withAnimation(.smooth) {
+        _ = withAnimation(.smooth) {
             timerPresets.append(newPreset)
         }
     }
     
     private func movePresetUp(_ index: Int) {
         guard index > timerPresets.startIndex else { return }
-        withAnimation(.smooth) {
+        _ = withAnimation(.smooth) {
             timerPresets.swapAt(index, index - 1)
         }
     }
     
     private func movePresetDown(_ index: Int) {
         guard index < timerPresets.index(before: timerPresets.endIndex) else { return }
-        withAnimation(.smooth) {
+        _ = withAnimation(.smooth) {
             timerPresets.swapAt(index, index + 1)
         }
     }
     
     private func removePreset(_ index: Int) {
         guard timerPresets.indices.contains(index) else { return }
-        withAnimation(.smooth) {
+        _ = withAnimation(.smooth) {
             timerPresets.remove(at: index)
         }
     }
     
     private func resetPresets() {
-        withAnimation(.smooth) {
+        _ = withAnimation(.smooth) {
             timerPresets = TimerPreset.defaultPresets
         }
     }
@@ -6550,6 +6613,8 @@ struct CustomOSDSettings: View {
     @Default(.enableOSDBrightness) var enableOSDBrightness
     @Default(.enableOSDKeyboardBacklight) var enableOSDKeyboardBacklight
     @Default(.osdMaterial) var osdMaterial
+    @Default(.osdLiquidGlassCustomizationMode) var osdLiquidGlassCustomizationMode
+    @Default(.osdLiquidGlassVariant) var osdLiquidGlassVariant
     @Default(.osdIconColorStyle) var osdIconColorStyle
     @Default(.enableSystemHUD) var enableSystemHUD
     @ObservedObject private var accessibilityPermission = AccessibilityPermissionStore.shared
@@ -6564,6 +6629,27 @@ struct CustomOSDSettings: View {
 
     private var hasAccessibilityPermission: Bool {
         accessibilityPermission.isAuthorized
+    }
+
+    private var availableOSDMaterials: [OSDMaterial] {
+        if #available(macOS 26.0, *) {
+            return OSDMaterial.allCases
+        }
+        return OSDMaterial.allCases.filter { $0 != .liquid }
+    }
+
+    private var liquidVariantRange: ClosedRange<Double> {
+        Double(LiquidGlassVariant.supportedRange.lowerBound)...Double(LiquidGlassVariant.supportedRange.upperBound)
+    }
+
+    private var osdLiquidVariantBinding: Binding<Double> {
+        Binding(
+            get: { Double(osdLiquidGlassVariant.rawValue) },
+            set: { newValue in
+                let raw = Int(newValue.rounded())
+                osdLiquidGlassVariant = LiquidGlassVariant.clamped(raw)
+            }
+        )
     }
     
     var body: some View {
@@ -6598,13 +6684,41 @@ struct CustomOSDSettings: View {
                 
                 Section {
                     Picker("Material", selection: $osdMaterial) {
-                        ForEach(OSDMaterial.allCases, id: \.self) { material in
+                        ForEach(availableOSDMaterials, id: \.self) { material in
                             Text(material.rawValue).tag(material)
                         }
                     }
                     .settingsHighlight(id: highlightID("Material"))
                     .onChange(of: osdMaterial) { _, _ in
                         previewValue = previewValue == 0.65 ? 0.651 : 0.65
+                    }
+
+                    if osdMaterial == .liquid {
+                        if #available(macOS 26.0, *) {
+                            Picker("Glass mode", selection: $osdLiquidGlassCustomizationMode) {
+                                ForEach(LockScreenGlassCustomizationMode.allCases) { mode in
+                                    Text(mode.rawValue).tag(mode)
+                                }
+                            }
+                            .pickerStyle(.segmented)
+
+                            if osdLiquidGlassCustomizationMode == .customLiquid {
+                                VStack(alignment: .leading, spacing: 6) {
+                                    HStack {
+                                        Text("Custom liquid variant")
+                                        Spacer()
+                                        Text("v\(osdLiquidGlassVariant.rawValue)")
+                                            .font(.caption)
+                                            .foregroundStyle(.secondary)
+                                    }
+                                    Slider(value: osdLiquidVariantBinding, in: liquidVariantRange, step: 1)
+                                }
+                            }
+                        } else {
+                            Text("Custom Liquid is available on macOS 26 or later.")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
                     }
                     
                     Picker("Icon & Progress Color", selection: $osdIconColorStyle) {
@@ -6682,6 +6796,10 @@ struct CustomOSDSettings: View {
         .navigationTitle("Custom OSD")
         .onAppear {
             accessibilityPermission.refreshStatus()
+            if #unavailable(macOS 26.0), osdMaterial == .liquid {
+                osdMaterial = .frosted
+                osdLiquidGlassCustomizationMode = .standard
+            }
         }
         .onChange(of: accessibilityPermission.isAuthorized) { _, granted in
             if !granted {
