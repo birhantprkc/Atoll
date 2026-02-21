@@ -70,6 +70,7 @@ struct DynamicNotchApp: App {
         }
     }
 
+    @CommandsBuilder
     var commands: some Commands {
         CommandGroup(replacing: .appSettings) {
             Button("Settings…") {
@@ -116,6 +117,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var cancellables = Set<AnyCancellable>()
     private var windowsHiddenForLock = false
     private var optionalShortcutHandlersRegistered = false
+    private weak var focusWithoutDevToolsMenuItem: NSMenuItem?
+    private weak var focusUseDevToolsMenuItem: NSMenuItem?
     
     // Debouncing mechanism for window size updates
     private var windowSizeUpdateWorkItem: DispatchWorkItem?
@@ -145,6 +148,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
         return false
+    }
+
+    func applicationDidBecomeActive(_ notification: Notification) {
+        installTopMenuItemsIfNeeded()
     }
     
     func applicationWillTerminate(_ notification: Notification) {
@@ -370,6 +377,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         idleAnimationManager.initializeDefaultAnimations()
 
         applySelectedAppIcon()
+        installTopMenuItemsIfNeeded()
+
+        Defaults.publisher(.focusMonitoringMode, options: [])
+            .sink { [weak self] _ in
+                self?.updateFocusMenuState()
+            }
+            .store(in: &cancellables)
         
         // Setup SystemHUD Manager
         SystemHUDManager.shared.setup(coordinator: coordinator)
@@ -531,8 +545,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             forName: Notification.Name.automaticallySwitchDisplayChanged, object: nil, queue: nil
         ) { [weak self] _ in
             guard let self = self, let window = self.window else { return }
-            window.alphaValue =
-                self.coordinator.selectedScreen == self.coordinator.preferredScreen ? 1 : 0
+            DispatchQueue.main.async {
+                window.alphaValue =
+                    self.coordinator.selectedScreen == self.coordinator.preferredScreen ? 1 : 0
+            }
         }
 
         NotificationCenter.default.addObserver(
@@ -642,6 +658,155 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let timerWidgetManager = LockScreenTimerWidgetManager.shared
         timerWidgetManager.handleLockStateChange(isLocked: LockScreenManager.shared.currentLockStatus)
 
+    }
+
+    private func installTopMenuItemsIfNeeded() {
+        guard let mainMenu = NSApp.mainMenu else { return }
+        if mainMenu.items.contains(where: { $0.identifier?.rawValue == "Atoll.Focus.Menu" }) {
+            updateFocusMenuState()
+            return
+        }
+
+        let insertionIndex = preferredMenuInsertionIndex(in: mainMenu)
+
+        let focusMenuItem = NSMenuItem(title: "Focus", action: nil, keyEquivalent: "")
+        focusMenuItem.identifier = NSUserInterfaceItemIdentifier("Atoll.Focus.Menu")
+        let focusSubmenu = NSMenu(title: "Focus")
+
+        let withoutDevTools = NSMenuItem(
+            title: "Use without DevTools",
+            action: #selector(selectFocusWithoutDevTools),
+            keyEquivalent: ""
+        )
+        withoutDevTools.target = self
+
+        let useDevTools = NSMenuItem(
+            title: "Use DevTools",
+            action: #selector(selectFocusUseDevTools),
+            keyEquivalent: ""
+        )
+        useDevTools.target = self
+
+        focusSubmenu.addItem(withoutDevTools)
+        focusSubmenu.addItem(useDevTools)
+        focusMenuItem.submenu = focusSubmenu
+        mainMenu.insertItem(focusMenuItem, at: insertionIndex)
+
+        focusWithoutDevToolsMenuItem = withoutDevTools
+        focusUseDevToolsMenuItem = useDevTools
+
+        let accessibilityMenuItem = NSMenuItem(title: "Accessibility", action: nil, keyEquivalent: "")
+        accessibilityMenuItem.identifier = NSUserInterfaceItemIdentifier("Atoll.Accessibility.Menu")
+        let accessibilitySubmenu = NSMenu(title: "Accessibility")
+
+        let requestAccessibility = NSMenuItem(
+            title: "Request Accessibility Access",
+            action: #selector(requestAccessibilityAccess),
+            keyEquivalent: ""
+        )
+        requestAccessibility.target = self
+
+        let openAccessibility = NSMenuItem(
+            title: "Open Accessibility Settings",
+            action: #selector(openAccessibilitySettings),
+            keyEquivalent: ""
+        )
+        openAccessibility.target = self
+
+        accessibilitySubmenu.addItem(requestAccessibility)
+        accessibilitySubmenu.addItem(openAccessibility)
+        accessibilityMenuItem.submenu = accessibilitySubmenu
+        mainMenu.insertItem(accessibilityMenuItem, at: insertionIndex + 1)
+
+        let permissionsMenuItem = NSMenuItem(title: "Permissions", action: nil, keyEquivalent: "")
+        permissionsMenuItem.identifier = NSUserInterfaceItemIdentifier("Atoll.Permissions.Menu")
+        let permissionsSubmenu = NSMenu(title: "Permissions")
+
+        let requestFullDisk = NSMenuItem(
+            title: "Request Full Disk Access",
+            action: #selector(requestFullDiskAccess),
+            keyEquivalent: ""
+        )
+        requestFullDisk.target = self
+
+        let openFullDisk = NSMenuItem(
+            title: "Open Full Disk Access Settings",
+            action: #selector(openFullDiskAccessSettings),
+            keyEquivalent: ""
+        )
+        openFullDisk.target = self
+
+        let openDevTools = NSMenuItem(
+            title: "Open Developer Tools Settings",
+            action: #selector(openDeveloperToolsSettingsFromMenu),
+            keyEquivalent: ""
+        )
+        openDevTools.target = self
+
+        permissionsSubmenu.addItem(requestFullDisk)
+        permissionsSubmenu.addItem(openFullDisk)
+        permissionsSubmenu.addItem(NSMenuItem.separator())
+        permissionsSubmenu.addItem(openDevTools)
+        permissionsMenuItem.submenu = permissionsSubmenu
+        mainMenu.insertItem(permissionsMenuItem, at: insertionIndex + 2)
+
+        updateFocusMenuState()
+    }
+
+    private func preferredMenuInsertionIndex(in mainMenu: NSMenu) -> Int {
+        if let index = mainMenu.items.firstIndex(where: { $0.title == "Window" }) {
+            return index
+        }
+        if let index = mainMenu.items.firstIndex(where: { $0.title == "Help" }) {
+            return index
+        }
+        return max(mainMenu.numberOfItems, 0)
+    }
+
+    private func updateFocusMenuState() {
+        let mode = Defaults[.focusMonitoringMode]
+        focusWithoutDevToolsMenuItem?.state = mode == .withoutDevTools ? .on : .off
+        focusUseDevToolsMenuItem?.state = mode == .useDevTools ? .on : .off
+    }
+
+    @objc private func selectFocusWithoutDevTools() {
+        Defaults[.focusMonitoringMode] = .withoutDevTools
+        updateFocusMenuState()
+    }
+
+    @objc private func selectFocusUseDevTools() {
+        Defaults[.focusMonitoringMode] = .useDevTools
+        updateFocusMenuState()
+    }
+
+    @objc private func requestAccessibilityAccess() {
+        AccessibilityPermissionStore.shared.requestAuthorizationPrompt()
+    }
+
+    @objc private func openAccessibilitySettings() {
+        AccessibilityPermissionStore.shared.openSystemSettings()
+    }
+
+    @objc private func requestFullDiskAccess() {
+        FullDiskAccessPermissionStore.shared.requestAccessPrompt()
+    }
+
+    @objc private func openFullDiskAccessSettings() {
+        FullDiskAccessPermissionStore.shared.openSystemSettings()
+    }
+
+    @objc private func openDeveloperToolsSettingsFromMenu() {
+        let urls = [
+            "x-apple.systempreferences:com.apple.preference.security?Privacy_DevTools",
+            "x-apple.systempreferences:com.apple.preference.security"
+        ]
+
+        for candidate in urls {
+            guard let url = URL(string: candidate) else { continue }
+            if NSWorkspace.shared.open(url) {
+                return
+            }
+        }
     }
 
     private func registerOptionalShortcutHandlers() {

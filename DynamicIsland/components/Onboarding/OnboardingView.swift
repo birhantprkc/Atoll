@@ -22,6 +22,7 @@
 
 import SwiftUI
 import AVFoundation
+import Defaults
 
 enum OnboardingStep {
     case welcome
@@ -36,6 +37,8 @@ private let calendarService = CalendarService()
 
 struct OnboardingView: View {
     @State private var step: OnboardingStep = .welcome
+    @State private var showFocusMonitoringChoice = false
+    @State private var didPresentFocusMonitoringChoice = false
     let onFinish: () -> Void
     let onOpenSettings: () -> Void
 
@@ -120,6 +123,28 @@ struct OnboardingView: View {
             }
         }
         .frame(width: 400, height: 600)
+        .onAppear {
+            guard !didPresentFocusMonitoringChoice else { return }
+            didPresentFocusMonitoringChoice = true
+            showFocusMonitoringChoice = true
+        }
+        .confirmationDialog(
+            "Focus detection mode",
+            isPresented: $showFocusMonitoringChoice,
+            titleVisibility: .visible
+        ) {
+            Button("Use DevTools") {
+                Defaults[.focusMonitoringMode] = .useDevTools
+            }
+
+            Button("Use without DevTools") {
+                Defaults[.focusMonitoringMode] = .withoutDevTools
+            }
+
+            Button("Later", role: .cancel) {}
+        } message: {
+            Text("This is optional. You can change it any time from the menu bar.")
+        }
     }
 
     // MARK: - Permission Request Logic

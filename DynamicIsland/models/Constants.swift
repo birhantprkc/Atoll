@@ -498,6 +498,22 @@ enum TimerProgressStyle: String, CaseIterable, Identifiable, Defaults.Serializab
     }
 }
 
+enum FocusMonitoringMode: String, CaseIterable, Identifiable, Defaults.Serializable {
+    case withoutDevTools = "withoutDevTools"
+    case useDevTools = "useDevTools"
+
+    var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .withoutDevTools:
+            return "Use without DevTools"
+        case .useDevTools:
+            return "Use DevTools"
+        }
+    }
+}
+
 enum ReminderPresentationStyle: String, CaseIterable, Identifiable, Defaults.Serializable {
     case ringCountdown = "Ring"
     case digital = "Digital"
@@ -1012,6 +1028,7 @@ extension Defaults.Keys {
 
     // MARK: Focus / Do Not Disturb Detection
     static let enableDoNotDisturbDetection = Key<Bool>("enableDoNotDisturbDetection", default: true)
+    static let focusMonitoringMode = Key<FocusMonitoringMode>("focusMonitoringMode", default: .withoutDevTools)
     static let showDoNotDisturbIndicator = Key<Bool>("showDoNotDisturbIndicator", default: true)
     static let showDoNotDisturbLabel = Key<Bool>("showDoNotDisturbLabel", default: true)
     static let focusIndicatorNonPersistent = Key<Bool>("focusIndicatorNonPersistent", default: false)
