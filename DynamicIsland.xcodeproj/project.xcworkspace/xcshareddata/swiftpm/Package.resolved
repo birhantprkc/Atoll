@@ -1,5 +1,5 @@
 {
-  "originHash" : "6fbfa8cda0c383746edd66361426fdc2bd266fc082867294374a1818f02798f3",
+  "originHash" : "802e15fea0dccd2d325dc082d8d36162007adcd2fa301070eb26448d0a2cf6c5",
   "pins" : [
     {
       "identity" : "atollextensionkit",
@@ -8,6 +8,15 @@
       "state" : {
         "branch" : "main",
         "revision" : "ebe35277572a349fad26abeb6fc552cb5251d584"
+      }
+    },
+    {
+      "identity" : "calendarview",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/Mijick/CalendarView",
+      "state" : {
+        "revision" : "168cf14a50d33684caa2a411bbd0b3f988e9dff6",
+        "version" : "1.1.1"
       }
     },
     {

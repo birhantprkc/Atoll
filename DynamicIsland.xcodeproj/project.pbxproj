@@ -25,6 +25,7 @@
 		7E8840DB2E9A347800C5CB8C /* Orange Cat Peeping.json in Resources */ = {isa = PBXBuildFile; fileRef = 7E8840DA2E9A347800C5CB8C /* Orange Cat Peeping.json */; };
 		7E9911B02EFD7D1B002EDFD5 /* Reindeer.json in Resources */ = {isa = PBXBuildFile; fileRef = 7E9911AF2EFD7D1B002EDFD5 /* Reindeer.json */; };
 		7E9918722EFDAE5B002EDFD5 /* MediaRemoteAdapter.framework in Resources */ = {isa = PBXBuildFile; fileRef = F4C1DD09EC134302938E84F6 /* MediaRemoteAdapter.framework */; };
+		7ECFE0C62F4A2323000DD9BD /* MijickCalendarView in Frameworks */ = {isa = PBXBuildFile; productRef = 7ECFE0C52F4A2323000DD9BD /* MijickCalendarView */; };
 		7EE1D73D2E6B1E0B00997219 /* ApplicationServices.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7EE1D73C2E6B1E0B00997219 /* ApplicationServices.framework */; };
 		7EE1D73F2E6B1E1200997219 /* IOKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7EE1D73E2E6B1E1200997219 /* IOKit.framework */; };
 		7EF1D4B92FFFCE3C008D2C32 /* ExtensionEventBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7EF1D4B82FFFCE3C008D2C32 /* ExtensionEventBridge.swift */; };
@@ -71,6 +72,7 @@
 				7E6118172E24071E0050006C /* Collections in Frameworks */,
 				7E6118162E24071E0050006C /* KeyboardShortcuts in Frameworks */,
 				7E6118152E24071E0050006C /* Sparkle in Frameworks */,
+				7ECFE0C62F4A2323000DD9BD /* MijickCalendarView in Frameworks */,
 				7E288D122F1659EF0020C117 /* AtollExtensionKit in Frameworks */,
 				7E6118142E24071E0050006C /* LaunchAtLogin in Frameworks */,
 			);
@@ -171,6 +173,7 @@
 				146BC4362D366E9B0047C66A /* MacroVisionKit */,
 				7E61181E2E24071E0050006C /* SkyLightWindow */,
 				7E288D112F1659EF0020C117 /* AtollExtensionKit */,
+				7ECFE0C52F4A2323000DD9BD /* MijickCalendarView */,
 			);
 			productName = DynamicIsland;
 			productReference = F54406E72CD4987A00C7AFD9 /* Atoll.app */;
@@ -216,6 +219,7 @@
 				7E61181F2E24071E0050006C /* XCRemoteSwiftPackageReference "SkyLightWindow" */,
 				7E09D5962EB7B497005AF41D /* XCRemoteSwiftPackageReference "open-meteo" */,
 				7E288D102F1659EF0020C117 /* XCRemoteSwiftPackageReference "AtollExtensionKit" */,
+				7ECFE0C42F4A2323000DD9BD /* XCRemoteSwiftPackageReference "CalendarView" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = F54406E82CD4987A00C7AFD9 /* Products */;
@@ -589,6 +593,14 @@
 				kind = branch;
 			};
 		};
+		7ECFE0C42F4A2323000DD9BD /* XCRemoteSwiftPackageReference "CalendarView" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/Mijick/CalendarView";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.1.1;
+			};
+		};
 		9A987A112C73CAA1005CA465 /* XCRemoteSwiftPackageReference "Pow" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/EmergeTools/Pow";
@@ -664,6 +676,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 7E61181F2E24071E0050006C /* XCRemoteSwiftPackageReference "SkyLightWindow" */;
 			productName = SkyLightWindow;
+		};
+		7ECFE0C52F4A2323000DD9BD /* MijickCalendarView */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 7ECFE0C42F4A2323000DD9BD /* XCRemoteSwiftPackageReference "CalendarView" */;
+			productName = MijickCalendarView;
 		};
 		9A987A0F2C73CA8D005CA465 /* Collections */ = {
 			isa = XCSwiftPackageProductDependency;

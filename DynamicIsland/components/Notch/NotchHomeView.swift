@@ -552,11 +552,18 @@ struct NotchHomeView: View {
                 }
                 
                 if Defaults[.showCalendar] {
-                    CalendarView()
-                        .onHover { isHovering in
-                            vm.isHoveringCalendar = isHovering
+                    Group {
+                        if showStandardMediaControls {
+                            CalendarView()
+                        } else {
+                            StandaloneCalendarView()
                         }
-                        .environmentObject(vm)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .onHover { isHovering in
+                        vm.isHoveringCalendar = isHovering
+                    }
+                    .environmentObject(vm)
                 }
                 
                 if Defaults[.showMirror],
