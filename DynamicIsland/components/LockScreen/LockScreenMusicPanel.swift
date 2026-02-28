@@ -355,13 +355,18 @@ struct LockScreenMusicPanel: View {
         collapseWorkItem?.cancel()
         collapseWorkItem = nil
     }
+
+    private var isProgressTimelinePaused: Bool {
+        !musicManager.isPlaying || musicManager.isLiveStream || musicManager.playbackRate <= 0
+    }
     
     // MARK: - Progress Bar
     
     private var progressBar: some View {
         TimelineView(
             .animation(
-                minimumInterval: (!musicManager.isLiveStream && musicManager.playbackRate > 0) ? 0.1 : nil
+                minimumInterval: 0.1,
+                paused: isProgressTimelinePaused
             )
         ) { timeline in
             MusicSliderView(
@@ -792,10 +797,8 @@ struct LockScreenMusicPanel: View {
 
     @ViewBuilder
     private var customLiquidPanelBackdrop: some View {
-        TimelineView(.periodic(from: .now, by: 1.0 / 30.0)) { context in
-            LiquidGlassBackground(variant: musicGlassVariant, cornerRadius: panelCornerRadius, trigger: context.date.timeIntervalSinceReferenceDate) {
-                Color.white.opacity(0.04)
-            }
+        LiquidGlassBackground(variant: musicGlassVariant, cornerRadius: panelCornerRadius) {
+            Color.white.opacity(0.04)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .allowsHitTesting(false)
@@ -873,10 +876,8 @@ struct LockScreenMusicPanel: View {
 
     @ViewBuilder
     private func customLiquidAlbumArtBackground(cornerRadius: CGFloat) -> some View {
-        TimelineView(.periodic(from: .now, by: 1.0 / 30.0)) { context in
-            LiquidGlassBackground(variant: musicGlassVariant, cornerRadius: cornerRadius, trigger: context.date.timeIntervalSinceReferenceDate) {
-                Color.clear
-            }
+        LiquidGlassBackground(variant: musicGlassVariant, cornerRadius: cornerRadius) {
+            Color.clear
         }
     }
 

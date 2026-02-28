@@ -251,6 +251,290 @@ struct CalendarView: View {
     }
 }
 
+struct StandaloneCalendarView: View {
+    @EnvironmentObject var vm: DynamicIslandViewModel
+    @ObservedObject private var calendarManager = CalendarManager.shared
+    @State private var selectedDate = Date()
+    @State private var displayedMonth = Date()
+    @State private var datePickerScrollTarget: Date?
+    @Default(.hideAllDayEvents) private var hideAllDayEvents
+    @Default(.hideCompletedReminders) private var hideCompletedReminders
+
+    private let calendar = Calendar.current
+    private let weekdaySymbols = Calendar.current.shortWeekdaySymbols
+
+    private var monthTitle: String {
+        displayedMonth.formatted(.dateTime.month(.wide))
+    }
+
+    private var yearTitle: String {
+        displayedMonth.formatted(.dateTime.year())
+    }
+
+    private var monthDays: [Date] {
+        guard let monthInterval = calendar.dateInterval(of: .month, for: displayedMonth),
+              let firstWeekInterval = calendar.dateInterval(of: .weekOfMonth, for: monthInterval.start),
+              let lastDay = calendar.date(byAdding: .day, value: -1, to: monthInterval.end),
+              let lastWeekInterval = calendar.dateInterval(of: .weekOfMonth, for: lastDay)
+        else { return [] }
+
+        var days: [Date] = []
+        var current = firstWeekInterval.start
+        while current < lastWeekInterval.end {
+            days.append(current)
+            guard let next = calendar.date(byAdding: .day, value: 1, to: current) else { break }
+            current = next
+        }
+        return days
+    }
+
+    private var filteredEvents: [EventModel] {
+        EventListView.filteredEvents(
+            events: calendarManager.events,
+            hideCompletedReminders: hideCompletedReminders,
+            hideAllDayEvents: hideAllDayEvents
+        )
+    }
+
+    private var resolvedNotchHeight: CGFloat {
+        let height = vm.notchSize.height
+        return height > 0 ? height : openNotchSize.height
+    }
+
+    private var headerHeight: CGFloat {
+        max(24, vm.effectiveClosedNotchHeight)
+    }
+
+    private var maxTabContentHeight: CGFloat {
+        let available = resolvedNotchHeight - headerHeight - 36
+        return max(130, available)
+    }
+
+    var body: some View {
+        GeometryReader { geometry in
+            let paneSpacing: CGFloat = 12
+            let paneWidth = max((geometry.size.width - paneSpacing) / 2, 0)
+            let paneHeight = max(0, geometry.size.height)
+
+            HStack(alignment: .top, spacing: paneSpacing) {
+                leftPickerPane
+                    .frame(width: paneWidth, alignment: .topLeading)
+                    .frame(height: paneHeight, alignment: .topLeading)
+                    .layoutPriority(1)
+
+                rightEventsPane
+                    .frame(width: paneWidth, alignment: .topLeading)
+                    .frame(height: paneHeight, alignment: .topLeading)
+                    .layoutPriority(1)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            .clipped()
+        }
+        .frame(height: maxTabContentHeight)
+        .clipped()
+        .onAppear {
+            selectedDate = Date.now
+            displayedMonth = selectedDate.startOfMonth
+            requestDatePickerCenterOnCurrentDate()
+            Task {
+                await calendarManager.updateCurrentDate(selectedDate)
+            }
+        }
+        .onChange(of: selectedDate) { _, newDate in
+            withAnimation(.smooth(duration: 0.22)) {
+                displayedMonth = newDate.startOfMonth
+            }
+            Task {
+                await calendarManager.updateCurrentDate(newDate)
+            }
+        }
+        .onChange(of: vm.notchState) { _, newState in
+            guard newState == .open else { return }
+            selectedDate = Date.now
+            displayedMonth = selectedDate.startOfMonth
+            requestDatePickerCenterOnCurrentDate()
+            Task {
+                await calendarManager.updateCurrentDate(selectedDate)
+            }
+        }
+    }
+
+    private var leftPickerPane: some View {
+        GeometryReader { geometry in
+            let pickerViewportHeight = max(96, geometry.size.height - 56)
+
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(alignment: .center) {
+                    HStack(alignment: .firstTextBaseline, spacing: 4) {
+                        Text(monthTitle)
+                            .font(.title3)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(.white)
+                        Text(yearTitle)
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                            .foregroundStyle(Color(white: 0.65))
+                    }
+                    Spacer()
+                    HStack(spacing: 6) {
+                        Button(action: showPreviousMonth) {
+                            Image(systemName: "chevron.left")
+                                .font(.system(size: 11, weight: .bold))
+                                .frame(width: 24, height: 24)
+                        }
+                        .buttonStyle(.plain)
+
+                        Button(action: showNextMonth) {
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 11, weight: .bold))
+                                .frame(width: 24, height: 24)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    .foregroundStyle(.white)
+                }
+
+                ScrollViewReader { proxy in
+                    VStack(spacing: 6) {
+                        LazyVGrid(columns: Array(repeating: GridItem(.flexible(minimum: 14), spacing: 6), count: 7), spacing: 6) {
+                            ForEach(weekdaySymbols, id: \.self) { symbol in
+                                Text(symbol.prefix(1))
+                                    .font(.caption2)
+                                    .fontWeight(.semibold)
+                                    .foregroundStyle(Color(white: 0.55))
+                                    .frame(maxWidth: .infinity)
+                            }
+                        }
+
+                        ZStack {
+                            ScrollView(.vertical, showsIndicators: false) {
+                                LazyVGrid(columns: Array(repeating: GridItem(.flexible(minimum: 14), spacing: 6), count: 7), spacing: 6) {
+                                    ForEach(monthDays, id: \.self) { day in
+                                        dayCell(for: day)
+                                            .id(calendar.startOfDay(for: day))
+                                    }
+                                }
+                                .padding(.bottom, 2)
+                            }
+                            .onChange(of: datePickerScrollTarget) { _, target in
+                                guard let target else { return }
+                                centerDatePicker(on: target, proxy: proxy)
+                            }
+
+                            LinearGradient(colors: [Color.black.opacity(0.65), .clear], startPoint: .top, endPoint: .bottom)
+                                .frame(height: 16)
+                                .allowsHitTesting(false)
+                                .frame(maxHeight: .infinity, alignment: .top)
+
+                            LinearGradient(colors: [.clear, Color.black.opacity(0.65)], startPoint: .top, endPoint: .bottom)
+                                .frame(height: 16)
+                                .allowsHitTesting(false)
+                                .frame(maxHeight: .infinity, alignment: .bottom)
+                        }
+                        .frame(height: max(0, pickerViewportHeight - 22))
+                        .clipped()
+                    }
+                    .frame(height: pickerViewportHeight)
+                }
+                .frame(height: pickerViewportHeight)
+                .clipped()
+            }
+            .frame(maxHeight: .infinity, alignment: .top)
+        }
+        .padding(.horizontal, 6)
+        .padding(.top, 4)
+        .clipped()
+    }
+
+    private var rightEventsPane: some View {
+        Group {
+            if filteredEvents.isEmpty {
+                EmptyEventsView(selectedDate: selectedDate)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                StandaloneEventCardList(
+                    events: filteredEvents,
+                    showFullEventTitles: Defaults[.showFullEventTitles],
+                    onToggleReminder: { reminderID, completed in
+                        Task {
+                            await calendarManager.setReminderCompleted(reminderID: reminderID, completed: completed)
+                        }
+                    }
+                )
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .clipped()
+    }
+
+    private func dayCell(for day: Date) -> some View {
+        let isCurrentMonth = calendar.isDate(day, equalTo: displayedMonth, toGranularity: .month)
+        let isSelected = calendar.isDate(day, inSameDayAs: selectedDate)
+        let isToday = calendar.isDateInToday(day)
+
+        return Button {
+            withAnimation(.smooth(duration: 0.18)) {
+                selectedDate = day
+            }
+        } label: {
+            ZStack {
+                if isSelected {
+                    Circle()
+                        .fill(Color.effectiveAccent)
+                        .frame(width: 28, height: 28)
+                }
+
+                Text(day.formatted(.dateTime.day()))
+                    .font(.system(size: 12, weight: isSelected ? .semibold : .medium))
+                    .foregroundStyle(dayTextColor(isCurrentMonth: isCurrentMonth, isSelected: isSelected, isToday: isToday))
+            }
+            .frame(maxWidth: .infinity, minHeight: 30)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func dayTextColor(isCurrentMonth: Bool, isSelected: Bool, isToday: Bool) -> Color {
+        if isSelected { return .white }
+        if !isCurrentMonth { return Color(white: 0.35) }
+        if isToday { return Color.effectiveAccent }
+        return .white
+    }
+
+    private func showPreviousMonth() {
+        guard let newMonth = calendar.date(byAdding: .month, value: -1, to: displayedMonth) else { return }
+        withAnimation(.smooth(duration: 0.22)) {
+            displayedMonth = newMonth.startOfMonth
+            selectedDate = newMonth.startOfMonth
+        }
+    }
+
+    private func showNextMonth() {
+        guard let newMonth = calendar.date(byAdding: .month, value: 1, to: displayedMonth) else { return }
+        withAnimation(.smooth(duration: 0.22)) {
+            displayedMonth = newMonth.startOfMonth
+            selectedDate = newMonth.startOfMonth
+        }
+    }
+
+    private func requestDatePickerCenterOnCurrentDate() {
+        datePickerScrollTarget = calendar.startOfDay(for: selectedDate)
+    }
+
+    private func centerDatePicker(on target: Date, proxy: ScrollViewProxy) {
+        let normalizedTarget = calendar.startOfDay(for: target)
+        DispatchQueue.main.async {
+            withAnimation(.smooth(duration: 0.24)) {
+                proxy.scrollTo(normalizedTarget, anchor: .center)
+            }
+            if datePickerScrollTarget == normalizedTarget {
+                datePickerScrollTarget = nil
+            }
+        }
+    }
+}
+
 struct EmptyEventsView: View {
     let selectedDate: Date
 
@@ -266,6 +550,170 @@ struct EmptyEventsView: View {
                 .font(.caption)
                 .foregroundColor(Color(white: 0.65))
         }
+    }
+}
+
+private extension Date {
+    var startOfMonth: Date {
+        Calendar.current.date(from: Calendar.current.dateComponents([.year, .month], from: self)) ?? self
+    }
+}
+
+private struct StandaloneEventCardList: View {
+    @Environment(\.openURL) private var openURL
+    let events: [EventModel]
+    let showFullEventTitles: Bool
+    let onToggleReminder: (String, Bool) -> Void
+
+    var body: some View {
+        ZStack {
+            ScrollView {
+                LazyVStack(spacing: 8) {
+                    ForEach(events) { event in
+                        eventCard(event)
+                    }
+                }
+                .padding(.vertical, 2)
+            }
+            .clipped()
+
+            LinearGradient(colors: [Color.black.opacity(0.65), .clear], startPoint: .top, endPoint: .bottom)
+                .frame(height: 16)
+                .allowsHitTesting(false)
+                .frame(maxHeight: .infinity, alignment: .top)
+
+            LinearGradient(colors: [.clear, Color.black.opacity(0.65)], startPoint: .top, endPoint: .bottom)
+                .frame(height: 16)
+                .allowsHitTesting(false)
+                .frame(maxHeight: .infinity, alignment: .bottom)
+        }
+        .clipped()
+    }
+
+    @ViewBuilder
+    private func eventCard(_ event: EventModel) -> some View {
+        if event.type.isReminder {
+            Button {
+                if let url = event.calendarAppURL() {
+                    openURL(url)
+                }
+            } label: {
+                reminderCard(event)
+            }
+            .buttonStyle(.plain)
+            .padding(.horizontal, 2)
+        } else {
+            calendarEventCard(event)
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    if let url = event.calendarAppURL() {
+                        openURL(url)
+                    }
+                }
+                .padding(.horizontal, 2)
+        }
+    }
+
+    private func reminderCard(_ event: EventModel) -> some View {
+        let isCompleted: Bool
+        if case .reminder(let completed) = event.type {
+            isCompleted = completed
+        } else {
+            isCompleted = false
+        }
+
+        return HStack(spacing: 10) {
+            ReminderToggle(
+                isOn: Binding(
+                    get: { isCompleted },
+                    set: { newValue in onToggleReminder(event.id, newValue) }
+                ),
+                color: Color(event.calendar.color)
+            )
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(event.title)
+                    .font(.callout)
+                    .fontWeight(.medium)
+                    .foregroundColor(.white)
+                    .lineLimit(showFullEventTitles ? nil : 2)
+
+                if event.isAllDay {
+                    Text("All-day")
+                        .font(.caption)
+                        .foregroundColor(Color(white: 0.65))
+                }
+            }
+
+            Spacer(minLength: 8)
+
+            if !event.isAllDay {
+                Text(event.start, style: .time)
+                    .font(.caption)
+                    .foregroundColor(Color(white: 0.75))
+            }
+        }
+        .padding(.horizontal, 11)
+        .padding(.vertical, 8)
+        .frame(maxWidth: .infinity, minHeight: 50, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(Color.white.opacity(0.05))
+        )
+        .opacity(isCompleted ? 0.55 : 1)
+    }
+
+    private func calendarEventCard(_ event: EventModel) -> some View {
+        HStack(alignment: .top, spacing: 10) {
+            RoundedRectangle(cornerRadius: 2)
+                .fill(Color(event.calendar.color))
+                .frame(width: 4, height: 36)
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(event.title)
+                    .font(.callout)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.white)
+                    .lineLimit(showFullEventTitles ? nil : 2)
+
+                if let location = event.location, !location.isEmpty {
+                    Text(location)
+                        .font(.caption)
+                        .foregroundColor(Color(white: 0.65))
+                        .lineLimit(1)
+                }
+
+                if let conferenceURL = event.conferenceURL {
+                    ConferenceJoinButton(url: conferenceURL, event: event)
+                }
+            }
+
+            Spacer(minLength: 8)
+
+            VStack(alignment: .trailing, spacing: 2) {
+                if event.isAllDay {
+                    Text("All-day")
+                        .font(.caption)
+                        .fontWeight(.medium)
+                        .foregroundColor(.white)
+                } else {
+                    Text(event.start, style: .time)
+                        .font(.caption)
+                        .foregroundColor(.white)
+                    Text(event.end, style: .time)
+                        .font(.caption2)
+                        .foregroundColor(Color(white: 0.65))
+                }
+            }
+        }
+        .padding(.horizontal, 11)
+        .padding(.vertical, 8)
+        .frame(maxWidth: .infinity, minHeight: 50, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(Color.white.opacity(0.05))
+        )
+        .opacity(event.eventStatus == .ended && Calendar.current.isDateInToday(event.start) ? 0.6 : 1)
     }
 }
 

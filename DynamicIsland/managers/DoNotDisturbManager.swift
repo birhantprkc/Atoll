@@ -32,12 +32,31 @@ final class DoNotDisturbManager: ObservableObject {
 
     private let notificationCenter = DistributedNotificationCenter.default()
     private let metadataExtractionQueue = DispatchQueue(label: "com.dynamicisland.focus.metadata", qos: .userInitiated)
+    private let pollingQueue = DispatchQueue(label: "com.dynamicisland.focus.polling", qos: .utility)
     private let focusLogStream = FocusLogStream()
+    private let assertionsURL = FileManager.default.homeDirectoryForCurrentUser
+        .appendingPathComponent("Library/DoNotDisturb/DB/Assertions.json")
+    private var pollingSource: DispatchSourceTimer?
+    private var lastAssertionsModificationDate: Date?
+    private var modeCancellable: AnyCancellable?
+
+    @Published private(set) var monitoringMode: FocusMonitoringMode = Defaults[.focusMonitoringMode]
 
     private init() {
         focusLogStream.onMetadataUpdate = { [weak self] identifier, name in
             self?.handleLogMetadataUpdate(identifier: identifier, name: name)
         }
+
+        modeCancellable = Defaults.publisher(.focusMonitoringMode, options: [])
+            .sink { [weak self] change in
+                guard let self else { return }
+
+                DispatchQueue.main.async {
+                    self.monitoringMode = change.newValue
+                }
+
+                self.applyMonitoringModeChange(change.newValue)
+            }
     }
 
     deinit {
@@ -63,7 +82,8 @@ final class DoNotDisturbManager: ObservableObject {
             suspensionBehavior: .deliverImmediately
         )
 
-        focusLogStream.start()
+        startAssertionsPolling()
+        applyMonitoringModeChange(Defaults[.focusMonitoringMode])
         isMonitoring = true
     }
 
@@ -74,6 +94,7 @@ final class DoNotDisturbManager: ObservableObject {
         notificationCenter.removeObserver(self, name: .focusModeDisabled, object: nil)
 
         focusLogStream.stop()
+        stopAssertionsPolling()
         isMonitoring = false
 
         DispatchQueue.main.async {
@@ -159,6 +180,8 @@ final class DoNotDisturbManager: ObservableObject {
     }
 
     private func handleLogMetadataUpdate(identifier: String?, name: String?) {
+        guard Defaults[.focusMonitoringMode] == .useDevTools else { return }
+
         metadataExtractionQueue.async { [weak self] in
             guard let self = self else { return }
             let trimmedIdentifier = identifier?.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -306,6 +329,90 @@ final class DoNotDisturbManager: ObservableObject {
 private extension Notification.Name {
     static let focusModeEnabled = Notification.Name("_NSDoNotDisturbEnabledNotification")
     static let focusModeDisabled = Notification.Name("_NSDoNotDisturbDisabledNotification")
+}
+
+private extension DoNotDisturbManager {
+    func applyMonitoringModeChange(_ mode: FocusMonitoringMode) {
+        guard isMonitoring else { return }
+
+        if mode == .useDevTools {
+            focusLogStream.start()
+        } else {
+            focusLogStream.stop()
+        }
+    }
+
+    func startAssertionsPolling() {
+        stopAssertionsPolling()
+        lastAssertionsModificationDate = nil
+
+        let timer = DispatchSource.makeTimerSource(queue: pollingQueue)
+        timer.schedule(deadline: .now() + .seconds(1), repeating: .seconds(2), leeway: .milliseconds(250))
+        timer.setEventHandler { [weak self] in
+            self?.pollAssertionsState()
+        }
+        timer.resume()
+        pollingSource = timer
+    }
+
+    func stopAssertionsPolling() {
+        pollingSource?.cancel()
+        pollingSource = nil
+        lastAssertionsModificationDate = nil
+    }
+
+    func pollAssertionsState() {
+        guard FullDiskAccessAuthorization.hasPermission() else { return }
+
+        if let attributes = try? FileManager.default.attributesOfItem(atPath: assertionsURL.path),
+           let modifiedAt = attributes[.modificationDate] as? Date,
+              let lastObservedModificationDate = lastAssertionsModificationDate,
+           modifiedAt <= lastObservedModificationDate {
+            return
+        }
+
+        guard let data = try? Data(contentsOf: assertionsURL),
+              !data.isEmpty,
+              let root = (try? JSONSerialization.jsonObject(with: data, options: [])) as? [String: Any],
+              let dataArray = root["data"] as? [[String: Any]],
+              let firstItem = dataArray.first else {
+            return
+        }
+
+        let assertions = (firstItem["storeAssertionRecords"] as? [Any]) ?? []
+        let isActive = !assertions.isEmpty
+
+        if let attributes = try? FileManager.default.attributesOfItem(atPath: assertionsURL.path),
+           let modifiedAt = attributes[.modificationDate] as? Date {
+            lastAssertionsModificationDate = modifiedAt
+        }
+
+        let identifierKeys = [
+            "modeIdentifier",
+            "FocusModeIdentifier",
+            "focusModeIdentifier",
+            "identifier",
+            "Identifier",
+            "focusModeUUID",
+            "UUID",
+            "uuid"
+        ]
+
+        let nameKeys = [
+            "activityDisplayName",
+            "displayName",
+            "FocusModeName",
+            "focusModeName",
+            "focusMode",
+            "name",
+            "Name"
+        ]
+
+        let identifier = isActive ? firstMatch(for: identifierKeys, in: assertions) : nil
+        let name = isActive ? firstMatch(for: nameKeys, in: assertions) : nil
+
+        publishMetadata(identifier: identifier, name: name, isActive: isActive, source: "assertions-poll")
+    }
 }
 
 // MARK: - Focus Mode Types
