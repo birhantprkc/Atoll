@@ -184,6 +184,22 @@ struct ContentView: View {
     private let musicControlPauseGrace: TimeInterval = 5
     private let musicControlResumeDelay: TimeInterval = 0.24
 
+    // MARK: - Tab switch direction for smooth transitions
+    
+    private var tabSwitchTransition: AnyTransition {
+        if coordinator.tabSwitchForward {
+            return .asymmetric(
+                insertion: .move(edge: .trailing).combined(with: .opacity),
+                removal: .move(edge: .leading).combined(with: .opacity)
+            )
+        } else {
+            return .asymmetric(
+                insertion: .move(edge: .leading).combined(with: .opacity),
+                removal: .move(edge: .trailing).combined(with: .opacity)
+            )
+        }
+    }
+    
     private var standardMediaControlsActive: Bool {
         showStandardMediaControls && !enableMinimalisticUI
     }
@@ -399,7 +415,6 @@ struct ContentView: View {
             alignment: .top
         )
         .frame(maxHeight: .infinity, alignment: .top)
-        .animation(nil, value: coordinator.currentView)
         .environmentObject(privacyManager)
         .onChange(of: dynamicNotchSize) { oldSize, newSize in
             guard oldSize != newSize else { return }
@@ -755,13 +770,16 @@ struct ContentView: View {
                                 }
                           }
                       }
-                      .id(coordinator.currentView) // Force SwiftUI to treat each view as unique
+                      .id(coordinator.currentView)
+                      .transition(tabSwitchTransition)
                   }
               }
+              .clipped()
               .zIndex(1)
               .allowsHitTesting(vm.notchState == .open)
               .blur(radius: abs(gestureProgress) > 0.3 ? min(abs(gestureProgress), 8) : 0)
               .opacity(abs(gestureProgress) > 0.3 ? min(abs(gestureProgress * 2), 0.8) : 1)
+              .animation(.smooth(duration: 0.3), value: coordinator.currentView)
           }
       }
 

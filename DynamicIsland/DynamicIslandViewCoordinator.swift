@@ -102,12 +102,21 @@ class DynamicIslandViewCoordinator: ObservableObject {
     static let shared = DynamicIslandViewCoordinator()
     private var cancellables = Set<AnyCancellable>()
     
+    private static let tabOrder: [NotchViews] = [.home, .shelf, .timer, .stats, .colorPicker, .notes, .clipboard, .extensionExperience]
+    
+    /// Direction of the most recent tab switch (true = forward/right, false = backward/left)
+    @Published var tabSwitchForward: Bool = true
+    
     @Published var currentView: NotchViews = .home {
         didSet {
             if Defaults[.enableMinimalisticUI] && currentView != .home {
                 currentView = .home
                 return
             }
+            // Track direction before SwiftUI re-renders
+            let oldIdx = Self.tabOrder.firstIndex(of: oldValue) ?? 0
+            let newIdx = Self.tabOrder.firstIndex(of: currentView) ?? 0
+            tabSwitchForward = newIdx >= oldIdx
             handleStatsTabTransition(from: oldValue, to: currentView)
         }
     }
