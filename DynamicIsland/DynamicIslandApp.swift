@@ -405,6 +405,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         
         // Setup SystemHUD Manager
         SystemHUDManager.shared.setup(coordinator: coordinator)
+
+        // Setup BetterDisplay integration
+        BetterDisplayManager.shared.configure(coordinator: coordinator)
         
         // Setup ScreenRecording Manager
         if Defaults[.enableScreenRecordingDetection] {

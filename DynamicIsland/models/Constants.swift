@@ -1009,6 +1009,9 @@ extension Defaults.Keys {
     static let circularHUDSize = Key<CGFloat>("circularHUDSize", default: 65)
     static let circularHUDStrokeWidth = Key<CGFloat>("circularHUDStrokeWidth", default: 4)
     static let circularHUDUseAccentColor = Key<Bool>("circularHUDUseAccentColor", default: true)
+
+    // MARK: BetterDisplay Integration
+    static let enableBetterDisplayIntegration = Key<Bool>("enableBetterDisplayIntegration", default: false)
     
     static let hasSeenOSDAlphaWarning = Key<Bool>("hasSeenOSDAlphaWarning", default: false)
     static let enableOSDVolume = Key<Bool>("enableOSDVolume", default: true)

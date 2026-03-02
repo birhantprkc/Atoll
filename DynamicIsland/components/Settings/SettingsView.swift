@@ -650,6 +650,7 @@ struct SettingsView: View {
             SettingsSearchEntry(tab: .hudAndOSD, title: "Keyboard Backlight OSD", keywords: ["keyboard", "backlight", "osd"], highlightID: SettingsTab.hudAndOSD.highlightID(for: "Keyboard Backlight OSD")),
             SettingsSearchEntry(tab: .hudAndOSD, title: "Material", keywords: ["material", "frosted", "liquid", "glass", "solid", "osd"], highlightID: SettingsTab.hudAndOSD.highlightID(for: "Material")),
             SettingsSearchEntry(tab: .hudAndOSD, title: "Icon & Progress Color", keywords: ["color", "icon", "white", "black", "gray", "osd"], highlightID: SettingsTab.hudAndOSD.highlightID(for: "Icon & Progress Color")),
+            SettingsSearchEntry(tab: .hudAndOSD, title: "BetterDisplay integration", keywords: ["betterdisplay", "external", "display", "brightness", "integration", "third party"], highlightID: SettingsTab.hudAndOSD.highlightID(for: "BetterDisplay integration")),
 
             // Media
             SettingsSearchEntry(tab: .media, title: "Music Source", keywords: ["media source", "controller"], highlightID: SettingsTab.media.highlightID(for: "Music Source")),
@@ -1794,6 +1795,9 @@ private struct HUDAndOSDSettingsView: View {
                     }
                 }
             }
+
+            // BetterDisplay Integration (shared across all HUD variants)
+            BetterDisplayIntegrationSection()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .background(paneBackgroundColor)
@@ -1802,6 +1806,74 @@ private struct HUDAndOSDSettingsView: View {
             if #unavailable(macOS 26.0), verticalHUDMaterial == .liquid {
                 verticalHUDMaterial = .frosted
                 verticalHUDLiquidGlassCustomizationMode = .standard
+            }
+        }
+    }
+}
+
+// MARK: - BetterDisplay Integration Settings Section
+
+private struct BetterDisplayIntegrationSection: View {
+    @Default(.enableBetterDisplayIntegration) var enableBetterDisplayIntegration
+    @ObservedObject private var betterDisplayManager = BetterDisplayManager.shared
+
+    private func highlightID(_ title: String) -> String {
+        SettingsTab.hudAndOSD.highlightID(for: title)
+    }
+
+    var body: some View {
+        Form {
+            Section {
+                HStack {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("BetterDisplay")
+                            .font(.system(size: 13, weight: .medium))
+                        Text(betterDisplayManager.isDetected ? "Detected" : "Not detected")
+                            .font(.caption)
+                            .foregroundStyle(betterDisplayManager.isDetected ? .green : .secondary)
+                    }
+
+                    Spacer()
+
+                    Toggle("", isOn: $enableBetterDisplayIntegration)
+                        .toggleStyle(.switch)
+                        .labelsHidden()
+                        .disabled(!betterDisplayManager.isDetected)
+                }
+                .settingsHighlight(id: highlightID("BetterDisplay integration"))
+
+                if !betterDisplayManager.isDetected {
+                    Text("Install [BetterDisplay](https://betterdisplay.pro) to control external display brightness and volume through Atoll's HUD.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                } else if enableBetterDisplayIntegration {
+                    Text("BetterDisplay OSD events will be routed through Atoll's active HUD style. Make sure BetterDisplay's OSD integration is enabled in its Settings › Application › Integration.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                } else {
+                    Text("Enable to route BetterDisplay's brightness and volume changes through Atoll's HUD instead of the system OSD.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                if betterDisplayManager.isDetected {
+                    Button {
+                        betterDisplayManager.refreshDetectionStatus()
+                    } label: {
+                        Label("Refresh detection", systemImage: "arrow.clockwise")
+                            .font(.caption)
+                    }
+                    .buttonStyle(.link)
+                }
+            } header: {
+                HStack(spacing: 6) {
+                    Image(systemName: "display.2")
+                    Text("BetterDisplay Integration")
+                }
+            } footer: {
+                Text("When enabled, Atoll listens for OSD notifications from BetterDisplay and displays them using your selected HUD style above. This works alongside the existing media key interception — BetterDisplay handles external display controls while Atoll provides the visual feedback.")
+                    .foregroundStyle(.secondary)
+                    .font(.caption)
             }
         }
     }
