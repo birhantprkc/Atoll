@@ -80,6 +80,8 @@ struct ContentView: View {
     @Default(.enableCapsLockIndicator) var enableCapsLockIndicator
     @Default(.enableExtensionLiveActivities) var enableExtensionLiveActivities
     @Default(.showStandardMediaControls) var showStandardMediaControls
+    @Default(.externalDisplayStyle) var externalDisplayStyle
+    @Default(.hideNonNotchUntilHover) var hideNonNotchUntilHover
     
     // Dynamic sizing based on view type and graph count with smooth transitions
     var dynamicNotchSize: CGSize {
@@ -231,8 +233,52 @@ struct ContentView: View {
         return NotchShape(topCornerRadius: topRadius, bottomCornerRadius: bottomRadius)
     }
 
+    /// Whether the current screen should render as a Dynamic Island pill
+    /// rather than the standard notch shape. Always false on physical notch screens.
+    private var isDynamicIslandMode: Bool {
+        shouldUseDynamicIslandMode(for: vm.screen ?? coordinator.selectedScreen)
+    }
+
+    /// Whether the current screen lacks a physical notch.
+    private var isNonNotchScreen: Bool {
+        let screenName = vm.screen ?? coordinator.selectedScreen
+        guard let screen = NSScreen.screens.first(where: { $0.localizedName == screenName }) else {
+            return true
+        }
+        return screen.safeAreaInsets.top <= 0
+    }
+
+    /// Whether the notch/island should hide off-screen when closed on a non-notch display.
+    private var shouldHideUntilHover: Bool {
+        hideNonNotchUntilHover && isNonNotchScreen && vm.notchState == .closed
+    }
+
+    /// Pill shape for Dynamic Island mode with animated corner radius transitions.
+    private var currentPillShape: DynamicIslandPillShape {
+        let radius: CGFloat
+        if vm.notchState == .open {
+            radius = enableMinimalisticUI
+                ? minimalisticCornerRadiusInsets.opened.top
+                : dynamicIslandPillCornerRadiusInsets.opened
+        } else {
+            // Use half the closed height for a true capsule shape
+            radius = max(vm.closedNotchSize.height / 2, dynamicIslandPillCornerRadiusInsets.closed.standard)
+        }
+        return DynamicIslandPillShape(cornerRadius: radius)
+    }
+
+    /// Resolves the clip/content shape per-screen: pill on non-notch screens
+    /// when dynamic island mode is active, standard notch shape otherwise.
+    private var resolvedClipShape: AnyShape {
+        if isDynamicIslandMode {
+            return AnyShape(currentPillShape)
+        }
+        return AnyShape(currentNotchShape)
+    }
+
     var body: some View {
         let interactionsEnabled = !lockScreenManager.isLocked
+        let isIslandMode = isDynamicIslandMode
         let notchHorizontalPadding: CGFloat = {
             guard vm.notchState == .open else {
                 return activeCornerRadiusInsets.closed.bottom
@@ -249,6 +295,8 @@ struct ContentView: View {
             return vm.effectiveClosedNotchHeight == 0 ? zeroHeightHoverPadding : 0
         }()
         let notchBottomPadding = currentShadowPadding + hoverAreaPadding
+        // Extra top padding to detach pill from screen edge in Dynamic Island mode
+        let pillTopOffset: CGFloat = isIslandMode ? dynamicIslandTopOffset : 0
 
         ZStack(alignment: .top) {
             let mainLayout = NotchLayout()
@@ -256,7 +304,7 @@ struct ContentView: View {
                 .padding(.horizontal, notchHorizontalPadding)
                 .padding([.horizontal, .bottom], vm.notchState == .open ? 12 : 0)
                 .background(.black)
-                .clipShape(currentNotchShape)
+                .clipShape(resolvedClipShape)
                 .compositingGroup()
                 .shadow(
                     color: ((vm.notchState == .open || isHovering) && Defaults[.enableShadow])
@@ -264,7 +312,16 @@ struct ContentView: View {
                         : .clear,
                     radius: Defaults[.cornerRadiusScaling] ? 10 : 5
                 )
+                // Extra horizontal inset for Dynamic Island mode so the shadow
+                // is not clipped by the outer frame constraint
+                .padding(.horizontal, isIslandMode ? dynamicIslandShadowInset : 0)
+                .padding(.top, pillTopOffset)
                 .padding(.bottom, notchBottomPadding)
+                // Hide off-screen when non-notch hide-until-hover is active
+                .offset(y: shouldHideUntilHover && !isHovering
+                    ? -(vm.closedNotchSize.height + pillTopOffset + currentShadowPadding + 10)
+                    : 0
+                )
 
             mainLayout
                 .conditionalModifier(!useModernCloseAnimation) { view in
@@ -288,7 +345,7 @@ struct ContentView: View {
                 }
                 .conditionalModifier(interactionsEnabled) { view in
                     view
-                        .contentShape(currentNotchShape)
+                        .contentShape(resolvedClipShape)
                         .onHover { hovering in
                             handleHover(hovering)
                         }
@@ -410,8 +467,8 @@ struct ContentView: View {
 
         }
         .frame(
-            maxWidth: dynamicNotchSize.width,
-            maxHeight: dynamicNotchSize.height + currentShadowPadding,
+            maxWidth: dynamicNotchSize.width + (isDynamicIslandMode ? dynamicIslandShadowInset * 2 : 0),
+            maxHeight: dynamicNotchSize.height + currentShadowPadding + (isDynamicIslandMode ? dynamicIslandTopOffset : 0),
             alignment: .top
         )
         .frame(maxHeight: .infinity, alignment: .top)

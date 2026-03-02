@@ -104,6 +104,51 @@ func addShadowPadding(to size: CGSize, isMinimalistic: Bool) -> CGSize {
     CGSize(width: size.width, height: size.height + notchShadowPaddingValue(isMinimalistic: isMinimalistic))
 }
 
+/// Determines whether a specific screen should render the Dynamic Island pill
+/// shape instead of the standard notch shape.
+///
+/// Returns `true` only when ALL of these conditions are met:
+/// 1. The user has selected `.dynamicIsland` in `externalDisplayStyle`
+/// 2. The screen does NOT have a physical notch (safeAreaInsets.top == 0)
+///
+/// Screens with a physical notch always use the standard notch shape.
+func shouldUseDynamicIslandMode(for screenName: String?) -> Bool {
+    guard Defaults[.externalDisplayStyle] == .dynamicIsland else {
+        return false
+    }
+
+    var selectedScreen: NSScreen? = NSScreen.main
+    if let screenName {
+        selectedScreen = NSScreen.screens.first(where: { $0.localizedName == screenName })
+    }
+
+    guard let screen = selectedScreen else {
+        // No screen found — fallback to standard notch
+        return false
+    }
+
+    // Physical notch screens always use standard notch shape
+    return screen.safeAreaInsets.top <= 0
+}
+
+/// Corner radius insets for the Dynamic Island pill shape.
+/// - closed: half the closed notch height for a true capsule look
+/// - opened: generous radius for smooth expanded pill
+let dynamicIslandPillCornerRadiusInsets: (opened: CGFloat, closed: (standard: CGFloat, minimalistic: CGFloat)) = (
+    opened: 24,
+    closed: (standard: 16, minimalistic: 16)
+)
+
+/// Vertical offset from the top screen edge for the Dynamic Island pill.
+/// Creates a visual gap so the pill floats below the menu bar, mimicking
+/// the iPhone's Dynamic Island detachment from the physical screen edge.
+let dynamicIslandTopOffset: CGFloat = 6
+
+/// Extra horizontal padding applied OUTSIDE the pill clip shape in Dynamic
+/// Island mode so the drop shadow has room to render without being clipped
+/// by the outer frame constraint.
+let dynamicIslandShadowInset: CGFloat = 14
+
 enum MusicPlayerImageSizes {
     static let cornerRadiusInset: (opened: CGFloat, closed: CGFloat) = (opened: 13.0, closed: 4.0)
     static let size = (opened: CGSize(width: 90, height: 90), closed: CGSize(width: 20, height: 20))

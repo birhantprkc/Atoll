@@ -224,7 +224,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         -> NSWindow
     {
         // Use the current required size instead of always using openNotchSize
-        let requiredSize = calculateRequiredNotchSize()
+        let baseSize = calculateRequiredNotchSize()
+        let requiredSize = adjustedSizeForScreen(baseSize, screen: screen)
         
         let window = DynamicIslandWindow(
             contentRect: NSRect(
@@ -317,10 +318,25 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             isStatsTabActive: coordinator.currentView == .stats,
             secondRowProgress: coordinator.statsSecondRowExpansion
         )
-        return addShadowPadding(
+        var result = addShadowPadding(
             to: adjustedContentSize,
             isMinimalistic: Defaults[.enableMinimalisticUI]
         )
+
+        return result
+    }
+
+    /// Adjusts a base notch size for a specific screen by adding Dynamic Island
+    /// shadow insets and top-offset only when the screen lacks a physical notch
+    /// and the user has chosen the Dynamic Island style.
+    private func adjustedSizeForScreen(_ baseSize: CGSize, screen: NSScreen) -> CGSize {
+        guard shouldUseDynamicIslandMode(for: screen.localizedName) else {
+            return baseSize
+        }
+        var adjusted = baseSize
+        adjusted.width += dynamicIslandShadowInset * 2
+        adjusted.height += dynamicIslandTopOffset
+        return adjusted
     }
 
     func ensureWindowSize(_ size: CGSize, animated: Bool, force: Bool = false) {
@@ -332,15 +348,17 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         if Defaults[.showOnAllDisplays] {
             for (screen, window) in windows {
-                if force || window.frame.size != size {
-                    resizeWindow(window, on: screen, to: size, animated: animated)
+                let screenSize = adjustedSizeForScreen(size, screen: screen)
+                if force || window.frame.size != screenSize {
+                    resizeWindow(window, on: screen, to: screenSize, animated: animated)
                 }
             }
         } else if let window {
             let screen = window.screen ?? NSScreen.screens.first { $0.frame.intersects(window.frame) } ?? NSScreen.main ?? NSScreen.screens.first
             guard let screen else { return }
-            if force || window.frame.size != size {
-                resizeWindow(window, on: screen, to: size, animated: animated)
+            let screenSize = adjustedSizeForScreen(size, screen: screen)
+            if force || window.frame.size != screenSize {
+                resizeWindow(window, on: screen, to: screenSize, animated: animated)
             }
         }
     }
