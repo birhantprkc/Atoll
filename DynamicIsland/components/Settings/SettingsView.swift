@@ -2308,20 +2308,8 @@ struct Media: View {
                         Text(style.rawValue).tag(style)
                     }
                 }
-                .disabled(!enableSneakPeek || enableMinimalisticUI)
-                .onChange(of: enableMinimalisticUI) { _, isMinimalistic in
-                    // Force standard sneak peek style when minimalistic UI is enabled
-                    if isMinimalistic {
-                        sneakPeekStyles = .standard
-                    }
-                }
+                .disabled(!enableSneakPeek)
                 .settingsHighlight(id: highlightID("Sneak Peek Style"))
-                
-                if enableMinimalisticUI {
-                    Text("Sneak peek style is locked to Standard in minimalistic mode")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
                 
                 HStack {
                     Stepper(value: $waitInterval, in: 0...10, step: 1) {

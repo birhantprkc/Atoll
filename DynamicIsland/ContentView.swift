@@ -87,6 +87,18 @@ struct ContentView: View {
     var dynamicNotchSize: CGSize {
         let baseSize = Defaults[.enableMinimalisticUI] ? minimalisticOpenNotchSize : openNotchSize
         
+        // When inline sneak peek is active in closed notch, use the wider inline width
+        // so the outer maxWidth frame doesn't clip the expanded content
+        let inlineSneakPeekActive = vm.notchState == .closed
+            && coordinator.expandingView.show
+            && (coordinator.expandingView.type == .music || coordinator.expandingView.type == .timer)
+            && Defaults[.enableSneakPeek]
+            && Defaults[.sneakPeekStyles] == .inline
+        if inlineSneakPeekActive {
+            let inlineWidth: CGFloat = 460
+            return CGSize(width: max(baseSize.width, inlineWidth), height: baseSize.height)
+        }
+        
         if coordinator.currentView == .timer {
             return CGSize(width: baseSize.width, height: 250) // Extra height for timer presets
         }
@@ -952,37 +964,42 @@ struct ContentView: View {
                 .fill(.black)
                 .frame(width: effectiveCenterWidth, height: notchContentHeight)
                 .overlay(
-                    HStack(alignment: .top){
+                    HStack(alignment: .top) {
                         if(coordinator.expandingView.show && coordinator.expandingView.type == .music) {
                             MarqueeText(
                                 .constant(musicManager.songTitle),
                                 textColor: Defaults[.coloredSpectrogram] ? Color(nsColor: musicManager.avgColor) : Color.gray,
                                 minDuration: 0.4,
-                                frameWidth: 100
+                                frameWidth: max(0, (effectiveCenterWidth - vm.closedNotchSize.width) / 2 - 12)
                             )
+                            .padding(.leading, 8)
                             .opacity((coordinator.expandingView.show && Defaults[.enableSneakPeek] && Defaults[.sneakPeekStyles] == .inline) ? 1 : 0)
                             Spacer(minLength: vm.closedNotchSize.width)
                             Text(musicManager.artistName)
                                 .lineLimit(1)
                                 .truncationMode(.tail)
                                 .foregroundStyle(Defaults[.coloredSpectrogram] ? Color(nsColor: musicManager.avgColor) : Color.gray)
+                                .padding(.trailing, 8)
                                 .opacity((coordinator.expandingView.show && coordinator.expandingView.type == .music && Defaults[.enableSneakPeek] && Defaults[.sneakPeekStyles] == .inline) ? 1 : 0)
                         } else if(coordinator.expandingView.show && coordinator.expandingView.type == .timer) {
                             MarqueeText(
                                 .constant(timerManager.timerName),
                                 textColor: timerManager.timerColor,
                                 minDuration: 0.4,
-                                frameWidth: 100
+                                frameWidth: max(0, (effectiveCenterWidth - vm.closedNotchSize.width) / 2 - 12)
                             )
+                            .padding(.leading, 8)
                             .opacity((coordinator.expandingView.show && Defaults[.enableSneakPeek] && Defaults[.sneakPeekStyles] == .inline) ? 1 : 0)
                             Spacer(minLength: vm.closedNotchSize.width)
                             Text(timerManager.formattedRemainingTime())
                                 .lineLimit(1)
                                 .truncationMode(.tail)
                                 .foregroundStyle(timerManager.timerColor)
+                                .padding(.trailing, 8)
                                 .opacity((coordinator.expandingView.show && coordinator.expandingView.type == .timer && Defaults[.enableSneakPeek] && Defaults[.sneakPeekStyles] == .inline) ? 1 : 0)
                         }
                     }
+                    .clipped()
                 )
 
             musicRightWing(for: secondary, notchHeight: notchContentHeight, trailingWidth: rightWingWidth)

@@ -297,8 +297,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         // If inline sneak peek is active, use a wider width to accommodate the expanded content
         if isInlineSneakPeekActive {
             // Calculate required width for inline sneak peek:
-            // Album art (~32) + Middle section (380) + Visualizer (~32) + padding = ~450
-            let inlineSneakPeekWidth: CGFloat = 450
+            // Album art (~32) + Middle section (380) + Visualizer (~32) + horizontal padding (28) + clip shape margin (12)
+            let inlineSneakPeekWidth: CGFloat = 460
             return CGSize(width: inlineSneakPeekWidth, height: vm.effectiveClosedNotchHeight)
         }
         
@@ -513,11 +513,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }.store(in: &cancellables)
         
         // Observe minimalistic UI setting changes - trigger window resize
-        Defaults.publisher(.enableMinimalisticUI, options: []).sink { [weak self] change in
-            // Force sneak peek to standard mode when minimalistic UI is enabled
-            if change.newValue == true && Defaults[.sneakPeekStyles] != .standard {
-                Defaults[.sneakPeekStyles] = .standard
-            }
+        Defaults.publisher(.enableMinimalisticUI, options: []).sink { [weak self] _ in
             // Update window size IMMEDIATELY (no debouncing) to prevent position shift
             self?.updateWindowSizeIfNeeded()
         }.store(in: &cancellables)
