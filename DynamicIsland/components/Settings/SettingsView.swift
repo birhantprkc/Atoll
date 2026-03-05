@@ -778,6 +778,7 @@ struct SettingsView: View {
             SettingsSearchEntry(tab: .shelf, title: "Quick Share Service", keywords: ["shelf", "share", "airdrop"], highlightID: SettingsTab.shelf.highlightID(for: "Quick Share Service")),
 
             // Appearance
+            SettingsSearchEntry(tab: .appearance, title: "Main screen style", keywords: ["dynamic island", "pill", "non-notch", "display style", "notch style"], highlightID: SettingsTab.appearance.highlightID(for: "Main screen style")),
             SettingsSearchEntry(tab: .appearance, title: "Settings icon in notch", keywords: ["settings button", "toolbar"], highlightID: SettingsTab.appearance.highlightID(for: "Settings icon in notch")),
             SettingsSearchEntry(tab: .appearance, title: "Enable window shadow", keywords: ["shadow", "appearance"], highlightID: SettingsTab.appearance.highlightID(for: "Enable window shadow")),
             SettingsSearchEntry(tab: .appearance, title: "Corner radius scaling", keywords: ["corner radius", "shape"], highlightID: SettingsTab.appearance.highlightID(for: "Corner radius scaling")),
@@ -3457,6 +3458,7 @@ struct Appearance: View {
     @Default(.lockScreenTimerWidgetUsesBlur) private var timerGlassModeIsGlass
     @Default(.enableLockScreenMediaWidget) private var enableLockScreenMediaWidget
     @Default(.enableLockScreenTimerWidget) private var enableLockScreenTimerWidget
+    @Default(.externalDisplayStyle) private var externalDisplayStyle
     @State private var selectedListVisualizer: CustomVisualizer? = nil
 
     @State private var isIconImporterPresented = false
@@ -3467,6 +3469,12 @@ struct Appearance: View {
     @State private var name: String = ""
     @State private var url: String = ""
     @State private var speed: CGFloat = 1.0
+
+    /// Whether the main screen has a physical notch.
+    private var mainScreenHasPhysicalNotch: Bool {
+        guard let screen = NSScreen.main else { return false }
+        return screen.safeAreaInsets.top > 0
+    }
 
     private var notchWidthRange: ClosedRange<Double> {
         let minW = Double(currentRecommendedMinimumNotchWidth())
@@ -3526,6 +3534,27 @@ struct Appearance: View {
                     .settingsHighlight(id: highlightID("Use simpler close animation"))
             } header: {
                 Text("General")
+            }
+
+            // Show display style picker only on non-notch Macs (main screen has no physical notch)
+            if !mainScreenHasPhysicalNotch {
+                Section {
+                    Picker("Main screen style", selection: $externalDisplayStyle) {
+                        ForEach(ExternalDisplayStyle.allCases) { style in
+                            Text(style.localizedName)
+                                .tag(style)
+                        }
+                    }
+                    .onChange(of: externalDisplayStyle) {
+                        NotificationCenter.default.post(name: Notification.Name.notchHeightChanged, object: nil)
+                    }
+                    .settingsHighlight(id: highlightID("Main screen style"))
+                    Text(externalDisplayStyle.description)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                } header: {
+                    Text("Display Style")
+                }
             }
 
             notchWidthControls()

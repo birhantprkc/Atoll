@@ -396,9 +396,10 @@ struct ContentView: View {
                         }
                 }
                 .onAppear(perform: {
-                    runAfter(1) {
-                        withAnimation(vm.animation) {
-                            if coordinator.firstLaunch {
+                    if coordinator.firstLaunch {
+                        // Single open during first launch; closeHello() handles the timed close.
+                        runAfter(1) {
+                            withAnimation(vm.animation) {
                                 openNotch()
                             }
                         }
@@ -1635,7 +1636,7 @@ struct ContentView: View {
     }
 
     private func shouldPreventAutoClose() -> Bool {
-        hasAnyActivePopovers() || vm.isAutoCloseSuppressed || SharingStateManager.shared.preventNotchClose
+        coordinator.firstLaunch || hasAnyActivePopovers() || vm.isAutoCloseSuppressed || SharingStateManager.shared.preventNotchClose
     }
     
     // Helper to prevent rapid haptic feedback

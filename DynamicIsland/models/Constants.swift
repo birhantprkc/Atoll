@@ -786,7 +786,7 @@ extension Defaults.Keys {
     static let lockScreenWeatherRefreshInterval = Key<TimeInterval>("lockScreenWeatherRefreshInterval", default: 30 * 60)
     static let lockScreenWeatherShowsLocation = Key<Bool>("lockScreenWeatherShowsLocation", default: true)
     static let lockScreenWeatherShowsSunrise = Key<Bool>("lockScreenWeatherShowsSunrise", default: true)
-    static let lockScreenWeatherWidgetStyle = Key<LockScreenWeatherWidgetStyle>("lockScreenWeatherWidgetStyle", default: .circular)
+    static let lockScreenWeatherWidgetStyle = Key<LockScreenWeatherWidgetStyle>("lockScreenWeatherWidgetStyle", default: .inline)
     static let lockScreenWeatherTemperatureUnit = Key<LockScreenWeatherTemperatureUnit>("lockScreenWeatherTemperatureUnit", default: .celsius)
     static let lockScreenWeatherShowsAQI = Key<Bool>("lockScreenWeatherShowsAQI", default: true)
     static let lockScreenWeatherAQIScale = Key<LockScreenWeatherAirQualityScale>("lockScreenWeatherAQIScale", default: .us)
@@ -1078,7 +1078,7 @@ extension Defaults.Keys {
     static let enableMinimalisticUI = Key<Bool>("enableMinimalisticUI", default: false)
     
     // MARK: Lyrics Feature
-    static let enableLyrics = Key<Bool>("enableLyrics", default: true)
+    static let enableLyrics = Key<Bool>("enableLyrics", default: false)
     
     // MARK: Notes Feature
     static let enableNotes = Key<Bool>("enableNotes", default: false)
