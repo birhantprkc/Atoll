@@ -436,7 +436,7 @@ struct SettingsView: View {
         HStack(spacing: 10) {
             sidebarIcon(for: tab)
             Text(tab.title)
-            if tab == .downloads || tab == .hudAndOSD {
+            if tab == .downloads {
                 Spacer()
                 Text("BETA")
                     .font(.system(size: 9, weight: .bold))
@@ -449,14 +449,14 @@ struct SettingsView: View {
                     )
             } else if tab == .extensions {
                 Spacer()
-                Text("ALPHA")
+                Text("BETA")
                     .font(.system(size: 9, weight: .bold))
                     .foregroundStyle(.white)
                     .padding(.horizontal, 6)
                     .padding(.vertical, 2)
                     .background(
                         Capsule()
-                            .fill(Color.orange)
+                            .fill(Color.blue)
                     )
             }
         }
