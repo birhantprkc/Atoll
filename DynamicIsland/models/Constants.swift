@@ -1029,6 +1029,9 @@ extension Defaults.Keys {
 
     // MARK: BetterDisplay Integration
     static let enableBetterDisplayIntegration = Key<Bool>("enableBetterDisplayIntegration", default: false)
+
+    // MARK: Lunar Integration
+    static let enableLunarIntegration = Key<Bool>("enableLunarIntegration", default: false)
     
     static let hasSeenOSDAlphaWarning = Key<Bool>("hasSeenOSDAlphaWarning", default: false)
     static let enableOSDVolume = Key<Bool>("enableOSDVolume", default: true)

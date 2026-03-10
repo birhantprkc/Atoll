@@ -740,6 +740,7 @@ struct SettingsView: View {
             SettingsSearchEntry(tab: .hudAndOSD, title: "Material", keywords: ["material", "frosted", "liquid", "glass", "solid", "osd"], highlightID: SettingsTab.hudAndOSD.highlightID(for: "Material")),
             SettingsSearchEntry(tab: .hudAndOSD, title: "Icon & Progress Color", keywords: ["color", "icon", "white", "black", "gray", "osd"], highlightID: SettingsTab.hudAndOSD.highlightID(for: "Icon & Progress Color")),
             SettingsSearchEntry(tab: .hudAndOSD, title: "BetterDisplay integration", keywords: ["betterdisplay", "external", "display", "brightness", "integration", "third party"], highlightID: SettingsTab.hudAndOSD.highlightID(for: "BetterDisplay integration")),
+            SettingsSearchEntry(tab: .hudAndOSD, title: "Lunar integration", keywords: ["lunar", "ddc", "external", "display", "brightness", "contrast", "integration", "third party"], highlightID: SettingsTab.hudAndOSD.highlightID(for: "Lunar integration")),
 
             // Media
             SettingsSearchEntry(tab: .media, title: "Music Source", keywords: ["media source", "controller"], highlightID: SettingsTab.media.highlightID(for: "Music Source")),
@@ -1495,6 +1496,7 @@ private struct HUDAndOSDSettingsView: View {
     @Default(.enableBrightnessHUD) var enableBrightnessHUD
     @Default(.enableKeyboardBacklightHUD) var enableKeyboardBacklightHUD
     @Default(.enableBetterDisplayIntegration) var enableBetterDisplayIntegration
+    @Default(.enableLunarIntegration) var enableLunarIntegration
     @Default(.verticalHUDShowValue) var verticalHUDShowValue
     @Default(.verticalHUDInteractive) var verticalHUDInteractive
     @Default(.verticalHUDHeight) var verticalHUDHeight
@@ -1730,7 +1732,7 @@ private struct HUDAndOSDSettingsView: View {
                 }
             case .vertical:
                 Form {
-                    if !accessibilityPermission.isAuthorized && !enableBetterDisplayIntegration {
+                    if !accessibilityPermission.isAuthorized && !enableBetterDisplayIntegration && !enableLunarIntegration {
                         Section {
                             SettingsPermissionCallout(
                                 message: "Accessibility permission is needed to intercept system controls for the Vertical HUD.",
@@ -1746,13 +1748,13 @@ private struct HUDAndOSDSettingsView: View {
                         }
                     }
 
-                    if accessibilityPermission.isAuthorized || enableBetterDisplayIntegration {
+                    if accessibilityPermission.isAuthorized || enableBetterDisplayIntegration || enableLunarIntegration {
                         Section {
                             Toggle("Volume HUD", isOn: $enableVolumeHUD)
                             Toggle("Brightness HUD", isOn: $enableBrightnessHUD)
                             Toggle("Keyboard Backlight HUD", isOn: $enableKeyboardBacklightHUD)
-                                .disabled(enableBetterDisplayIntegration)
-                                .help(enableBetterDisplayIntegration ? "Disabled while BetterDisplay integration is active — BetterDisplay uses Cmd+Brightness keys for its own controls." : "")
+                                .disabled(enableBetterDisplayIntegration || enableLunarIntegration)
+                                .help((enableBetterDisplayIntegration || enableLunarIntegration) ? "Disabled while external display integration is active — brightness keys are handled by the external app." : "")
                         } header: {
                             Text("Controls")
                         } footer: {
@@ -1847,7 +1849,7 @@ private struct HUDAndOSDSettingsView: View {
 
             case .circular:
                 Form {
-                    if !accessibilityPermission.isAuthorized && !enableBetterDisplayIntegration {
+                    if !accessibilityPermission.isAuthorized && !enableBetterDisplayIntegration && !enableLunarIntegration {
                         Section {
                             SettingsPermissionCallout(
                                 message: "Accessibility permission is needed to intercept system controls for the Circular HUD.",
@@ -1863,13 +1865,13 @@ private struct HUDAndOSDSettingsView: View {
                         }
                     }
 
-                    if accessibilityPermission.isAuthorized || enableBetterDisplayIntegration {
+                    if accessibilityPermission.isAuthorized || enableBetterDisplayIntegration || enableLunarIntegration {
                         Section {
                             Toggle("Volume HUD", isOn: $enableVolumeHUD)
                             Toggle("Brightness HUD", isOn: $enableBrightnessHUD)
                             Toggle("Keyboard Backlight HUD", isOn: $enableKeyboardBacklightHUD)
-                                .disabled(enableBetterDisplayIntegration)
-                                .help(enableBetterDisplayIntegration ? "Disabled while BetterDisplay integration is active — BetterDisplay uses Cmd+Brightness keys for its own controls." : "")
+                                .disabled(enableBetterDisplayIntegration || enableLunarIntegration)
+                                .help((enableBetterDisplayIntegration || enableLunarIntegration) ? "Disabled while external display integration is active — brightness keys are handled by the external app." : "")
                         } header: {
                             Text("Controls")
                         } footer: {
@@ -1909,8 +1911,8 @@ private struct HUDAndOSDSettingsView: View {
                 }
             }
 
-            // BetterDisplay Integration (shared across all HUD variants)
-            BetterDisplayIntegrationSection()
+            // Third-party display integrations (shared across all HUD variants)
+            ExternalDisplayIntegrationsSection()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .background(paneBackgroundColor)
@@ -1924,93 +1926,175 @@ private struct HUDAndOSDSettingsView: View {
     }
 }
 
-// MARK: - BetterDisplay Integration Settings Section
+// MARK: - External Display Integrations Settings Section
 
-private struct BetterDisplayIntegrationSection: View {
+private struct ExternalDisplayIntegrationsSection: View {
     @Default(.enableBetterDisplayIntegration) var enableBetterDisplayIntegration
+    @Default(.enableLunarIntegration) var enableLunarIntegration
     @ObservedObject private var betterDisplayManager = BetterDisplayManager.shared
+    @ObservedObject private var lunarManager = LunarManager.shared
+
+    @State private var isBetterDisplayExpanded = false
+    @State private var isLunarExpanded = false
 
     private func highlightID(_ title: String) -> String {
         SettingsTab.hudAndOSD.highlightID(for: title)
     }
 
-    private var statusText: String {
-        if betterDisplayManager.isRunning {
-            return "Running"
-        } else if betterDisplayManager.isDetected {
-            return "Not running"
-        } else {
-            return "Not detected"
-        }
+    // MARK: BetterDisplay helpers
+
+    private var bdStatusText: String {
+        if betterDisplayManager.isRunning { return "Running" }
+        if betterDisplayManager.isDetected { return "Not running" }
+        return "Not detected"
     }
 
-    private var statusColor: Color {
-        if betterDisplayManager.isRunning {
-            return .green
-        } else if betterDisplayManager.isDetected {
-            return .orange
-        } else {
-            return .secondary
-        }
+    private var bdStatusColor: Color {
+        if betterDisplayManager.isRunning { return .green }
+        if betterDisplayManager.isDetected { return .orange }
+        return .secondary
+    }
+
+    // MARK: Lunar helpers
+
+    private var lunarStatusText: String {
+        if lunarManager.isConnected { return "Connected" }
+        if lunarManager.isRunning { return "Running" }
+        if lunarManager.isDetected { return "Not running" }
+        return "Not detected"
+    }
+
+    private var lunarStatusColor: Color {
+        if lunarManager.isConnected { return .green }
+        if lunarManager.isRunning { return .orange }
+        if lunarManager.isDetected { return .orange }
+        return .secondary
     }
 
     var body: some View {
         Form {
+            // MARK: - BetterDisplay
+
             Section {
-                HStack {
-                    VStack(alignment: .leading, spacing: 2) {
+                DisclosureGroup(isExpanded: $isBetterDisplayExpanded) {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(bdStatusText)
+                                .font(.caption)
+                                .foregroundStyle(bdStatusColor)
+                        }
+                        Spacer()
+                        Toggle("", isOn: $enableBetterDisplayIntegration)
+                            .toggleStyle(.switch)
+                            .labelsHidden()
+                            .disabled(!betterDisplayManager.isDetected)
+                    }
+                    .settingsHighlight(id: highlightID("BetterDisplay integration"))
+
+                    if !betterDisplayManager.isDetected {
+                        Text("Install [BetterDisplay](https://betterdisplay.pro) to control external display brightness and volume through Atoll's HUD.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    } else if !betterDisplayManager.isRunning {
+                        Text("BetterDisplay is installed but not currently running. Launch BetterDisplay to enable integration.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    } else if enableBetterDisplayIntegration {
+                        Text("BetterDisplay OSD events will be routed through Atoll's active HUD style. Make sure BetterDisplay's OSD integration is enabled in its Settings › Application › Integration.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    } else {
+                        Text("Enable to route BetterDisplay's brightness and volume changes through Atoll's HUD instead of the system OSD.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    if betterDisplayManager.isDetected {
+                        Button {
+                            betterDisplayManager.refreshDetectionStatus()
+                        } label: {
+                            Label("Refresh detection", systemImage: "arrow.clockwise")
+                                .font(.caption)
+                        }
+                        .buttonStyle(.link)
+                    }
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "display.2")
                         Text("BetterDisplay")
                             .font(.system(size: 13, weight: .medium))
-                        Text(statusText)
-                            .font(.caption)
-                            .foregroundStyle(statusColor)
                     }
-
-                    Spacer()
-
-                    Toggle("", isOn: $enableBetterDisplayIntegration)
-                        .toggleStyle(.switch)
-                        .labelsHidden()
-                        .disabled(!betterDisplayManager.isDetected)
-                }
-                .settingsHighlight(id: highlightID("BetterDisplay integration"))
-
-                if !betterDisplayManager.isDetected {
-                    Text("Install [BetterDisplay](https://betterdisplay.pro) to control external display brightness and volume through Atoll's HUD.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                } else if !betterDisplayManager.isRunning {
-                    Text("BetterDisplay is installed but not currently running. Launch BetterDisplay to enable integration.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                } else if enableBetterDisplayIntegration {
-                    Text("BetterDisplay OSD events will be routed through Atoll's active HUD style. Make sure BetterDisplay's OSD integration is enabled in its Settings › Application › Integration.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                } else {
-                    Text("Enable to route BetterDisplay's brightness and volume changes through Atoll's HUD instead of the system OSD.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-
-                if betterDisplayManager.isDetected {
-                    Button {
-                        betterDisplayManager.refreshDetectionStatus()
-                    } label: {
-                        Label("Refresh detection", systemImage: "arrow.clockwise")
-                            .font(.caption)
-                    }
-                    .buttonStyle(.link)
-                }
-            } header: {
-                HStack(spacing: 6) {
-                    Image(systemName: "display.2")
-                    Text("BetterDisplay Integration")
                 }
             } footer: {
-                Text("When enabled, Atoll listens for OSD notifications from BetterDisplay and displays them using your selected HUD style above. This works alongside the existing media key interception — BetterDisplay handles external display controls while Atoll provides the visual feedback.")
-                    .foregroundStyle(.secondary)
-                    .font(.caption)
+                if isBetterDisplayExpanded {
+                    Text("When enabled, Atoll listens for OSD notifications from BetterDisplay and displays them using your selected HUD style above.")
+                        .foregroundStyle(.secondary)
+                        .font(.caption)
+                }
+            }
+
+            // MARK: - Lunar
+
+            Section {
+                DisclosureGroup(isExpanded: $isLunarExpanded) {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(lunarStatusText)
+                                .font(.caption)
+                                .foregroundStyle(lunarStatusColor)
+                        }
+                        Spacer()
+                        Toggle("", isOn: $enableLunarIntegration)
+                            .toggleStyle(.switch)
+                            .labelsHidden()
+                            .disabled(!lunarManager.isDetected)
+                    }
+                    .settingsHighlight(id: highlightID("Lunar integration"))
+
+                    if !lunarManager.isDetected {
+                        Text("Install [Lunar](https://lunar.fyi) to control external display brightness, contrast, and volume through Atoll's HUD via DDC.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    } else if !lunarManager.isRunning {
+                        Text("Lunar is installed but not currently running. Launch Lunar to enable integration.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    } else if lunarManager.isConnected && enableLunarIntegration {
+                        Text("Connected to Lunar's DDC socket. Brightness, contrast, and volume adjustments will be shown through Atoll's HUD.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    } else if enableLunarIntegration {
+                        Text("Lunar is running but the socket connection is not yet established. It will connect automatically.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    } else {
+                        Text("Enable to route Lunar's DDC brightness, contrast, and volume changes through Atoll's HUD.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    if lunarManager.isDetected {
+                        Button {
+                            lunarManager.refreshDetectionStatus()
+                        } label: {
+                            Label("Refresh detection", systemImage: "arrow.clockwise")
+                                .font(.caption)
+                        }
+                        .buttonStyle(.link)
+                    }
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "moon.fill")
+                        Text("Lunar")
+                            .font(.system(size: 13, weight: .medium))
+                    }
+                }
+            } footer: {
+                if isLunarExpanded {
+                    Text("When enabled, Atoll connects to Lunar's TCP socket and displays DDC brightness, contrast, and volume events using your selected HUD style above.")
+                        .foregroundStyle(.secondary)
+                        .font(.caption)
+                }
             }
         }
     }
@@ -2158,6 +2242,7 @@ struct HUD: View {
     @Default(.enableBrightnessHUD) var enableBrightnessHUD
     @Default(.enableKeyboardBacklightHUD) var enableKeyboardBacklightHUD
     @Default(.enableBetterDisplayIntegration) var enableBetterDisplayIntegration
+    @Default(.enableLunarIntegration) var enableLunarIntegration
     @Default(.systemHUDSensitivity) var systemHUDSensitivity
     @ObservedObject var coordinator = DynamicIslandViewCoordinator.shared
     @ObservedObject private var accessibilityPermission = AccessibilityPermissionStore.shared
@@ -2176,7 +2261,7 @@ struct HUD: View {
     
     var body: some View {
         Form {
-            if !hasAccessibilityPermission && !enableBetterDisplayIntegration {
+            if !hasAccessibilityPermission && !enableBetterDisplayIntegration && !enableLunarIntegration {
                 Section {
                     SettingsPermissionCallout(
                         message: "Accessibility permission lets Dynamic Island replace the native volume, brightness, and keyboard HUDs.",
@@ -2190,13 +2275,13 @@ struct HUD: View {
 
 
             
-            if enableSystemHUD && !Defaults[.enableCustomOSD] && (hasAccessibilityPermission || enableBetterDisplayIntegration) {
+            if enableSystemHUD && !Defaults[.enableCustomOSD] && (hasAccessibilityPermission || enableBetterDisplayIntegration || enableLunarIntegration) {
                 Section {
                     Toggle("Volume HUD", isOn: $enableVolumeHUD)
                     Toggle("Brightness HUD", isOn: $enableBrightnessHUD)
                     Toggle("Keyboard Backlight HUD", isOn: $enableKeyboardBacklightHUD)
-                        .disabled(enableBetterDisplayIntegration)
-                        .help(enableBetterDisplayIntegration ? "Disabled while BetterDisplay integration is active \u{2014} BetterDisplay uses Cmd+Brightness keys for its own controls." : "")
+                        .disabled(enableBetterDisplayIntegration || enableLunarIntegration)
+                        .help((enableBetterDisplayIntegration || enableLunarIntegration) ? "Disabled while external display integration is active \u{2014} brightness keys are handled by the external app." : "")
                 } header: {
                     Text("Controls")
                 } footer: {
@@ -6909,6 +6994,7 @@ struct CustomOSDSettings: View {
     @Default(.enableOSDBrightness) var enableOSDBrightness
     @Default(.enableOSDKeyboardBacklight) var enableOSDKeyboardBacklight
     @Default(.enableBetterDisplayIntegration) var enableBetterDisplayIntegration
+    @Default(.enableLunarIntegration) var enableLunarIntegration
     @Default(.osdMaterial) var osdMaterial
     @Default(.osdLiquidGlassCustomizationMode) var osdLiquidGlassCustomizationMode
     @Default(.osdLiquidGlassVariant) var osdLiquidGlassVariant
@@ -6951,7 +7037,7 @@ struct CustomOSDSettings: View {
     
     var body: some View {
         Form {
-            if !hasAccessibilityPermission && !enableBetterDisplayIntegration {
+            if !hasAccessibilityPermission && !enableBetterDisplayIntegration && !enableLunarIntegration {
                 Section {
                     SettingsPermissionCallout(
                         message: "Accessibility permission is needed to intercept system controls for the Custom OSD.",
@@ -6963,7 +7049,7 @@ struct CustomOSDSettings: View {
                 }
             }
 
-            if hasAccessibilityPermission || enableBetterDisplayIntegration {
+            if hasAccessibilityPermission || enableBetterDisplayIntegration || enableLunarIntegration {
                 Section {
                     Toggle("Volume OSD", isOn: $enableOSDVolume)
                         .settingsHighlight(id: highlightID("Volume OSD"))
@@ -6971,8 +7057,8 @@ struct CustomOSDSettings: View {
                         .settingsHighlight(id: highlightID("Brightness OSD"))
                     Toggle("Keyboard Backlight OSD", isOn: $enableOSDKeyboardBacklight)
                         .settingsHighlight(id: highlightID("Keyboard Backlight OSD"))
-                        .disabled(enableBetterDisplayIntegration)
-                        .help(enableBetterDisplayIntegration ? "Disabled while BetterDisplay integration is active \u{2014} BetterDisplay uses Cmd+Brightness keys for its own controls." : "")
+                        .disabled(enableBetterDisplayIntegration || enableLunarIntegration)
+                        .help((enableBetterDisplayIntegration || enableLunarIntegration) ? "Disabled while external display integration is active \u{2014} brightness keys are handled by the external app." : "")
                 } header: {
                     Text("Controls")
                 } footer: {

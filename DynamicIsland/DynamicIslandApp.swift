@@ -159,6 +159,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         windowSizeUpdateWorkItem?.cancel()
         NotificationCenter.default.removeObserver(self)
         extensionXPCServiceHost.stop()
+
+        // Restore Lunar's native OSD if integration was active
+        LunarManager.shared.appWillTerminate()
     }
     
     @objc func onScreenLocked(_: Notification) {
@@ -415,6 +418,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         // Setup BetterDisplay integration
         BetterDisplayManager.shared.configure(coordinator: coordinator)
+
+        // Setup Lunar integration
+        LunarManager.shared.configure(coordinator: coordinator)
         
         // Setup ScreenRecording Manager
         if Defaults[.enableScreenRecordingDetection] {

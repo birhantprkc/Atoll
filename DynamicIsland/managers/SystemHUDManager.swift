@@ -188,6 +188,14 @@ class SystemHUDManager {
                 await self.startSystemObserver()
             }
         }.store(in: &cancellables)
+
+        // When Lunar integration toggled, restart observer to update brightness key interception
+        Defaults.publisher(.enableLunarIntegration, options: []).sink { [weak self] _ in
+            guard let self = self, self.isSetupComplete else { return }
+            Task { @MainActor in
+                await self.startSystemObserver()
+            }
+        }.store(in: &cancellables)
     }
     
     private var cancellables = Set<AnyCancellable>()
@@ -240,9 +248,9 @@ class SystemHUDManager {
             keyboardBacklightEnabled = Defaults[.enableKeyboardBacklightHUD]
         }
 
-        // When BetterDisplay integration is on, stop intercepting brightness and
-        // Cmd+Brightness keys so BetterDisplay receives them and sends OSD notifications.
-        if Defaults[.enableBetterDisplayIntegration] {
+        // When BetterDisplay or Lunar integration is on, stop intercepting brightness and
+        // Cmd+Brightness keys so the external app receives them and sends DDC/OSD events.
+        if Defaults[.enableBetterDisplayIntegration] || Defaults[.enableLunarIntegration] {
             brightnessEnabled = false
             keyboardBacklightEnabled = false
         }
