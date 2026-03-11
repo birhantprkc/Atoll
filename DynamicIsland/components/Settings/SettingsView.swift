@@ -7295,6 +7295,7 @@ struct TerminalSettings: View {
     @ObservedObject var terminalManager = TerminalManager.shared
     @Default(.enableTerminalFeature) var enableTerminalFeature
     @Default(.terminalShellPath) var terminalShellPath
+    @Default(.terminalFontFamily) var terminalFontFamily
     @Default(.terminalFontSize) var terminalFontSize
     @Default(.terminalOpacity) var terminalOpacity
     @Default(.terminalMaxHeightFraction) var terminalMaxHeightFraction
@@ -7313,6 +7314,21 @@ struct TerminalSettings: View {
 
     private var formattedMaxHeight: String {
         "\(Int(terminalMaxHeightFraction * 100))% of screen"
+    }
+
+    /// All monospaced font families available on the system.
+    private var monospacedFontFamilies: [String] {
+        NSFontManager.shared.availableFontFamilies.filter { family in
+            guard let font = NSFont(name: family, size: 12) else { return false }
+            return font.isFixedPitch
+                || font.fontDescriptor.symbolicTraits.contains(.monoSpace)
+        }
+        .sorted()
+    }
+
+    /// Display name for the font picker — shows "System Monospaced" when no custom font is set.
+    private var fontDisplayName: String {
+        terminalFontFamily.isEmpty ? "System Monospaced" : terminalFontFamily
     }
 
     private var cursorStyleBinding: Binding<TerminalCursorStyleOption> {
@@ -7365,6 +7381,20 @@ struct TerminalSettings: View {
 
                 // MARK: Appearance
                 Section {
+                    Picker("Font family", selection: $terminalFontFamily) {
+                        Text("System Monospaced").tag("")
+                        Divider()
+                        ForEach(monospacedFontFamilies, id: \.self) { family in
+                            Text(family)
+                                .font(.custom(family, size: 13))
+                                .tag(family)
+                        }
+                    }
+                    .onChange(of: terminalFontFamily) { _, newValue in
+                        terminalManager.applyFontFamily(newValue)
+                    }
+                    .settingsHighlight(id: highlightID("Font family"))
+
                     VStack(alignment: .leading, spacing: 8) {
                         HStack {
                             Text("Font size")

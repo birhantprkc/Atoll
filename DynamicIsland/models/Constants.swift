@@ -915,6 +915,7 @@ extension Defaults.Keys {
     // MARK: Terminal Feature
     static let enableTerminalFeature = Key<Bool>("enableTerminalFeature", default: false)
     static let terminalShellPath = Key<String>("terminalShellPath", default: "/bin/zsh")
+    static let terminalFontFamily = Key<String>("terminalFontFamily", default: "")
     static let terminalFontSize = Key<Double>("terminalFontSize", default: 12.0)
     static let terminalOpacity = Key<Double>("terminalOpacity", default: 1.0)
     static let terminalMaxHeightFraction = Key<Double>("terminalMaxHeightFraction", default: 0.4)
