@@ -747,6 +747,7 @@ struct SettingsView: View {
             SettingsSearchEntry(tab: .media, title: "Skip buttons", keywords: ["skip", "controls", "±10"], highlightID: SettingsTab.media.highlightID(for: "Skip buttons")),
             SettingsSearchEntry(tab: .media, title: "Sneak Peek Style", keywords: ["sneak peek", "preview"], highlightID: SettingsTab.media.highlightID(for: "Sneak Peek Style")),
             SettingsSearchEntry(tab: .media, title: "Enable lyrics", keywords: ["lyrics", "song text"], highlightID: SettingsTab.media.highlightID(for: "Enable lyrics")),
+            SettingsSearchEntry(tab: .media, title: "Auto-hide inactive notch media player", keywords: ["auto hide", "inactive", "placeholder", "notch media"], highlightID: SettingsTab.media.highlightID(for: "Auto-hide inactive notch media player")),
             SettingsSearchEntry(tab: .media, title: "Show Change Media Output control", keywords: ["airplay", "route picker", "media output"], highlightID: SettingsTab.media.highlightID(for: "Show Change Media Output control")),
             SettingsSearchEntry(tab: .media, title: "Enable album art parallax", keywords: ["parallax", "lock screen", "album art"], highlightID: SettingsTab.media.highlightID(for: "Enable album art parallax")),
             SettingsSearchEntry(tab: .media, title: "Enable album art parallax effect", keywords: ["parallax", "parallax effect", "album art"], highlightID: SettingsTab.media.highlightID(for: "Enable album art parallax effect")),
@@ -2397,6 +2398,7 @@ struct Media: View {
     @Default(.lockScreenGlassCustomizationMode) private var lockScreenGlassCustomizationMode
     @Default(.lockScreenMusicAlbumParallaxEnabled) private var lockScreenMusicAlbumParallaxEnabled
     @Default(.showStandardMediaControls) private var showStandardMediaControls
+    @Default(.autoHideInactiveNotchMediaPlayer) private var autoHideInactiveNotchMediaPlayer
 
     private func highlightID(_ title: String) -> String {
         SettingsTab.media.highlightID(for: title)
@@ -2444,12 +2446,20 @@ struct Media: View {
                     .disabled(enableMinimalisticUI)
                     .settingsHighlight(id: highlightID("Show media controls in Dynamic Island"))
 
+                Defaults.Toggle("Auto-hide inactive notch media player", key: .autoHideInactiveNotchMediaPlayer)
+                    .disabled(enableMinimalisticUI || !showStandardMediaControls)
+                    .settingsHighlight(id: highlightID("Auto-hide inactive notch media player"))
+
                 if enableMinimalisticUI {
                     Text("Disable Minimalistic UI to configure the standard notch media controls.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 } else if standardControlsSuppressed {
                     Text("Standard notch media controls are hidden. Re-enable the toggle above to restore them.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                } else if !autoHideInactiveNotchMediaPlayer {
+                    Text("When disabled, the notch music player stays visible with placeholder metadata even when playback is inactive.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }

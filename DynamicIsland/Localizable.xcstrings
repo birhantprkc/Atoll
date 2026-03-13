@@ -26249,6 +26249,9 @@
         }
       }
     },
+    "When disabled, the notch music player stays visible with placeholder metadata even when playback is inactive." : {
+
+    },
     "When enabled, Atoll connects to Lunar's TCP socket and displays DDC brightness, contrast, and volume events using your selected HUD style above." : {
 
     },

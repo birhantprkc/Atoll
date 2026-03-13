@@ -36,8 +36,6 @@ struct MusicPlayerView: View {
                 .padding(.all, 5)
             MusicControlsView()
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .drawingGroup()
-                .compositingGroup()
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -529,11 +527,12 @@ struct NotchHomeView: View {
     @ObservedObject private var extensionNotchExperienceManager = ExtensionNotchExperienceManager.shared
     @ObservedObject private var musicManager = MusicManager.shared
     @Default(.showStandardMediaControls) private var showStandardMediaControls
+    @Default(.autoHideInactiveNotchMediaPlayer) private var autoHideInactiveNotchMediaPlayer
     let albumArtNamespace: Namespace.ID
 
     /// Whether the music player should actively display (enabled AND has real content).
     private var shouldShowMusicPlayer: Bool {
-        showStandardMediaControls && musicManager.hasActiveSession
+        showStandardMediaControls && (!autoHideInactiveNotchMediaPlayer || musicManager.hasActiveSession)
     }
     
     var body: some View {
