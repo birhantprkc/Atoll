@@ -56,8 +56,13 @@ struct AlbumArtView: View {
     }
 
     private var albumArtBackground: some View {
-        Image(nsImage: musicManager.albumArt)
-            .resizable()
+        Color.clear
+            .aspectRatio(1, contentMode: .fit)
+            .background(
+                Image(nsImage: musicManager.albumArt)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+            )
             .clipped()
             .clipShape(
                 RoundedRectangle(
@@ -65,7 +70,6 @@ struct AlbumArtView: View {
                         ? MusicPlayerImageSizes.cornerRadiusInset.opened
                         : MusicPlayerImageSizes.cornerRadiusInset.closed)
             )
-            .aspectRatio(1, contentMode: .fit)
             .scaleEffect(x: 1.3, y: 1.4)
             .rotationEffect(.degrees(92))
             .blur(radius: 40)
@@ -100,9 +104,13 @@ struct AlbumArtView: View {
     }
 
     private var albumArtImage: some View {
-        Image(nsImage: musicManager.albumArt)
-            .resizable()
+        Color.clear
             .aspectRatio(1, contentMode: .fit)
+            .overlay {
+                Image(nsImage: musicManager.albumArt)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+            }
             .matchedGeometryEffect(id: "albumArt", in: albumArtNamespace)
         .clipped()
         .clipShape(
