@@ -1048,6 +1048,7 @@ extension Defaults.Keys {
     // MARK: Third-Party DDC Integration
     static let enableThirdPartyDDCIntegration = Key<Bool>("enableThirdPartyDDCIntegration", default: false)
     static let thirdPartyDDCProvider = Key<ThirdPartyDDCProvider>("thirdPartyDDCProvider", default: .betterDisplay)
+    static let enableExternalVolumeControlListener = Key<Bool>("enableExternalVolumeControlListener", default: false)
     static let didMigrateThirdPartyDDCIntegration = Key<Bool>("didMigrateThirdPartyDDCIntegration", default: false)
 
     // Legacy keys retained for migration/backward compatibility

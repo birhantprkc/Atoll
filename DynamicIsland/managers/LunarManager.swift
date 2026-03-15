@@ -91,6 +91,10 @@ final class LunarManager: ObservableObject {
         Defaults[.enableThirdPartyDDCIntegration] && Defaults[.thirdPartyDDCProvider] == .lunar
     }
 
+    private var isExternalVolumeListenerEnabled: Bool {
+        isLunarIntegrationEnabled && Defaults[.enableExternalVolumeControlListener]
+    }
+
     private init() {
         isDetected = Self.checkInstallation()
         isRunning = Self.checkRunning()
@@ -293,6 +297,7 @@ final class LunarManager: ObservableObject {
         let targetScreen = resolveScreen(for: data.display)
         let isExternal = isExternalDisplay(data.display, resolvedScreen: targetScreen)
         let hasVolumeData = data.volume != nil || data.mute != nil
+        let externalVolumeListenerEnabled = isExternalVolumeListenerEnabled
         let resolvedScreenText = targetScreen?.localizedName ?? "nil"
         let brightnessText = data.brightness.map { String($0) } ?? "nil"
         let contrastText = data.contrast.map { String($0) } ?? "nil"
@@ -300,7 +305,7 @@ final class LunarManager: ObservableObject {
         let muteText = data.mute.map { String($0) } ?? "nil"
 
         NSLog(
-            "🌙 Lunar routed payload: display=\(data.display) resolvedScreen=\(resolvedScreenText) isExternal=\(isExternal) brightness=\(brightnessText) contrast=\(contrastText) volume=\(volumeText) mute=\(muteText) hasVolumeData=\(hasVolumeData)"
+            "🌙 Lunar routed payload: display=\(data.display) resolvedScreen=\(resolvedScreenText) isExternal=\(isExternal) brightness=\(brightnessText) contrast=\(contrastText) volume=\(volumeText) mute=\(muteText) hasVolumeData=\(hasVolumeData) externalVolumeListener=\(externalVolumeListenerEnabled)"
         )
 
         // Nits-only events are informational (no user-facing HUD needed).
@@ -321,13 +326,17 @@ final class LunarManager: ObservableObject {
         }
 
         // Volume
-        if let volume = data.volume {
-            let value = CGFloat(volume)
-            let isMuted = data.mute ?? false
-            dispatchVolumeHUD(value: value, isMuted: isMuted, onScreen: targetScreen)
-        } else if let mute = data.mute {
-            // Mute toggle without a volume value
-            dispatchVolumeHUD(value: mute ? 0 : 1, isMuted: mute, onScreen: targetScreen)
+        if externalVolumeListenerEnabled {
+            if let volume = data.volume {
+                let value = CGFloat(volume)
+                let isMuted = data.mute ?? false
+                dispatchVolumeHUD(value: value, isMuted: isMuted, onScreen: targetScreen)
+            } else if let mute = data.mute {
+                // Mute toggle without a volume value
+                dispatchVolumeHUD(value: mute ? 0 : 1, isMuted: mute, onScreen: targetScreen)
+            }
+        } else if hasVolumeData {
+            NSLog("🌙 Lunar volume payload ignored because external volume listener is disabled")
         }
     }
 

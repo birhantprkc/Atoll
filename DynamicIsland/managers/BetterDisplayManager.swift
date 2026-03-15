@@ -119,6 +119,10 @@ final class BetterDisplayManager: ObservableObject {
         Defaults[.enableThirdPartyDDCIntegration] && Defaults[.thirdPartyDDCProvider] == .betterDisplay
     }
 
+    private var isExternalVolumeListenerEnabled: Bool {
+        isBetterDisplayIntegrationEnabled && Defaults[.enableExternalVolumeControlListener]
+    }
+
     private init() {
         isDetected = Self.checkInstallation()
         isRunning = Self.checkRunning()
@@ -239,6 +243,7 @@ final class BetterDisplayManager: ObservableObject {
         let isExternalDisplay = isExternal(displayID: osd.displayID, resolvedScreen: targetScreen)
         let inferredMute = osd.controlTarget == "mute" || osd.systemIconID == 4
         let hasVolumeData = category == .volume && osd.value != nil
+        let externalVolumeListenerEnabled = isExternalVolumeListenerEnabled
         let targetText = osd.controlTarget ?? "nil"
         let displayIDText = osd.displayID.map { String($0) } ?? "nil"
         let resolvedScreenText = targetScreen?.localizedName ?? "nil"
@@ -247,7 +252,7 @@ final class BetterDisplayManager: ObservableObject {
         let normalizedText = String(format: "%.3f", normalizedValue)
 
         NSLog(
-            "📺 BetterDisplay routed payload: category=\(categoryName(category)) target=\(targetText) displayID=\(displayIDText) resolvedScreen=\(resolvedScreenText) isExternal=\(isExternalDisplay) rawValue=\(valueText) maxValue=\(maxValueText) normalized=\(normalizedText) hasVolumeData=\(hasVolumeData) inferredMute=\(inferredMute)"
+            "📺 BetterDisplay routed payload: category=\(categoryName(category)) target=\(targetText) displayID=\(displayIDText) resolvedScreen=\(resolvedScreenText) isExternal=\(isExternalDisplay) rawValue=\(valueText) maxValue=\(maxValueText) normalized=\(normalizedText) hasVolumeData=\(hasVolumeData) inferredMute=\(inferredMute) externalVolumeListener=\(externalVolumeListenerEnabled)"
         )
 
         switch category {
@@ -256,6 +261,10 @@ final class BetterDisplayManager: ObservableObject {
             dispatchBrightnessHUD(value: normalizedValue, customSymbol: icon, onScreen: targetScreen)
 
         case .volume:
+            guard externalVolumeListenerEnabled else {
+                NSLog("📺 BetterDisplay volume payload ignored because external volume listener is disabled")
+                return
+            }
             let isMuted = osd.controlTarget == "mute" || osd.systemIconID == 4
             dispatchVolumeHUD(value: normalizedValue, isMuted: isMuted, onScreen: targetScreen)
 

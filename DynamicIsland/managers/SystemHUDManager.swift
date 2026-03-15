@@ -195,6 +195,13 @@ class SystemHUDManager {
                 await self.startSystemObserver()
             }
         }.store(in: &cancellables)
+
+        Defaults.publisher(.enableExternalVolumeControlListener, options: []).sink { [weak self] _ in
+            guard let self = self, self.isSetupComplete else { return }
+            Task { @MainActor in
+                await self.startSystemObserver()
+            }
+        }.store(in: &cancellables)
     }
     
     private var cancellables = Set<AnyCancellable>()
@@ -227,7 +234,7 @@ class SystemHUDManager {
         }
     }
     
-    /// Resolves the effective control flags, applying BetterDisplay overrides.
+    /// Resolves the effective control flags, applying third-party DDC overrides.
     private func resolvedControlFlags() -> (volume: Bool, brightness: Bool, backlight: Bool) {
         var volumeEnabled: Bool
         var brightnessEnabled: Bool
@@ -252,6 +259,11 @@ class SystemHUDManager {
         if Defaults[.enableThirdPartyDDCIntegration] {
             brightnessEnabled = false
             keyboardBacklightEnabled = false
+
+            // Optional: route volume exclusively from the selected external provider.
+            if Defaults[.enableExternalVolumeControlListener] {
+                volumeEnabled = false
+            }
         }
 
         return (volumeEnabled, brightnessEnabled, keyboardBacklightEnabled)
@@ -280,7 +292,7 @@ class SystemHUDManager {
         // Force disable system HUD to ensure no duplicates
         SystemOSDManager.disableSystemHUD()
         
-        print("System observer started (HUD: \(Defaults[.enableSystemHUD]), OSD: \(Defaults[.enableCustomOSD]), Vertical: \(Defaults[.enableVerticalHUD]), ThirdPartyDDC: \(Defaults[.enableThirdPartyDDCIntegration]), Provider: \(Defaults[.thirdPartyDDCProvider].displayName))")
+        print("System observer started (HUD: \(Defaults[.enableSystemHUD]), OSD: \(Defaults[.enableCustomOSD]), Vertical: \(Defaults[.enableVerticalHUD]), ThirdPartyDDC: \(Defaults[.enableThirdPartyDDCIntegration]), Provider: \(Defaults[.thirdPartyDDCProvider].displayName), ExternalVolumeListener: \(Defaults[.enableExternalVolumeControlListener]))")
         isSystemOperationInProgress = false
     }
     
