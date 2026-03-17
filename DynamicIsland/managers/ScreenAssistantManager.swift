@@ -1103,7 +1103,13 @@ class ScreenAssistantManager: NSObject, ObservableObject {
     }
     
     func clearChat() {
+        resetConversationContext()
+    }
+
+    func resetConversationContext() {
+        isLoading = false
         chatMessages.removeAll()
+        clearAllFiles()
     }
     
     private func addAssistantMessage(_ content: String) {
