@@ -406,7 +406,7 @@ struct StandaloneCalendarView: View {
                 ScrollViewReader { proxy in
                     VStack(spacing: 6) {
                         LazyVGrid(columns: Array(repeating: GridItem(.flexible(minimum: 14), spacing: 6), count: 7), spacing: 6) {
-                            ForEach(weekdaySymbols, id: \.self) { symbol in
+                            ForEach(Array(weekdaySymbols.enumerated()), id: \.offset) { _, symbol in
                                 Text(symbol.prefix(1))
                                     .font(.caption2)
                                     .fontWeight(.semibold)
