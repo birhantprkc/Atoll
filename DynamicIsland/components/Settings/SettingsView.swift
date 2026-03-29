@@ -3439,12 +3439,14 @@ struct Shelf: View {
                                 if let imgData = provider.imageData, let nsImg = NSImage(data: imgData) {
                                     Image(nsImage: nsImg)
                                         .resizable()
-                                        .aspectRatio(contentMode: .fit)
+                                        .scaledToFit()
+                                        .frame(width: 16, height: 16)
+                                        .clipShape(RoundedRectangle(cornerRadius: 3))
                                 } else {
                                     Image(systemName: "square.and.arrow.up")
+                                        .frame(width: 16, height: 16)
                                 }
                             }
-                            .frame(width: 16, height: 16)
                             .foregroundColor(.accentColor)
                             Text(provider.id)
                         }
@@ -3460,12 +3462,14 @@ struct Shelf: View {
                             if let imgData = selectedProvider.imageData, let nsImg = NSImage(data: imgData) {
                                 Image(nsImage: nsImg)
                                     .resizable()
-                                    .aspectRatio(contentMode: .fit)
+                                    .scaledToFit()
+                                    .frame(width: 16, height: 16)
+                                    .clipShape(RoundedRectangle(cornerRadius: 3))
                             } else {
                                 Image(systemName: "square.and.arrow.up")
+                                    .frame(width: 16, height: 16)
                             }
                         }
-                        .frame(width: 16, height: 16)
                         .foregroundColor(.accentColor)
                         VStack(alignment: .leading, spacing: 2) {
                             Text("Currently selected: \(selectedProvider.id)")
