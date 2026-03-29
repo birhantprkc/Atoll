@@ -35,6 +35,14 @@ struct LocalSendDeviceInfo: Identifiable, Hashable, Sendable {
     }
 }
 
+enum LocalSendTransferState: Equatable {
+    case idle
+    case sending
+    case completed
+    case failed(String)
+    case rejected(deviceID: String)
+}
+
 @MainActor
 final class LocalSendService: NSObject, ObservableObject {
     static let shared = LocalSendService()
@@ -43,6 +51,8 @@ final class LocalSendService: NSObject, ObservableObject {
     @Published private(set) var isRefreshing = false
     @Published private(set) var isSending = false
     @Published private(set) var sendProgress: Double = 0
+    @Published private(set) var transferState: LocalSendTransferState = .idle
+    @Published private(set) var rejectedDeviceIDs: Set<String> = []
     @Published var selectedDeviceID: String {
         didSet { Defaults[.localSendSelectedDeviceID] = selectedDeviceID }
     }
@@ -59,10 +69,19 @@ final class LocalSendService: NSObject, ObservableObject {
     private var recentProbeIPs: [String] = []
     private var knownPeerIPs: [String] = []
     private var isStarted = false
+    private var completionDismissTask: Task<Void, Never>?
 
     private override init() {
         selectedDeviceID = Defaults[.localSendSelectedDeviceID]
         super.init()
+    }
+    
+    func clearRejectedStatus(for deviceID: String) {
+        rejectedDeviceIDs.remove(deviceID)
+    }
+    
+    func clearAllRejectedStatuses() {
+        rejectedDeviceIDs.removeAll()
     }
 
     func startDiscovery() {
@@ -483,6 +502,8 @@ final class LocalSendService: NSObject, ObservableObject {
         let startedAt = Date()
         isSending = true
         sendProgress = 0
+        transferState = .sending
+        completionDismissTask?.cancel()
 
         do {
             guard let target = devices.first(where: { $0.id == selectedDeviceID }) ?? devices.first else {
@@ -495,7 +516,7 @@ final class LocalSendService: NSObject, ObservableObject {
             let prepare = try await prepareUpload(files: files, to: target)
             guard !prepare.fileTokens.isEmpty else {
                 sendProgress = 1
-                await finishSending(startedAt: startedAt)
+                await finishSending(startedAt: startedAt, success: true)
                 return
             }
 
@@ -527,14 +548,24 @@ final class LocalSendService: NSObject, ObservableObject {
             }
 
             sendProgress = 1
-            await finishSending(startedAt: startedAt)
+            await finishSending(startedAt: startedAt, success: true)
+        } catch let error as LocalSendServiceError {
+            if case .transferRejected = error {
+                rejectedDeviceIDs.insert(selectedDeviceID)
+                transferState = .rejected(deviceID: selectedDeviceID)
+            } else {
+                transferState = .failed(error.localizedDescription)
+            }
+            await finishSending(startedAt: startedAt, success: false)
+            throw error
         } catch {
-            await finishSending(startedAt: startedAt)
+            transferState = .failed(error.localizedDescription)
+            await finishSending(startedAt: startedAt, success: false)
             throw error
         }
     }
 
-    private func finishSending(startedAt: Date) async {
+    private func finishSending(startedAt: Date, success: Bool) async {
         let elapsed = Date().timeIntervalSince(startedAt)
         let minimumVisibleDuration: TimeInterval = 0.8
         if elapsed < minimumVisibleDuration {
@@ -543,6 +574,27 @@ final class LocalSendService: NSObject, ObservableObject {
         }
         isSending = false
         sendProgress = 0
+        
+        if success {
+            transferState = .completed
+            // Auto-dismiss completed state after 3 seconds
+            completionDismissTask = Task { @MainActor in
+                try? await Task.sleep(nanoseconds: 3_000_000_000)
+                if case .completed = self.transferState {
+                    self.transferState = .idle
+                }
+            }
+        } else {
+            // Auto-dismiss failed/rejected state after 4 seconds
+            completionDismissTask = Task { @MainActor in
+                try? await Task.sleep(nanoseconds: 4_000_000_000)
+                if case .failed = self.transferState {
+                    self.transferState = .idle
+                } else if case .rejected = self.transferState {
+                    self.transferState = .idle
+                }
+            }
+        }
     }
 
     private func sendAnnouncement() {
@@ -880,6 +932,10 @@ final class LocalSendService: NSObject, ObservableObject {
         if http.statusCode == 204 {
             return ("", [:])
         }
+        // HTTP 403 means the transfer was rejected by the recipient
+        if http.statusCode == 403 {
+            throw LocalSendServiceError.transferRejected
+        }
         guard (200 ... 299).contains(http.statusCode) else {
             let body = String(data: data, encoding: .utf8)
             throw LocalSendServiceError.server(status: http.statusCode, body: body)
@@ -1037,6 +1093,7 @@ enum LocalSendServiceError: LocalizedError {
     case invalidTarget
     case invalidResponse
     case server(status: Int, body: String?)
+    case transferRejected
 
     var errorDescription: String? {
         switch self {
@@ -1053,6 +1110,8 @@ enum LocalSendServiceError: LocalizedError {
                 return "LocalSend peer error (\(status)): \(body)"
             }
             return "LocalSend peer error (\(status))"
+        case .transferRejected:
+            return "Transfer was rejected by the recipient"
         }
     }
 }

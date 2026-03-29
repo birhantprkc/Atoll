@@ -49,7 +49,9 @@ final class LocalSendDevicePickerWindowManager {
         )
         
         if let existingWindow = window {
-            existingWindow.contentView = NSHostingView(rootView: pickerView)
+            let hostingView = NSHostingView(rootView: pickerView)
+            hostingView.layer?.backgroundColor = .clear
+            existingWindow.contentView = hostingView
             existingWindow.makeKeyAndOrderFront(nil)
             return
         }
@@ -74,7 +76,15 @@ final class LocalSendDevicePickerWindowManager {
         newWindow.hasShadow = true
         newWindow.level = .floating
         newWindow.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
-        newWindow.contentView = NSHostingView(rootView: pickerView)
+        
+        let hostingView = NSHostingView(rootView: 
+            pickerView
+                .background(Color.clear)
+        )
+        hostingView.wantsLayer = true
+        hostingView.layer?.backgroundColor = .clear
+        hostingView.layer?.isOpaque = false
+        newWindow.contentView = hostingView
         newWindow.isMovableByWindowBackground = true
         
         window = newWindow
@@ -134,8 +144,12 @@ struct LocalSendDevicePickerView: View {
     
     var body: some View {
         ZStack {
-            // Background
+            // Explicitly clear background for proper transparency
+            Color.clear
+            
+            // Background - clips to rounded rect
             panelBackground
+                .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
             
             // Content
             VStack(spacing: 16) {
@@ -203,6 +217,7 @@ struct LocalSendDevicePickerView: View {
                 .stroke(Color.white.opacity(0.2), lineWidth: 1)
         }
         .shadow(color: Color.black.opacity(0.4), radius: 30, x: 0, y: 15)
+        .compositingGroup()
         .onAppear {
             localSend.startDiscovery()
             localSend.refreshDeviceScan()
@@ -291,7 +306,9 @@ struct LocalSendDevicePickerView: View {
                     DeviceGridItem(
                         device: device,
                         isHovered: hoveredDeviceID == device.id,
+                        isRejected: localSend.rejectedDeviceIDs.contains(device.id),
                         onSelect: {
+                            localSend.clearRejectedStatus(for: device.id)
                             onDeviceSelected(device)
                         }
                     )
@@ -311,6 +328,7 @@ struct LocalSendDevicePickerView: View {
 private struct DeviceGridItem: View {
     let device: LocalSendDeviceInfo
     let isHovered: Bool
+    let isRejected: Bool
     let onSelect: () -> Void
     
     var body: some View {
@@ -319,23 +337,27 @@ private struct DeviceGridItem: View {
                 // Device icon
                 ZStack {
                     Circle()
-                        .fill(Color.white.opacity(isHovered ? 0.15 : 0.08))
+                        .fill(isRejected ? Color.red.opacity(0.15) : Color.white.opacity(isHovered ? 0.15 : 0.08))
                         .frame(width: 56, height: 56)
                     
                     Image(systemName: deviceIcon)
                         .font(.system(size: 24, weight: .medium))
-                        .foregroundColor(isHovered ? .accentColor : .white.opacity(0.8))
+                        .foregroundColor(isRejected ? .red : (isHovered ? .accentColor : .white.opacity(0.8)))
                 }
                 
                 // Device name
                 VStack(spacing: 2) {
                     Text(device.alias)
                         .font(.system(size: 12, weight: .medium))
-                        .foregroundColor(.white)
+                        .foregroundColor(isRejected ? .red : .white)
                         .lineLimit(1)
                         .truncationMode(.tail)
                     
-                    if let model = device.model, !model.isEmpty {
+                    if isRejected {
+                        Text("Rejected")
+                            .font(.system(size: 10, weight: .medium))
+                            .foregroundColor(.red.opacity(0.8))
+                    } else if let model = device.model, !model.isEmpty {
                         Text(model)
                             .font(.system(size: 10))
                             .foregroundColor(.white.opacity(0.5))
@@ -348,7 +370,7 @@ private struct DeviceGridItem: View {
             .padding(.vertical, 16)
             .background(
                 RoundedRectangle(cornerRadius: 16)
-                    .fill(Color.white.opacity(isHovered ? 0.12 : 0.06))
+                    .fill(isRejected ? Color.red.opacity(0.08) : Color.white.opacity(isHovered ? 0.12 : 0.06))
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 16)

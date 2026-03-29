@@ -288,8 +288,9 @@ struct FileShareView: View {
                 LocalSendDevicePickerWindowManager.shared.show(
                     onDeviceSelected: { device in
                         localSend.selectedDeviceID = device.id
-                        showLocalSendPicker = false
                         if let providers = pendingDropProviders {
+                            // Close the picker first since handleDrop will use quickShare properly
+                            showLocalSendPicker = false
                             Task {
                                 await handleDrop(providers)
                                 pendingDropProviders = nil
