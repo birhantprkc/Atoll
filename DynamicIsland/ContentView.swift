@@ -991,10 +991,10 @@ struct ContentView: View {
                     .background(
                         Image(nsImage: musicManager.albumArt)
                             .resizable()
-                            .scaledToFill()
+                            .aspectRatio(contentMode: .fit)
+                            .clipShape(RoundedRectangle(cornerRadius: musicManager.albumArt.size.width/musicManager.albumArt.size.height > 1.0 ? MusicPlayerImageSizes.cornerRadiusInset.closed/3.0 : MusicPlayerImageSizes.cornerRadiusInset.closed))
                     )
                     .clipped()
-                    .clipShape(RoundedRectangle(cornerRadius: MusicPlayerImageSizes.cornerRadiusInset.closed))
                     .matchedGeometryEffect(id: "albumArt", in: albumArtNamespace)
                     .albumArtFlip(angle: musicManager.flipAngle)
                 albumArtBadge(for: secondary, badgeSize: badgeDisplaySize)

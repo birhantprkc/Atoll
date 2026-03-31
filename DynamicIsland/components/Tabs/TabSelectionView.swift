@@ -105,7 +105,7 @@ struct TabSelectionView: View {
         return tabsArray
     }
     var body: some View {
-        HStack(spacing: 32) {
+        HStack(spacing: 24) {
             ForEach(tabs) { tab in
                 let isSelected = isSelected(tab)
                 let activeAccent = tab.accentColor ?? .white

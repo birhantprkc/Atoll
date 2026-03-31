@@ -1142,18 +1142,21 @@ struct MinimalisticAlbumArtView: View {
         Button {
             musicManager.openMusicApp()
         } label: {
-            Color.clear
-                .aspectRatio(1, contentMode: .fit)
-                .background(
-                    Image(nsImage: musicManager.albumArt)
-                        .resizable()
-                        .scaledToFill()
-                )
-                .clipped()
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-                .matchedGeometryEffect(id: "albumArt", in: albumArtNamespace)
-                .albumArtFlip(angle: musicManager.flipAngle)
-                .parallax3D()
+                Color.clear
+                    .aspectRatio(1, contentMode: .fit)
+                    .background(
+                        
+                        Image(nsImage: musicManager.albumArt)
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .clipShape(RoundedRectangle(cornerRadius: musicManager.albumArt.size.width/musicManager.albumArt.size.height > 1.0 ? 4 : 12))
+                        
+                        
+                    )
+                    .clipped()
+                    .matchedGeometryEffect(id: "albumArt", in: albumArtNamespace)
+                    .albumArtFlip(angle: musicManager.flipAngle)
+                    .parallax3D()
         }
         .buttonStyle(PlainButtonStyle())
         .opacity(musicManager.isPlaying ? 1 : 0.4)

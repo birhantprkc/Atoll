@@ -60,15 +60,18 @@ struct AlbumArtView: View {
             .background(
                 Image(nsImage: musicManager.albumArt)
                     .resizable()
-                    .scaledToFill()
+                    .aspectRatio(contentMode: .fit)
+                    .clipShape(
+                        RoundedRectangle(
+                            cornerRadius: Defaults[.cornerRadiusScaling]
+                                ? musicManager.albumArt.size.width/musicManager.albumArt.size.height > 1.0 ? MusicPlayerImageSizes.cornerRadiusInset.opened/3 : MusicPlayerImageSizes.cornerRadiusInset.opened
+                                : musicManager.albumArt.size.width/musicManager.albumArt.size.height > 1.0 ? MusicPlayerImageSizes.cornerRadiusInset.closed/3 : MusicPlayerImageSizes.cornerRadiusInset.closed
+
+
+                        )
+                    )
             )
             .clipped()
-            .clipShape(
-                RoundedRectangle(
-                    cornerRadius: Defaults[.cornerRadiusScaling]
-                        ? MusicPlayerImageSizes.cornerRadiusInset.opened
-                        : MusicPlayerImageSizes.cornerRadiusInset.closed)
-            )
             .scaleEffect(x: 1.3, y: 1.4)
             .rotationEffect(.degrees(92))
             .blur(radius: 40)
@@ -110,17 +113,19 @@ struct AlbumArtView: View {
             .overlay {
                 Image(nsImage: musicManager.albumArt)
                     .resizable()
-                    .scaledToFill() //to ensure the thumbnail will always be within the square icon
-                    
+                    .aspectRatio(contentMode: .fit)
+                    .clipShape(
+                        RoundedRectangle(
+                            cornerRadius: Defaults[.cornerRadiusScaling]
+                                ? musicManager.albumArt.size.width/musicManager.albumArt.size.height > 1.0 ? MusicPlayerImageSizes.cornerRadiusInset.opened/3 : MusicPlayerImageSizes.cornerRadiusInset.opened
+                                : musicManager.albumArt.size.width/musicManager.albumArt.size.height > 1.0 ? MusicPlayerImageSizes.cornerRadiusInset.closed/3 : MusicPlayerImageSizes.cornerRadiusInset.closed
+
+
+                        )
+                    ) // ensures that even the rectagular album cover is rounded just like the MacOS media player
             }
             .matchedGeometryEffect(id: "albumArt", in: albumArtNamespace)
         .clipped()
-        .clipShape(
-            RoundedRectangle(
-                cornerRadius: Defaults[.cornerRadiusScaling]
-                    ? MusicPlayerImageSizes.cornerRadiusInset.opened
-                    : MusicPlayerImageSizes.cornerRadiusInset.closed)
-        )
     }
 
     @ViewBuilder
