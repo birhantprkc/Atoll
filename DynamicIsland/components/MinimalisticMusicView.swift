@@ -63,6 +63,7 @@ struct MinimalisticMusicView: View {
                                 // Lyrics under the author name (same font size as author)
                                 if enableLyrics {
                                     lyricsLineView
+                                        .font(.system(size: 11, weight: .regular))
                                 }
                             }
                             .frame(width: geo.size.width, height: geo.size.height, alignment: .center)

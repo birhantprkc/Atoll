@@ -2443,6 +2443,9 @@ struct Media: View {
     @Default(.lockScreenMusicAlbumParallaxEnabled) private var lockScreenMusicAlbumParallaxEnabled
     @Default(.showStandardMediaControls) private var showStandardMediaControls
     @Default(.autoHideInactiveNotchMediaPlayer) private var autoHideInactiveNotchMediaPlayer
+    @Default(.parallaxEffectIntensity) private var parallaxEffectIntensity
+
+    
     @ObservedObject private var musicManager = MusicManager.shared
 
     private var isAppleMusicActive: Bool {
@@ -2587,10 +2590,18 @@ struct Media: View {
                     Text("Enable lyrics")
                 }
                 .settingsHighlight(id: highlightID("Enable lyrics"))
-                Defaults.Toggle(key: .enableParallaxEffect) {
-                    Text("Enable album art parallax effect")
+                
+                //Parallax Effect Intensity to control how much parallax is wanted
+                Slider(value: $parallaxEffectIntensity, in: 0...12, step: 1.0) {
+                    HStack {
+                        Text("Parallax Effect Intensity")
+                        Spacer()
+                        Text("\(parallaxEffectIntensity, specifier: "%0.1f")")
+                            .foregroundStyle(.secondary)
+                    }
                 }
                 .settingsHighlight(id: highlightID("Enable album art parallax effect"))
+                
                 Picker("Sneak Peek Style", selection: $sneakPeekStyles){
                     ForEach(SneakPeekStyle.allCases) { style in
                         Text(style.rawValue).tag(style)

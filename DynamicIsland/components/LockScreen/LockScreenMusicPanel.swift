@@ -301,7 +301,7 @@ struct LockScreenMusicPanel: View {
                 if showAppIcon, let icon = lockScreenAppIcon {
                     icon
                         .resizable()
-                        .aspectRatio(contentMode: .fill)
+                        .scaledToFill()
                         .frame(width: appIconSize, height: appIconSize)
                         .clipShape(RoundedRectangle(cornerRadius: appIconCornerRadius, style: .continuous))
                         .shadow(color: Color.black.opacity(0.35), radius: 6, x: 0, y: 4)
@@ -310,7 +310,7 @@ struct LockScreenMusicPanel: View {
                 }
             }
             .albumArtFlip(angle: musicManager.flipAngle)
-            .parallax3D(magnitude: 12, enableOverride: lockScreenParallaxEnabled, suspended: isParallaxSuspended)
+            .parallax3D(enableOverride: lockScreenParallaxEnabled, suspended: isParallaxSuspended)
             .frame(width: size, height: size)
             .background(albumArtBackground(cornerRadius: cornerRadius))
         }
@@ -1049,7 +1049,7 @@ struct LockScreenMusicPanel: View {
     private func albumArtImage(size: CGFloat, cornerRadius: CGFloat) -> some View {
         Image(nsImage: musicManager.albumArt)
             .resizable()
-            .aspectRatio(contentMode: .fit)
+            .scaledToFill()
             .frame(width: size, height: size)
             .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
     }
@@ -1082,7 +1082,7 @@ struct LockScreenMusicPanel: View {
     }
 
     private var appIconCornerRadius: CGFloat {
-        isExpanded ? 18 : 10
+        isExpanded ? 18 : 12
     }
 
     private var appIconOffset: CGFloat {

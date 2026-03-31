@@ -991,7 +991,7 @@ struct ContentView: View {
                     .background(
                         Image(nsImage: musicManager.albumArt)
                             .resizable()
-                            .aspectRatio(contentMode: .fit)
+                            .scaledToFill()
                     )
                     .clipped()
                     .clipShape(RoundedRectangle(cornerRadius: MusicPlayerImageSizes.cornerRadiusInset.closed))

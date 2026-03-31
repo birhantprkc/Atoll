@@ -374,7 +374,7 @@ struct MinimalisticMusicPlayerView: View {
 private struct MinimalisticReminderEventListView: View {
     let reminders: [ReminderLiveActivityManager.ReminderEntry]
 
-    private let textFont = Font.system(size: 13, weight: .semibold)
+    private let textFont = Font.system(size: 13, weight: .regular)
     private let separatorSpacing: CGFloat = 10
 
     var body: some View {
@@ -1128,7 +1128,7 @@ struct MinimalisticAlbumArtView: View {
             .background(
                 Image(nsImage: musicManager.albumArt)
                     .resizable()
-                    .aspectRatio(contentMode: .fit)
+                    .scaledToFill()
             )
             .clipped()
             .clipShape(RoundedRectangle(cornerRadius: 12))
@@ -1147,13 +1147,13 @@ struct MinimalisticAlbumArtView: View {
                 .background(
                     Image(nsImage: musicManager.albumArt)
                         .resizable()
-                        .aspectRatio(contentMode: .fit)
+                        .scaledToFill()
                 )
                 .clipped()
                 .clipShape(RoundedRectangle(cornerRadius: 12))
                 .matchedGeometryEffect(id: "albumArt", in: albumArtNamespace)
                 .albumArtFlip(angle: musicManager.flipAngle)
-                .parallax3D(magnitude: 12)
+                .parallax3D()
         }
         .buttonStyle(PlainButtonStyle())
         .opacity(musicManager.isPlaying ? 1 : 0.4)
