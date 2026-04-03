@@ -1550,7 +1550,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "%lldx"
+            "value": "%lldм назад"
           }
         }
       },
@@ -2148,7 +2148,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "1x"
+            "value": "1 мин"
           }
         }
       }
@@ -2748,7 +2748,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Цилиндр акцента"
+            "value": "Выделяющий цвет"
           }
         },
         "tr": {
@@ -2872,7 +2872,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Доступ запрещен"
+            "value": "Доступ запрещён"
           }
         },
         "tr": {
@@ -3566,7 +3566,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Добавить новый визуализатор"
+            "value": "Добавить новую визуализацию"
           }
         },
         "tr": {
@@ -3797,6 +3797,7 @@
         }
       }
     },
+    "Adjusts the lock screen timer widget width without affecting button sizing.": {},
     "AI Assistant": {
       "localizations": {
         "fr": {
@@ -5036,7 +5037,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Иконка приложения"
+            "value": "Значок приложения"
           }
         },
         "tr": {
@@ -5282,7 +5283,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Вы уверены, что хотите удалить «%@»?"
+            "value": "AQI"
           }
         }
       }
@@ -5792,7 +5793,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Автоматически загружать обновления"
+            "value": "Автоматически загружать уведомления"
           }
         },
         "tr": {
@@ -5900,7 +5901,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Подсветка"
+            "value": "Фон"
           }
         }
       }
@@ -5994,7 +5995,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Аккумулятор"
+            "value": "Батарея"
           }
         },
         "tr": {
@@ -6432,7 +6433,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Состояние батареи"
+            "value": "Статус батареи"
           }
         },
         "tr": {
@@ -6536,7 +6537,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Синяя пунктирная рамка — реальный размер в Atoll"
+            "value": "Экранные индикаторы BetterDisplay будут отображаться в активном стиле панели Atoll. Убедитесь, что интеграция индикатора включена в BetterDisplay: Настройки › Приложение › Интеграция."
           }
         }
       }
@@ -6619,7 +6620,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Устройство Bluetooth %1$@: %2$d%%"
+            "value": "Bluetooth-устройство %1$@ на %2$d %"
           }
         }
       }
@@ -6717,7 +6718,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Менеджер буфера обмена"
+            "value": "Повысьте свою продуктивность с помощью менеджера буфера обмена."
           }
         },
         "tr": {
@@ -6824,7 +6825,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Детализация"
+            "value": "Перерыв"
           }
         }
       }
@@ -6848,7 +6849,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Яркость"
+            "value": "Пауза"
           }
         }
       }
@@ -7203,7 +7204,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Доступ к календарю запрещен. Разрешите его в Системных настройках."
+            "value": "Доступ к календарю запрещен. Пожалуйста, включите его в настройках системы."
           }
         },
         "tr": {
@@ -7301,7 +7302,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Календари"
+            "value": "Виджет календаря"
           }
         }
       }
@@ -7628,6 +7629,7 @@
         }
       }
     },
+    "Change Media Output": {},
     "Charging": {
       "comment": "Charging fallback label when no estimate is available",
       "localizations": {
@@ -7824,7 +7826,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Зарядка приостановлена: настольный режим"
+            "value": "Зарядка приостановлена: Настольный режим"
           }
         },
         "tr": {
@@ -7924,7 +7926,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Проверить обновления…"
+            "value": "Проверить обновления..."
           }
         },
         "tr": {
@@ -8443,7 +8445,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Круговой"
+            "value": "Круг"
           }
         },
         "tr": {
@@ -8568,7 +8570,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Очистить"
+            "value": "Классическая форма выреза, плавно переходящая в верхний край экрана"
           }
         }
       }
@@ -9302,7 +9304,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Соберите последний отчет о сбое для разработчика."
+            "value": "Разработка и отладка: цветовая пипетка, мониторинг статистики и экранный помощник."
           }
         }
       }
@@ -9726,7 +9728,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Скоро"
+            "value": "Скоро будет"
           }
         },
         "tr": {
@@ -10504,7 +10506,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Использование CPU"
+            "value": "ЦП"
           }
         }
       }
@@ -10740,6 +10742,10 @@
         }
       }
     },
+    "Currently: %@": {
+      "comment": "A label inside the quick share settings view, describing the currently selected quick share service.",
+      "isCommentAutoGenerated": true
+    },
     "Cursor": {
       "localizations": {
         "ko": {
@@ -10790,7 +10796,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Пользовательский"
+            "value": "Стиль указателя"
           }
         }
       }
@@ -10819,11 +10825,12 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Свой цвет"
+            "value": "Пользовательский цвет"
           }
         }
       }
     },
+    "Custom Focus metadata": {},
     "Custom height": {
       "localizations": {
         "ar": {
@@ -10901,7 +10908,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Своя высота"
+            "value": "Пользовательская высота"
           }
         },
         "tr": {
@@ -11095,7 +11102,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Своя анимация музыки в Live Activity"
+            "value": "Пользовательская анимация эфира активности музыки"
           }
         },
         "tr": {
@@ -11195,7 +11202,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Свой размер выреза — %.0f"
+            "value": "Пользовательский размер выреза - %.0f"
           }
         },
         "tr": {
@@ -11394,7 +11401,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Свои визуализаторы (Lottie)"
+            "value": "Пользовательская визуализация (Lottie)"
           }
         },
         "tr": {
@@ -11574,7 +11581,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Настроить в окне конфигурации"
+            "value": "Персонализировать в Настройках"
           }
         },
         "tr": {
@@ -11596,6 +11603,10 @@
           }
         }
       }
+    },
+    "Customize the appearance of the LocalSend device selection popup that appears when you drop files.": {
+      "comment": "A description of the LocalSend device picker.",
+      "isCommentAutoGenerated": true
     },
     "Dash outline equals the exact notch bounds.": {
       "comment": "A description under the live preview section of the animation editor.",
@@ -11758,7 +11769,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Польз. таймер по умолчанию"
+            "value": "Стандартный"
           }
         }
       }
@@ -11899,6 +11910,7 @@
         }
       }
     },
+    "Denied": {},
     "Denied/Revoked": {
       "comment": "A label describing an extension with denied or revoked permissions.",
       "isCommentAutoGenerated": true,
@@ -12107,7 +12119,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Статус обнаружения"
+            "value": "Дизайнер"
           }
         }
       }
@@ -12129,6 +12141,10 @@
           }
         }
       }
+    },
+    "Device Picker Style": {
+      "comment": "A dropdown menu that lets you choose how the LocalSend device picker is displayed.",
+      "isCommentAutoGenerated": true
     },
     "Devices": {
       "comment": "The title of the \"Devices\" section in the settings menu.",
@@ -12464,7 +12480,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Дискретные переходы: Зеленый (0–60%), Желтый (60–85%) и Красный (85–100%)."
+            "value": "Отключено при активной интеграции BetterDisplay — приложение использует Cmd+Клавиши яркости для своего управления."
           }
         }
       }
@@ -12530,7 +12546,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Чтение с диска"
+            "value": "Диск"
           }
         }
       }
@@ -12655,7 +12671,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Показывает HUD-уведомление при подключении Bluetooth-аудиоустройств (наушников, AirPods, колонок), отображая имя и заряд."
+            "value": "Стиль дисплея"
           }
         }
       }
@@ -12737,7 +12753,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Не беспокоить"
+            "value": "Отображает ближайшее предстоящее событие календаря над или под виджетом погоды. Выбор календаря здесь не зависит от фильтра календаря в динамическом острове."
           }
         }
       }
@@ -12779,7 +12795,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Готово"
+            "value": "Поддержать"
           }
         }
       }
@@ -12871,7 +12887,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Загрузить"
+            "value": "Загрузка"
           }
         },
         "tr": {
@@ -12949,7 +12965,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Стиль иконки загрузки"
+            "value": "Стиль значка загрузки"
           }
         }
       }
@@ -13287,7 +13303,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Бросьте файлы сюда"
+            "value": "Перетащите файлы сюда"
           }
         },
         "tr": {
@@ -13379,7 +13395,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "dynamic.island"
+            "value": "Видимость динамического острова"
           }
         }
       },
@@ -13636,7 +13652,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Изменить макет"
+            "value": "Редактировать макет"
           }
         },
         "tr": {
@@ -13682,6 +13698,7 @@
         }
       }
     },
+    "Empty Slot": {},
     "Enable \"Idle Animation\" to customize animations": {
       "localizations": {
         "ko": {
@@ -13907,6 +13924,7 @@
         }
       }
     },
+    "Enable colored spectograms": {},
     "Enable colored spectrograms": {
       "localizations": {
         "ar": {
@@ -13984,7 +14002,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Цветные спектрограммы"
+            "value": "Включить цветную спектрограмму"
           }
         },
         "tr": {
@@ -14429,7 +14447,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Заменять системный HUD"
+            "value": "Включить замену системной панели"
           }
         },
         "tr": {
@@ -14507,7 +14525,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Включить размытие медиа-панели"
+            "value": "Включите в Настройках → Терминал"
           }
         }
       }
@@ -14609,7 +14627,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Включить музыкальную Live Activity"
+            "value": "Включить эфир активности для музыки"
           }
         },
         "tr": {
@@ -14949,7 +14967,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Включить Live Activity таймера"
+            "value": "Включить сторонние расширения"
           }
         }
       }
@@ -15111,7 +15129,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Улучшите свой опыт с HUD"
+            "value": "Повысьте удобство работы с панелями"
           }
         },
         "tr": {
@@ -15399,7 +15417,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Список событий"
+            "value": "Цвет события"
           }
         }
       }
@@ -15510,7 +15528,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Выйти"
+            "value": "Выход"
           }
         },
         "tr": {
@@ -15831,6 +15849,10 @@
         }
       }
     },
+    "Files dropped here will be shared via this service": {
+      "comment": "A description of what happens when files are dropped into the AirDrop view.",
+      "isCommentAutoGenerated": true
+    },
     "Files dropped on the shelf will be shared via this service": {
       "comment": "A description below the currently selected quick share provider, explaining that files dropped on the shelf will be shared via that provider.",
       "isCommentAutoGenerated": true,
@@ -15854,6 +15876,10 @@
           }
         }
       }
+    },
+    "Files shared from the shelf will use this service": {
+      "comment": "A description of how files shared from the shelf will be shared.",
+      "isCommentAutoGenerated": true
     },
     "Fill Notch": {
       "localizations": {
@@ -16100,7 +16126,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Статус Фокуса"
+            "value": "Режим обнаружения фокуса"
           }
         }
       }
@@ -16177,6 +16203,7 @@
         }
       }
     },
+    "Forward 10s": {},
     "Free": {
       "localizations": {
         "ru": {
@@ -16212,7 +16239,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Своб. · %@"
+            "value": "Текст"
           }
         }
       }
@@ -16245,6 +16272,7 @@
         }
       }
     },
+    "Full Access": {},
     "Full charge": {
       "comment": "Text displayed in the status text when the battery is fully charged.",
       "isCommentAutoGenerated": true,
@@ -16286,6 +16314,7 @@
         }
       }
     },
+    "Full Disk Access unlocks custom Focus icons, colors, and labels. Standard Focus detection still works without it—grant access only if you need personalized indicators.": {},
     "Fully charged": {
       "comment": "Charging fallback label when already charged",
       "localizations": {
@@ -16414,7 +16443,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Основные"
+            "value": "Общие"
           }
         },
         "tr": {
@@ -16738,7 +16767,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Начать"
+            "value": "Приступить"
           }
         },
         "tr": {
@@ -17031,7 +17060,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Понятно!"
+            "value": "Есть!"
           }
         },
         "tr": {
@@ -17105,7 +17134,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Использование GPU"
+            "value": "ГП"
           }
         }
       }
@@ -17274,7 +17303,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Высота:"
+            "value": "Зелёный"
           }
         }
       }
@@ -17339,6 +17368,7 @@
         }
       }
     },
+    "Hide active event and show next upcoming event": {},
     "Hide all-day events": {
       "comment": "A toggle to hide all-day events in the calendar.",
       "isCommentAutoGenerated": true,
@@ -17518,7 +17548,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Скрывать только если приложение NowPlaying в полноэкранном режиме"
+            "value": "Скрывать только во время полноэкранного режима медиа приложения"
           }
         },
         "tr": {
@@ -17628,7 +17658,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Иерархический"
+            "value": "Ступенчатый"
           }
         },
         "tr": {
@@ -17815,7 +17845,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Размер истории"
+            "value": "История"
           }
         }
       }
@@ -17838,6 +17868,7 @@
       },
       "shouldTranslate": false
     },
+    "Hours": {},
     "https://example.com/animation.json": {
       "comment": "A placeholder text for a Lottie JSON URL input field.",
       "isCommentAutoGenerated": true,
@@ -18075,7 +18106,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Стиль HUD"
+            "value": "Стиль панели"
           }
         },
         "tr": {
@@ -18176,7 +18207,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "HUD"
+            "value": "Панели"
           }
         },
         "tr": {
@@ -18335,7 +18366,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Импорт"
+            "value": "Изображение"
           }
         }
       }
@@ -18605,7 +18636,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Встроенный"
+            "value": "Строкой"
           }
         },
         "tr": {
@@ -18690,7 +18721,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Устанавливать обновления автоматически"
+            "value": "Автоматически устанавливать обновления"
           }
         }
       }
@@ -18975,7 +19006,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "HUD подсветки клавиатуры"
+            "value": "Только что"
           }
         }
       }
@@ -19080,6 +19111,7 @@
         }
       }
     },
+    "Last Update": {},
     "Last Updated": {
       "localizations": {
         "fr": {
@@ -19397,10 +19429,14 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Liquid Glass требуется macOS 26 или новее."
+            "value": "Жидкое стекло"
           }
         }
       }
+    },
+    "Liquid Glass Variant": {
+      "comment": "A label for selecting the variant of the Liquid Glass effect.",
+      "isCommentAutoGenerated": true
     },
     "Listens for Focus session changes via distributed notifications": {
       "localizations": {
@@ -19673,6 +19709,10 @@
         }
       }
     },
+    "LocalSend Device Picker": {
+      "comment": "A section header for the LocalSend device picker settings.",
+      "isCommentAutoGenerated": true
+    },
     "Lock Screen": {
       "localizations": {
         "fr": {
@@ -19696,7 +19736,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Экран блокировки"
+            "value": "Загрузка..."
           }
         }
       }
@@ -20018,7 +20058,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "URL Lottie JSON"
+            "value": "Ссылка на JSON Lottie"
           }
         },
         "tr": {
@@ -20278,6 +20318,7 @@
         }
       }
     },
+    "Lyrics": {},
     "Mac battery at %d percent": {
       "comment": "Mac battery gauge accessibility label",
       "localizations": {
@@ -20296,7 +20337,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Заряд батареи Mac: %d%%"
+            "value": "Режим энергосбережения: %d"
           }
         }
       }
@@ -20365,6 +20406,10 @@
         }
       }
     },
+    "Make sure LocalSend is running on other devices": {
+      "comment": "A description of the error.",
+      "isCommentAutoGenerated": true
+    },
     "Manage indicator preferences from Settings → Privacy. No manual microphone toggle is required.": {
       "comment": "A description of how to manage the microphone privacy indicator preferences.",
       "isCommentAutoGenerated": true,
@@ -20384,7 +20429,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Управляйте индикаторами в Настройки → Конфиденциальность. Ручной переключатель микрофона не требуется."
+            "value": "Стиль главного экрана"
           }
         }
       }
@@ -20614,7 +20659,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Соответствовать реальному размеру выреза"
+            "value": "Соответствовать реальным размерам выреза"
           }
         },
         "tr": {
@@ -20669,7 +20714,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Параметры материала:"
+            "value": "Материал"
           }
         }
       }
@@ -20751,7 +20796,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Макс. емкость: %lld%%"
+            "value": "Максимальная ёмкость: %lld%%"
           }
         },
         "tr": {
@@ -20983,7 +21028,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Горизонтальные жесты для управления медиа"
+            "value": "Средний"
           }
         },
         "tr": {
@@ -21183,7 +21228,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Таймаут неактивности медиа"
+            "value": "Таймаут отсутствия активности медиа"
           }
         },
         "tr": {
@@ -21278,6 +21323,7 @@
         }
       }
     },
+    "Media Panel Width": {},
     "Media playback live activity": {
       "localizations": {
         "ar": {
@@ -21355,7 +21401,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Окно Live Activity для медиа"
+            "value": "Эфир активности воспроизведения медиа"
           }
         },
         "tr": {
@@ -21555,8 +21601,8 @@
         },
         "ru": {
           "stringUnit": {
-            "state": "translated",
-            "value": "Mediuм"
+            "state": "needs_review",
+            "value": "Medium"
           }
         },
         "tr": {
@@ -21682,7 +21728,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Использование памяти"
+            "value": "Память"
           }
         }
       }
@@ -21764,7 +21810,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Иконка в строке меню"
+            "value": "Значок в строке меню"
           }
         },
         "tr": {
@@ -21908,7 +21954,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Микрофон %@"
+            "value": "Микро %@"
           }
         },
         "tr": {
@@ -22211,7 +22257,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Минимальное время наведения"
+            "value": "Минимальная длительность наведения курсора"
           }
         },
         "tr": {
@@ -22457,7 +22503,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Зеркалить форму"
+            "value": "Форма зеркала"
           }
         },
         "tr": {
@@ -22779,6 +22825,7 @@
         }
       }
     },
+    "Music": {},
     "Music panel variant": {
       "localizations": {
         "ko": {
@@ -23108,7 +23155,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Имя"
+            "value": "Название"
           }
         },
         "tr": {
@@ -23310,7 +23357,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Скачивание"
+            "value": "Сеть"
           }
         }
       }
@@ -23453,6 +23500,7 @@
         }
       }
     },
+    "Next Track": {},
     "No active interfaces detected yet.": {
       "comment": "A message displayed when there are no active network interfaces to display.",
       "isCommentAutoGenerated": true,
@@ -23738,7 +23786,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Нет пользовательской анимации"
+            "value": "Нет пользовательских анимаций"
           }
         },
         "tr": {
@@ -23838,7 +23886,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Нет пользовательского визуализатора"
+            "value": "Нет пользовательских визуализаций"
           }
         },
         "tr": {
@@ -23860,6 +23908,10 @@
           }
         }
       }
+    },
+    "No devices found": {
+      "comment": "A message displayed when there are no local send devices available.",
+      "isCommentAutoGenerated": true
     },
     "No events": {
       "comment": "A description displayed when there are no events in the calendar.",
@@ -23962,7 +24014,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Сегодня событий нет"
+            "value": "Сегодня нет событий"
           }
         },
         "tr": {
@@ -24003,7 +24055,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Нет исключений"
+            "value": "Исключений нет"
           }
         }
       }
@@ -24412,7 +24464,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Высота дисплея без выреза"
+            "value": "Высота для дисплеев без выреза"
           }
         },
         "tr": {
@@ -24493,6 +24545,7 @@
         }
       }
     },
+    "Not Determined": {},
     "Not Now": {
       "localizations": {
         "ar": {
@@ -24792,7 +24845,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Высота дисплея с вырезом"
+            "value": "Высота выреза"
           }
         },
         "tr": {
@@ -25013,7 +25066,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Уведомлять за"
+            "value": "Ничего не воспроизводится"
           }
         }
       }
@@ -25260,7 +25313,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Один или несколько файлов не удалось загрузить"
+            "value": "Не удалось загрузить один или несколько файлов"
           }
         },
         "tr": {
@@ -25301,7 +25354,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Только иконка приложения"
+            "value": "Только значок приложения"
           }
         }
       }
@@ -25372,7 +25425,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Только иконка скачивания"
+            "value": "Только значок загрузки"
           }
         }
       }
@@ -25455,6 +25508,7 @@
         }
       }
     },
+    "Open Privacy & Security": {},
     "Open shelf tab by default if items added": {
       "localizations": {
         "ru": {
@@ -25520,7 +25574,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Открывает панель ИИ-помощника. По умолчанию Cmd+Shift+A."
+            "value": "Открывает прозрачное окно предварительного просмотра с имитаций данных, отражающих текущую конфигурацию виджета экрана блокировки."
           }
         }
       }
@@ -25646,7 +25700,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Выходные устройства"
+            "value": "Использование Option в качестве Meta клавиши отправляет Esc+клавишу вместо специальных символов macOS. Отправка сообщений о действиях мыши передаёт события мыши приложениям терминала, например vim или tmux."
           }
         }
       }
@@ -25851,7 +25905,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Проценты"
+            "value": "Процент"
           }
         }
       }
@@ -26047,7 +26101,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Закрепите элементы из истории, чтобы сохранить их здесь"
+            "value": "Остров с закруглёнными углами, похожий на динамический остров iPhone"
           }
         }
       }
@@ -26118,6 +26172,7 @@
         }
       }
     },
+    "Play / Pause": {},
     "Play feedback when volume is changed": {
       "localizations": {
         "ru": {
@@ -26604,6 +26659,7 @@
         }
       }
     },
+    "Previous Track": {},
     "Privacy Indicators": {
       "comment": "A heading for the section that lists privacy indicators.",
       "isCommentAutoGenerated": true,
@@ -26700,7 +26756,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Индикатор"
+            "value": "Индикатор прогресса"
           }
         }
       }
@@ -26804,7 +26860,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Стиль индикатора"
+            "value": "Стиль индикатора прогресса"
           }
         },
         "tr": {
@@ -26910,6 +26966,10 @@
         }
       }
     },
+    "Quick Share settings": {
+      "comment": "A help text for the \"Quick Share settings\" button in the AirDrop view.",
+      "isCommentAutoGenerated": true
+    },
     "Quit": {
       "localizations": {
         "ar": {
@@ -26987,7 +27047,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Завершить"
+            "value": "Закрыть"
           }
         },
         "tr": {
@@ -27319,6 +27379,7 @@
         }
       }
     },
+    "Recommended minimum width adjusts automatically based on the number of enabled tabs.": {},
     "Recording": {
       "localizations": {
         "fr": {
@@ -27422,6 +27483,11 @@
           }
         }
       }
+    },
+    "Refresh devices": {},
+    "Rejected": {
+      "comment": "A label displayed when a device is rejected.",
+      "isCommentAutoGenerated": true
     },
     "Release name": {
       "localizations": {
@@ -27600,7 +27666,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Запоминать последнюю вкладку"
+            "value": "Запомнить последнюю вкладку"
           }
         },
         "tr": {
@@ -27686,7 +27752,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Напоминания"
+            "value": "Виджет напоминаний"
           }
         }
       }
@@ -27819,6 +27885,7 @@
         }
       }
     },
+    "Repeat": {},
     "Request Access": {
       "localizations": {
         "fr": {
@@ -27842,11 +27909,12 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Запросить доступ"
+            "value": "Удалить выбранное"
           }
         }
       }
     },
+    "Request Full Disk Access": {},
     "Requires a third-party client with API plugin enabled.": {
       "comment": "Description of a music controller type when it requires a third-party client with an API plugin enabled.",
       "isCommentAutoGenerated": true,
@@ -28009,6 +28077,8 @@
         }
       }
     },
+    "Reset Media Width": {},
+    "Reset Music": {},
     "Reset Notch Experiences": {
       "comment": "A menu item that resets all notch experiences for a particular app.",
       "isCommentAutoGenerated": true,
@@ -28057,6 +28127,8 @@
         }
       }
     },
+    "Reset Timer": {},
+    "Reset Timer Width": {},
     "Reset to Default": {
       "localizations": {
         "fr": {
@@ -28109,6 +28181,7 @@
         }
       }
     },
+    "Reset Weather": {},
     "Reset Width": {
       "comment": "A button to reset the expanded notch width to its default value.",
       "isCommentAutoGenerated": true,
@@ -28335,7 +28408,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Восстановить"
+            "value": "Перезапускает процессы оболочки. Любые несохраненные данные в терминале будут потеряны."
           }
         }
       }
@@ -28388,6 +28461,7 @@
         }
       }
     },
+    "Restricted": {},
     "Resume": {
       "localizations": {
         "fr": {
@@ -28460,6 +28534,7 @@
         }
       }
     },
+    "Rewind 10s": {},
     "Rich Text": {
       "comment": "Name for a clipboard item type that represents a rich text format.",
       "isCommentAutoGenerated": true,
@@ -28530,7 +28605,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Вращение:"
+            "value": "Кольцо"
           }
         }
       }
@@ -28613,7 +28688,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Выполняется"
+            "value": "Запущено"
           }
         },
         "tr": {
@@ -28820,6 +28895,14 @@
           }
         }
       }
+    },
+    "Scan Again": {
+      "comment": "A button to refresh the list of nearby devices.",
+      "isCommentAutoGenerated": true
+    },
+    "Scanning for devices...": {
+      "comment": "A description of the scanning process for devices.",
+      "isCommentAutoGenerated": true
     },
     "Screen Assistant": {
       "localizations": {
@@ -29082,7 +29165,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Искать в буфере обмена..."
+            "value": "Строк обратной прокрутки"
           }
         }
       }
@@ -29245,7 +29328,6 @@
       }
     },
     "Seconds": {
-      "extractionState": "stale",
       "localizations": {
         "fr": {
           "stringUnit": {
@@ -29368,6 +29450,10 @@
           }
         }
       }
+    },
+    "Select Device": {
+      "comment": "A label displayed above the LocalSend device picker view.",
+      "isCommentAutoGenerated": true
     },
     "Select one or more profiles to customize your experience": {
       "comment": "A description below the header that instructs users to select one or more profiles to customize their experience.",
@@ -29813,7 +29899,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Сеанс · ↓ %1$@ · ↑ %2$@"
+            "value": "Сессия · ↓ %1$@ · ↑ %2$@"
           }
         }
       }
@@ -30077,7 +30163,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Полка"
+            "value": "Панель файлов"
           }
         },
         "tr": {
@@ -30234,6 +30320,7 @@
         }
       }
     },
+    "Show \"Change Media Output\" control": {},
     "Show All Color Formats": {
       "localizations": {
         "ru": {
@@ -30331,7 +30418,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Показывать индикатор батареи"
+            "value": "Показать индикатор заряда батареи"
           }
         },
         "tr": {
@@ -30458,7 +30545,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Показывать индикатор зарядки"
+            "value": "Показать индикатор зарядки"
           }
         }
       }
@@ -30631,7 +30718,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Показывать забавную анимацию при неактивности"
+            "value": "Показать прикольную анимацию лица при бездействия"
           }
         },
         "tr": {
@@ -30706,7 +30793,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Показывать прогресс загрузки"
+            "value": "Показать прогресс загрузки"
           }
         }
       }
@@ -30787,6 +30874,7 @@
         }
       }
     },
+    "Show floating media controls": {},
     "Show floating pause/stop controls": {
       "localizations": {
         "ko": {
@@ -30804,7 +30892,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Показывать плавающие элементы паузы/остановки"
+            "value": "Показать вкладки расширений"
           }
         }
       }
@@ -30953,6 +31041,7 @@
         }
       }
     },
+    "Show merged AirPlay and output devices": {},
     "Show next calendar event": {
       "localizations": {
         "ru": {
@@ -31040,7 +31129,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Показывать на конкретном дисплее"
+            "value": "Показать на определённом дисплее"
           }
         },
         "tr": {
@@ -31140,7 +31229,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Показывать на всех дисплеях"
+            "value": "Показать на всех дисплеях"
           }
         },
         "tr": {
@@ -31359,7 +31448,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Показывать кнопки перемешивания/повтора"
+            "value": "Показать кнопки перемешивания и повтора"
           }
         },
         "tr": {
@@ -31551,7 +31640,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Показывает рассуждения модели перед выдачей ответа"
+            "value": "Показывает экранный помощник во всплывающей панели рядом с вырезом"
           }
         }
       }
@@ -31578,6 +31667,8 @@
         }
       }
     },
+    "Shrinks the lock screen media panel while keeping the expanded view full width.": {},
+    "Shuffle": {},
     "Simple and minimal interface with just the essentials for everyday tasks.": {
       "localizations": {
         "ko": {
@@ -31612,7 +31703,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Размер и масштаб"
+            "value": "Простой и минималистичный интерфейс с самым необходимым для повседневных задач."
           }
         }
       }
@@ -32032,7 +32123,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Стиль быстрого просмотра"
+            "value": "Стиль предварительного просмотра"
           }
         },
         "tr": {
@@ -32548,7 +32639,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Начать"
+            "value": "Стандартные элементы управления предыдущим/следующим треком"
           }
         }
       }
@@ -33082,7 +33173,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Остановить"
+            "value": "Держите дела под контролем с календарём, таймером и мониторингом батареи."
           }
         }
       }
@@ -33405,7 +33496,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Поддержите нас"
+            "value": "Поддержать нас"
           }
         },
         "tr": {
@@ -33725,7 +33816,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Сделать снимок выделенной области"
+            "value": "Вкладка"
           }
         }
       }
@@ -33889,7 +33980,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Эти элементы находятся рядом с вырезом во время работы таймера."
+            "value": "Эти элементы управления дублируют вкладку «Экран блокировки», позволяя настроить панель медиа с акцентом на параметры воспроизведения."
           }
         }
       }
@@ -34487,6 +34578,7 @@
         }
       }
     },
+    "Timer Widget Width": {},
     "Title": {
       "comment": "A label for the title input field in the note editor.",
       "isCommentAutoGenerated": true,
@@ -34588,7 +34680,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Открыть/закрыть вырез:"
+            "value": "Переключить открытие выреза:"
           }
         },
         "tr": {
@@ -34688,7 +34780,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Быстрый просмотр:"
+            "value": "Переключить предварительный просмотр:"
           }
         },
         "tr": {
@@ -35055,7 +35147,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Смахивание двумя пальцами вверх для закрытия, вниз для открытия, если отключено открытие при наведении."
+            "value": "Сделайте свайп двумя пальцами вверх, чтобы свернуть вырез и вниз - чтобы его развернуть, когда функция **Развернуть вырез при наведении курсора\" отключена"
           }
         },
         "tr": {
@@ -35302,7 +35394,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Разблокируйте расширенные функции и улучшите свой опыт. Обновитесь для дополнительных настроек!"
+            "value": "Откройте для себя расширенные возможности и улучшите свой пользовательский опыт. Обновите подписку прямо сейчас, чтобы получить больше настроек!"
           }
         },
         "tr": {
@@ -35402,7 +35494,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "со звуком"
+            "value": "незаглушенный"
           }
         },
         "tr": {
@@ -35470,7 +35562,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Интервал обновления"
+            "value": "Отключено"
           }
         }
       }
@@ -35581,7 +35673,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Перейти на Pro"
+            "value": "Обновиться до Pro"
           }
         },
         "tr": {
@@ -35692,7 +35784,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Использование"
+            "value": "Ссылка"
           }
         }
       }
@@ -36006,7 +36098,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Используется"
+            "value": "Использовать без инструментов разработчика (DevTools)"
           }
         }
       }
@@ -36155,6 +36247,10 @@
         }
       },
       "shouldTranslate": false
+    },
+    "Variant %lld": {
+      "comment": "A label for a specific variant of the Liquid Glass.",
+      "isCommentAutoGenerated": true
     },
     "Version": {
       "localizations": {
@@ -36356,6 +36452,7 @@
         }
       }
     },
+    "Vertical Bar": {},
     "Vertical offset": {
       "localizations": {
         "ko": {
@@ -36390,7 +36487,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "По вертикали:"
+            "value": "Вертикальный отступ"
           }
         }
       },
@@ -36483,7 +36580,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Смотреть на GitHub: th-ch/youtube-music"
+            "value": "Посмотреть на GitHub: th-ch/youtube-music"
           }
         },
         "tr": {
@@ -36629,7 +36726,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Погода"
+            "value": "З "
           }
         }
       }
@@ -36971,7 +37068,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "При отключении все сочетания клавиш будут неактивны."
+            "value": "Когда параметр «Жирный текст как яркие цвета» отключён, он отображается более толстым начертанием шрифта вместо использования ярких ANSI-цветов."
           }
         }
       }
@@ -37073,7 +37170,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "При включении на вкладке Stats будут отображаться графики производительности в реальном времени."
+            "value": "При включении, вырез на экране сдвигается вверх и скрывается на внешних (не имеющих выреза) дисплеях, пока вы не наведете на него курсор."
           }
         }
       }
@@ -37118,6 +37215,7 @@
         }
       }
     },
+    "Width adjustments apply only to the standard notch layout. Disable Minimalistic UI to edit this value.": {},
     "Width:": {
       "extractionState": "stale",
       "localizations": {
@@ -37244,11 +37342,12 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Запись"
+            "value": "Работает со всеми медиа приложениями, включая браузеры, определяя, что воспроизводится. Заметка: функция может быть удалена в будущих версиях macOS."
           }
         }
       }
     },
+    "Write Only": {},
     "Written": {
       "localizations": {
         "ru": {
@@ -37364,7 +37463,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Теперь вы можете наслаждаться приложением. Настройки всегда доступны в меню."
+            "value": "Теперь Вы можете пользоваться приложением. Если хотите внести дополнительные изменения, Вы всегда можете сделать это в настройках."
           }
         },
         "tr": {
@@ -37464,7 +37563,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "Все готово!"
+            "value": "Всё готово!"
           }
         },
         "tr": {
@@ -37638,7 +37737,7 @@
         "ru": {
           "stringUnit": {
             "state": "translated",
-            "value": "YouTube Music требует установки этого стороннего приложения: "
+            "value": "Для работы YouTube Music необходимо установить следующее стороннее приложение: "
           }
         },
         "tr": {
