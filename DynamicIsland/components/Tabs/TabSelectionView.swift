@@ -141,6 +141,7 @@ struct TabSelectionView: View {
             }
         }
         .animation(.smooth(duration: 0.3), value: coordinator.currentView)
+        .clipShape(Capsule())
         .onAppear {
             ensureValidSelection(with: tabs)
         }
