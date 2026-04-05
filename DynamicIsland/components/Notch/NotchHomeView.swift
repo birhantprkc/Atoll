@@ -33,7 +33,6 @@ struct MusicPlayerView: View {
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
             AlbumArtView(vm: vm, albumArtNamespace: albumArtNamespace)
-                .padding(.all, 5)
             MusicControlsView()
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
@@ -62,14 +61,17 @@ struct AlbumArtView: View {
                 Image(nsImage: musicManager.albumArt)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
+                    .clipShape(
+                        RoundedRectangle(
+                            cornerRadius: Defaults[.cornerRadiusScaling]
+                                ? musicManager.albumArt.size.width/musicManager.albumArt.size.height > 1.0 ? MusicPlayerImageSizes.cornerRadiusInset.opened/3 : MusicPlayerImageSizes.cornerRadiusInset.opened
+                                : musicManager.albumArt.size.width/musicManager.albumArt.size.height > 1.0 ? MusicPlayerImageSizes.cornerRadiusInset.closed/3 : MusicPlayerImageSizes.cornerRadiusInset.closed
+
+
+                        )
+                    )
             )
             .clipped()
-            .clipShape(
-                RoundedRectangle(
-                    cornerRadius: Defaults[.cornerRadiusScaling]
-                        ? MusicPlayerImageSizes.cornerRadiusInset.opened
-                        : MusicPlayerImageSizes.cornerRadiusInset.closed)
-            )
             .scaleEffect(x: 1.3, y: 1.4)
             .rotationEffect(.degrees(92))
             .blur(radius: 40)
@@ -86,7 +88,9 @@ struct AlbumArtView: View {
                     appIconOverlay
                 }
                 .albumArtFlip(angle: musicManager.flipAngle)
-                .parallax3D(magnitude: 12)
+                .parallax3D()
+                .padding(.bottom, -5)
+
             }
             .buttonStyle(PlainButtonStyle())
             .scaleEffect(musicManager.isPlaying ? 1 : 0.85)
@@ -110,15 +114,18 @@ struct AlbumArtView: View {
                 Image(nsImage: musicManager.albumArt)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
+                    .clipShape(
+                        RoundedRectangle(
+                            cornerRadius: Defaults[.cornerRadiusScaling]
+                                ? musicManager.albumArt.size.width/musicManager.albumArt.size.height > 1.0 ? MusicPlayerImageSizes.cornerRadiusInset.opened/3 : MusicPlayerImageSizes.cornerRadiusInset.opened
+                                : musicManager.albumArt.size.width/musicManager.albumArt.size.height > 1.0 ? MusicPlayerImageSizes.cornerRadiusInset.closed/3 : MusicPlayerImageSizes.cornerRadiusInset.closed
+
+
+                        )
+                    ) // ensures that even the rectagular album cover is rounded just like the MacOS media player
             }
             .matchedGeometryEffect(id: "albumArt", in: albumArtNamespace)
         .clipped()
-        .clipShape(
-            RoundedRectangle(
-                cornerRadius: Defaults[.cornerRadiusScaling]
-                    ? MusicPlayerImageSizes.cornerRadiusInset.opened
-                    : MusicPlayerImageSizes.cornerRadiusInset.closed)
-        )
     }
 
     @ViewBuilder
@@ -126,8 +133,8 @@ struct AlbumArtView: View {
         if vm.notchState == .open && !musicManager.usingAppIconForArtwork {
             AppIcon(for: musicManager.bundleIdentifier ?? "com.apple.Music")
                 .resizable()
-                .aspectRatio(contentMode: .fill)
-                .frame(width: 30, height: 30)
+                .scaledToFill()
+                .frame(width: 36, height: 36)
                 .offset(x: 10, y: 10)
                 .transition(.scale.combined(with: .opacity).animation(.bouncy.delay(0.3)))
                 .zIndex(2)
@@ -207,9 +214,9 @@ struct MusicControlsView: View {
 
                     MarqueeText(
                         lyricsBinding,
-                        font: .headline,
+                        font: .system(size: 12, weight: .regular),
                         nsFont: .headline,
-                        textColor: .white.opacity(0.8),
+                        textColor: .white.opacity(0.7),
                         minDuration: 0.35,
                         frameWidth: width
                     )
@@ -605,6 +612,7 @@ struct NotchHomeView: View {
             .combined(with: .blurReplace.animation(.smooth.speed(0.9)))
             .combined(with: .move(edge: .top)))
         .blur(radius: vm.notchState == .closed ? 30 : 0)
+        .padding(Defaults[.enableMinimalisticUI] ? 0 : 8) //Putting the main padding for home view here for consistency
     }
 
     private var minimalisticOverridePayload: ExtensionNotchExperiencePayload? {
@@ -713,6 +721,7 @@ struct MusicSliderView: View {
             LiveStreamProgressIndicator(tint: sliderTint)
                 .frame(maxWidth: .infinity)
                 .frame(height: sliderFrameHeight)
+                
         case .inline:
             HStack(spacing: 10) {
                 Spacer()
@@ -720,6 +729,7 @@ struct MusicSliderView: View {
                 LiveStreamProgressIndicator(tint: sliderTint)
                     .frame(maxWidth: .infinity)
                     .frame(height: sliderFrameHeight)
+
                 Spacer()
                     .frame(width: 48)
             }
@@ -748,10 +758,10 @@ struct MusicSliderView: View {
         )
     }
 
-    private var sliderTint: Color {
+    private var sliderTint: Color {//
         switch Defaults[.sliderColor] {
         case .albumArt:
-            return Color(nsColor: color).ensureMinimumBrightness(factor: 0.8)
+            return Color(nsColor: color).ensureMinimumBrightness(factor: 0.6)
         case .accent:
             return .accentColor
         case .white:

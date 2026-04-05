@@ -63,6 +63,7 @@ struct MinimalisticMusicView: View {
                                 // Lyrics under the author name (same font size as author)
                                 if enableLyrics {
                                     lyricsLineView
+                                        .font(.system(size: 11, weight: .regular))
                                 }
                             }
                             .frame(width: geo.size.width, height: geo.size.height, alignment: .center)
@@ -93,9 +94,10 @@ struct MinimalisticMusicView: View {
                     Image(nsImage: musicManager.albumArt)
                         .resizable()
                         .aspectRatio(contentMode: .fit)
+                        .clipShape(RoundedRectangle(cornerRadius: musicManager.albumArt.size.width/musicManager.albumArt.size.height > 1.0 ? 4 : 12))
+
                 )
                 .clipped()
-                .clipShape(RoundedRectangle(cornerRadius: 18)) // Dramatically increased corner radius for minimalistic mode
                 .albumArtFlip(angle: musicManager.flipAngle)
                 .frame(width: max(0, vm.effectiveClosedNotchHeight - 12), height: max(0, vm.effectiveClosedNotchHeight - 12))
         }

@@ -34,6 +34,7 @@ struct DynamicIslandHeader: View {
     @Default(.enableTimerFeature) var enableTimerFeature
     @Default(.timerDisplayMode) var timerDisplayMode
     @Default(.showClipboardIcon) var showClipboardIcon
+    @Default(.showColorPickerIcon) var showColorPickerIcon
     @Default(.clipboardDisplayMode) var clipboardDisplayMode
     
     var body: some View {
@@ -50,6 +51,8 @@ struct DynamicIslandHeader: View {
                 .blur(radius: vm.notchState == .closed ? 20 : 0)
                 .animation(.smooth.delay(0.1), value: vm.notchState)
                 .zIndex(2)
+                .padding(8)
+
             }
 
             if vm.notchState == .open && !Defaults[.enableMinimalisticUI] {
@@ -128,7 +131,7 @@ struct DynamicIslandHeader: View {
                     }
                     
                     // ColorPicker button
-                    if Defaults[.enableColorPickerFeature] {
+                    if Defaults[.enableColorPickerFeature] && showColorPickerIcon{
                         Button(action: {
                             switch Defaults[.colorPickerDisplayMode] {
                             case .panel:
@@ -293,7 +296,7 @@ private extension DynamicIslandHeader {
         Defaults[.settingsIconInNotch]
             && Defaults[.enableClipboardManager]
             && Defaults[.showClipboardIcon]
-            && Defaults[.enableColorPickerFeature]
+            && Defaults[.showColorPickerIcon]
             && Defaults[.enableTimerFeature]
     }
 }
