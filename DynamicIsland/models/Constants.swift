@@ -268,6 +268,34 @@ enum FantasticalViewStyle: String, CaseIterable, Codable, Defaults.Serializable 
     }
 }
 
+enum ThirdPartyCalendarApp: String, CaseIterable, Codable, Defaults.Serializable, Identifiable {
+    case fantastical = "fantastical"
+    case notionCalendar = "notionCalendar"
+    
+    var id: String { rawValue }
+    
+    var displayName: String {
+        switch self {
+        case .fantastical: return "Fantastical"
+        case .notionCalendar: return "Notion Calendar"
+        }
+    }
+    
+    var iconName: String {
+        switch self {
+        case .fantastical: return "calendar.badge.clock"
+        case .notionCalendar: return "calendar.badge.plus"
+        }
+    }
+    
+    var iconColor: Color {
+        switch self {
+        case .fantastical: return .red
+        case .notionCalendar: return .blue
+        }
+    }
+}
+
 enum ClipboardDisplayMode: String, CaseIterable, Codable, Defaults.Serializable {
     case popover = "popover"     // Traditional popover attached to button
     case panel = "panel"         // Floating panel near notch
@@ -867,7 +895,8 @@ extension Defaults.Keys {
     static let lockScreenWeatherWidgetRowOrder = Key<String>("lockScreenWeatherWidgetRowOrder", default: "weather_calendar_focus")
     
     // MARK: Third-party Calendar Integration
-    static let useFantasticalCalendar = Key<Bool>("useFantasticalCalendar", default: false)
+    static let enableThirdPartyCalendarApp = Key<Bool>("enableThirdPartyCalendarApp", default: false)
+    static let selectedCalendarApp = Key<ThirdPartyCalendarApp>("selectedCalendarApp", default: .fantastical)
     static let fantasticalDefaultView = Key<FantasticalViewStyle>("fantasticalDefaultView", default: .mini)
     
         // MARK: Battery

@@ -2752,7 +2752,8 @@ struct CalendarSettings: View {
     @Default(.lockScreenCalendarSelectionMode) private var lockScreenCalendarSelectionMode
     @Default(.lockScreenSelectedCalendarIDs) private var lockScreenSelectedCalendarIDs
     @Default(.lockScreenShowCalendarEventAfterStartEnabled) private var lockScreenShowCalendarEventAfterStartEnabled
-    @Default(.useFantasticalCalendar) private var useFantasticalCalendar
+    @Default(.enableThirdPartyCalendarApp) private var enableThirdPartyCalendarApp
+    @Default(.selectedCalendarApp) private var selectedCalendarApp
     @Default(.fantasticalDefaultView) private var fantasticalDefaultView
 
     private func highlightID(_ title: String) -> String {
@@ -3050,28 +3051,37 @@ struct CalendarSettings: View {
                 
                 // MARK: - Third-party Calendar Integration
                 Section {
-                    Defaults.Toggle(key: .useFantasticalCalendar) {
+                    Defaults.Toggle(key: .enableThirdPartyCalendarApp) {
                         HStack {
-                            Image(systemName: "calendar.badge.clock")
-                                .foregroundColor(.red)
+                            Image(systemName: selectedCalendarApp.iconName)
+                                .foregroundColor(selectedCalendarApp.iconColor)
                                 .frame(width: 20, height: 20)
-                            Text("Use Fantastical")
+                            Text("Enable third-party calendar app launch")
                         }
                     }
-                    .settingsHighlight(id: highlightID("Use Fantastical"))
+                    .settingsHighlight(id: highlightID("Enable third-party calendar app launch"))
                     
-                    if useFantasticalCalendar {
-                        Picker("Default View", selection: $fantasticalDefaultView) {
-                            ForEach(FantasticalViewStyle.allCases, id: \.self) { style in
-                                Text(style.displayName).tag(style)
+                    if enableThirdPartyCalendarApp {
+                        Picker("Calendar App", selection: $selectedCalendarApp) {
+                            ForEach(ThirdPartyCalendarApp.allCases) { app in
+                                Text(app.displayName).tag(app)
                             }
                         }
-                        .settingsHighlight(id: highlightID("Fantastical Default View"))
+                        .settingsHighlight(id: highlightID("Calendar App"))
+                        
+                        if selectedCalendarApp == .fantastical {
+                            Picker("Default View", selection: $fantasticalDefaultView) {
+                                ForEach(FantasticalViewStyle.allCases, id: \.self) { style in
+                                    Text(style.displayName).tag(style)
+                                }
+                            }
+                            .settingsHighlight(id: highlightID("Fantastical Default View"))
+                        }
                     }
                 } header: {
                     Text("Third-party Calendar Integration")
                 } footer: {
-                    Text("When enabled, clicking on calendar events will open Fantastical instead of Apple Calendar. More integrations coming soon.")
+                    Text("When enabled, clicking on calendar events will open the selected third-party calendar app instead of Apple Calendar.")
                 }
 
                 Section(header: Text("Select Calendars")) {

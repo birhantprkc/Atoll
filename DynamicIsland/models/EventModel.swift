@@ -22,6 +22,7 @@
 
 import Foundation
 import Defaults
+import AppKit
 
 struct EventModel: Equatable, Identifiable {
     let id: String
@@ -98,9 +99,14 @@ extension EventModel {
     var isMeeting: Bool { !participants.isEmpty }
 
     func calendarAppURL() -> URL? {
-        // Check if Fantastical is enabled
-        if Defaults[.useFantasticalCalendar] {
-            return fantasticalURL()
+        // Check if a third-party calendar app is enabled
+        if Defaults[.enableThirdPartyCalendarApp] {
+            switch Defaults[.selectedCalendarApp] {
+            case .fantastical:
+                return fantasticalURL()
+            case .notionCalendar:
+                return notionCalendarURL()
+            }
         }
         return appleCalendarURL()
     }
@@ -159,6 +165,48 @@ extension EventModel {
             return URL(string: "x-fantastical3://show/\(viewStyle.rawValue)/\(dateString)")
         }
         return URL(string: "x-fantastical3://show/\(viewStyle.rawValue)")
+    }
+    
+    /// Returns URL to open event in Notion Calendar (formerly Cron)
+    private func notionCalendarURL() -> URL? {
+        // Reminders still use Apple's Reminders app
+        guard !type.isReminder else {
+            return URL(string: "x-apple-reminderkit://remcdreminder/\(id)")
+        }
+        
+        let formatter = ISO8601DateFormatter()
+        
+        var components = URLComponents()
+        components.scheme = "cron"
+        components.host = "showEvent"
+        components.queryItems = [
+            URLQueryItem(name: "accountEmail", value: calendar.accountName),
+            URLQueryItem(name: "iCalUID", value: id),
+            URLQueryItem(name: "startDate", value: formatter.string(from: start)),
+            URLQueryItem(name: "endDate", value: formatter.string(from: end)),
+            URLQueryItem(name: "title", value: title)
+        ]
+        
+        if let url = components.url {
+            return url
+        }
+        
+        // Fallback: just launch Notion Calendar app
+        Self.launchNotionCalendar()
+        return nil
+    }
+    
+    /// Launches Notion Calendar app directly (fallback or general access)
+    static func launchNotionCalendar() {
+        // Launch via bundle identifier (Notion Calendar's bundle ID is "com.cron.electron")
+        if let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.cron.electron") {
+            let config = NSWorkspace.OpenConfiguration()
+            NSWorkspace.shared.openApplication(at: url, configuration: config) { _, error in
+                if let error = error {
+                    print("Error launching Notion Calendar: \(error.localizedDescription)")
+                }
+            }
+        }
     }
 }
 
