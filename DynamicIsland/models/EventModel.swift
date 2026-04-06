@@ -21,6 +21,7 @@
  */
 
 import Foundation
+import Defaults
 
 struct EventModel: Equatable, Identifiable {
     let id: String
@@ -97,7 +98,15 @@ extension EventModel {
     var isMeeting: Bool { !participants.isEmpty }
 
     func calendarAppURL() -> URL? {
-
+        // Check if Fantastical is enabled
+        if Defaults[.useFantasticalCalendar] {
+            return fantasticalURL()
+        }
+        return appleCalendarURL()
+    }
+    
+    /// Returns URL to open event in Apple Calendar
+    private func appleCalendarURL() -> URL? {
         guard let id = id.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) else {
             return nil
         }
@@ -122,6 +131,34 @@ extension EventModel {
             date =  ""
         }
         return URL(string: "ical://ekevent\(date)/\(id)?method=show&options=more")
+    }
+    
+    /// Returns URL to open date in Fantastical
+    private func fantasticalURL() -> URL? {
+        // Reminders still use Apple's Reminders app
+        guard !type.isReminder else {
+            return URL(string: "x-apple-reminderkit://remcdreminder/\(id)")
+        }
+        
+        let viewStyle = Defaults[.fantasticalDefaultView]
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd"
+        let dateString = dateFormatter.string(from: start)
+        
+        // x-fantastical3://show/mini/yyyy-MM-dd or x-fantastical3://show/calendar/yyyy-MM-dd
+        return URL(string: "x-fantastical3://show/\(viewStyle.rawValue)/\(dateString)")
+    }
+    
+    /// Returns URL to open Fantastical at current date (for general calendar access)
+    static func fantasticalShowURL(for date: Date? = nil) -> URL? {
+        let viewStyle = Defaults[.fantasticalDefaultView]
+        if let date = date {
+            let dateFormatter = DateFormatter()
+            dateFormatter.dateFormat = "yyyy-MM-dd"
+            let dateString = dateFormatter.string(from: date)
+            return URL(string: "x-fantastical3://show/\(viewStyle.rawValue)/\(dateString)")
+        }
+        return URL(string: "x-fantastical3://show/\(viewStyle.rawValue)")
     }
 }
 

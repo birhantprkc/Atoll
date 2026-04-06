@@ -256,6 +256,18 @@ enum CalendarSelectionState: Codable, Defaults.Serializable {
     case selected(Set<String>)
 }
 
+enum FantasticalViewStyle: String, CaseIterable, Codable, Defaults.Serializable {
+    case mini = "mini"
+    case calendar = "calendar"
+    
+    var displayName: String {
+        switch self {
+        case .mini: return "Mini View"
+        case .calendar: return "Full Calendar"
+        }
+    }
+}
+
 enum ClipboardDisplayMode: String, CaseIterable, Codable, Defaults.Serializable {
     case popover = "popover"     // Traditional popover attached to button
     case panel = "panel"         // Floating panel near notch
@@ -853,6 +865,10 @@ extension Defaults.Keys {
     static let lockScreenShowCalendarTimeRemaining = Key<Bool>("lockScreenShowCalendarTimeRemaining", default: true)
     static let lockScreenShowCalendarStartTimeAfterBegins = Key<Bool>("lockScreenShowCalendarStartTimeAfterBegins", default: true)
     static let lockScreenWeatherWidgetRowOrder = Key<String>("lockScreenWeatherWidgetRowOrder", default: "weather_calendar_focus")
+    
+    // MARK: Third-party Calendar Integration
+    static let useFantasticalCalendar = Key<Bool>("useFantasticalCalendar", default: false)
+    static let fantasticalDefaultView = Key<FantasticalViewStyle>("fantasticalDefaultView", default: .mini)
     
         // MARK: Battery
     static let showPowerStatusNotifications = Key<Bool>("showPowerStatusNotifications", default: true)

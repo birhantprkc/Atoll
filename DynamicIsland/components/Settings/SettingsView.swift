@@ -2752,6 +2752,8 @@ struct CalendarSettings: View {
     @Default(.lockScreenCalendarSelectionMode) private var lockScreenCalendarSelectionMode
     @Default(.lockScreenSelectedCalendarIDs) private var lockScreenSelectedCalendarIDs
     @Default(.lockScreenShowCalendarEventAfterStartEnabled) private var lockScreenShowCalendarEventAfterStartEnabled
+    @Default(.useFantasticalCalendar) private var useFantasticalCalendar
+    @Default(.fantasticalDefaultView) private var fantasticalDefaultView
 
     private func highlightID(_ title: String) -> String {
         SettingsTab.calendar.highlightID(for: title)
@@ -3044,6 +3046,32 @@ struct CalendarSettings: View {
                     }
                     .disabled(!lockScreenShowCalendarEvent)
                     .settingsHighlight(id: highlightID("Show start time after event begins"))
+                }
+                
+                // MARK: - Third-party Calendar Integration
+                Section {
+                    Defaults.Toggle(key: .useFantasticalCalendar) {
+                        HStack {
+                            Image(systemName: "calendar.badge.clock")
+                                .foregroundColor(.red)
+                                .frame(width: 20, height: 20)
+                            Text("Use Fantastical")
+                        }
+                    }
+                    .settingsHighlight(id: highlightID("Use Fantastical"))
+                    
+                    if useFantasticalCalendar {
+                        Picker("Default View", selection: $fantasticalDefaultView) {
+                            ForEach(FantasticalViewStyle.allCases, id: \.self) { style in
+                                Text(style.displayName).tag(style)
+                            }
+                        }
+                        .settingsHighlight(id: highlightID("Fantastical Default View"))
+                    }
+                } header: {
+                    Text("Third-party Calendar Integration")
+                } footer: {
+                    Text("When enabled, clicking on calendar events will open Fantastical instead of Apple Calendar. More integrations coming soon.")
                 }
 
                 Section(header: Text("Select Calendars")) {
