@@ -281,14 +281,22 @@ enum ThirdPartyCalendarApp: String, CaseIterable, Codable, Defaults.Serializable
         }
     }
     
-    var iconName: String {
+    /// Bundle identifiers to try when looking up the app icon (first match wins).
+    var bundleIdentifiers: [String] {
+        switch self {
+        case .fantastical: return ["com.flexibits.fantastical2.mac", "com.flexibits.fantastical"]
+        case .notionCalendar: return ["com.cron.electron"]
+        }
+    }
+    
+    var fallbackIconName: String {
         switch self {
         case .fantastical: return "calendar.badge.clock"
         case .notionCalendar: return "calendar.badge.plus"
         }
     }
     
-    var iconColor: Color {
+    var fallbackIconColor: Color {
         switch self {
         case .fantastical: return .red
         case .notionCalendar: return .blue
@@ -368,6 +376,14 @@ enum ThirdPartyDDCProvider: String, CaseIterable, Codable, Defaults.Serializable
             return "BetterDisplay"
         case .lunar:
             return "Lunar"
+        }
+    }
+    
+    /// Bundle identifiers to try when looking up the app icon.
+    var bundleIdentifiers: [String] {
+        switch self {
+        case .betterDisplay: return ["pro.betterdisplay.BetterDisplay"]
+        case .lunar: return ["fyi.lunar.Lunar"]
         }
     }
 }
