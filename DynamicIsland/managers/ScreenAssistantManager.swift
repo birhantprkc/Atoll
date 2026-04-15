@@ -826,9 +826,7 @@ class ScreenAssistantManager: NSObject, ObservableObject {
         switch provider {
         case .gemini:
             parseGeminiResponse(data: data)
-        case .openai:
-            parseOpenAIResponse(data: data)
-        case .groq:
+        case .openai, .groq:
             parseOpenAIResponse(data: data)
         case .claude:
             parseClaudeResponse(data: data)
