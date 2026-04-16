@@ -1041,12 +1041,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             guard Defaults[.enableShortcuts], Defaults[.enableTerminalFeature] else { return }
 
             if vm.notchState == .closed {
+                closeNotchWorkItem?.cancel()
+                closeNotchWorkItem = nil
                 vm.open()
                 coordinator.currentView = .terminal
             } else {
                 if coordinator.currentView == .terminal {
                     vm.close()
                 } else {
+                    closeNotchWorkItem?.cancel()
+                    closeNotchWorkItem = nil
                     coordinator.currentView = .terminal
                 }
             }
