@@ -82,6 +82,7 @@ struct ContentView: View {
     @Default(.showStandardMediaControls) var showStandardMediaControls
     @Default(.externalDisplayStyle) var externalDisplayStyle
     @Default(.hideNonNotchUntilHover) var hideNonNotchUntilHover
+    @Default(.terminalStickyMode) var terminalStickyMode
     
     // Dynamic sizing based on view type and graph count with smooth transitions
     var dynamicNotchSize: CGSize {
@@ -520,6 +521,7 @@ struct ContentView: View {
                             currentView: currentViewString
                         )
                     }
+                    syncStickyTerminalOutsideClickMonitor()
                 }
                 .sensoryFeedback(.alignment, trigger: haptics)
                 .contextMenu {
@@ -546,12 +548,6 @@ struct ContentView: View {
         )
         .frame(maxHeight: .infinity, alignment: .top)
         .environmentObject(privacyManager)
-        .onChange(of: dynamicNotchSize) { oldSize, newSize in
-            guard oldSize != newSize else { return }
-            runAfter(0.1) {
-                vm.shouldRecheckHover.toggle()
-            }
-        }
         .background(dragDetector)
         .environmentObject(vm)
         .environmentObject(webcamManager)
@@ -565,6 +561,9 @@ struct ContentView: View {
             }
             enqueueMusicControlWindowSync(forceRefresh: true)
             startHiddenEdgeHoverPolling()
+        }
+        .onChange(of: terminalStickyMode) { _, _ in
+            syncStickyTerminalOutsideClickMonitor()
         }
         .onChange(of: vm.notchState) { _, state in
             if state == .open {
@@ -1750,6 +1749,16 @@ struct ContentView: View {
             NSEvent.removeMonitor(hoverClickLocalMonitor)
             self.hoverClickLocalMonitor = nil
         }
+    }
+
+    /// Installs the global outside-click monitor when Terminal + sticky mode are active (e.g. keyboard-opened terminal).
+    /// Removes the monitor when the tab, sticky setting, or open state no longer applies.
+    private func syncStickyTerminalOutsideClickMonitor() {
+        guard vm.notchState == .open, terminalStickyMode, coordinator.currentView == .terminal else {
+            removeStickyTerminalClickMonitor()
+            return
+        }
+        installStickyTerminalClickMonitor()
     }
 
     private func installStickyTerminalClickMonitor() {
