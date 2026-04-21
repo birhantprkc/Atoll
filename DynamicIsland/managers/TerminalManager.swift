@@ -218,6 +218,9 @@ class TerminalManager: ObservableObject {
             ?? .blinkBlock
         view.getTerminal().setCursorStyle(cursorStyle.swiftTermStyle)
 
+        // Keep drawing the selected cursor style when TerminalView.hasFocus is false; SwiftTerm
+        view.caretViewTracksFocus = false
+
         // Scrollback
         let scrollback = Defaults[.terminalScrollbackLines]
         view.getTerminal().buffer.changeHistorySize(scrollback)
