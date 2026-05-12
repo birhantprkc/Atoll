@@ -324,6 +324,8 @@ final class FullScreenArtworkWindowManager: ObservableObject {
     private var isLiveWallpaperAllowed = false
     private var activeLiveWallpaperFingerprint: String?
     private var activeWallpaperKey: String?
+    private var pendingFallbackStaticURL: URL?
+    private var pendingFallbackWallpaperKey: String?
     private var fallbackRightClickMonitor: Any?
     private var artworkLayoutOverCanvasPreferenceCancellable: AnyCancellable?
     private var lyricsTextCancellable: AnyCancellable?
@@ -358,6 +360,8 @@ final class FullScreenArtworkWindowManager: ObservableObject {
         isLiveWallpaperAllowed = false
         activeLiveWallpaperFingerprint = nil
         activeWallpaperKey = nil
+        pendingFallbackStaticURL = nil
+        pendingFallbackWallpaperKey = nil
         let shouldRestoreStandardPanelLayout = isShowingSpotifyCanvasFallback
         isShowingSpotifyCanvasFallback = false
         removeFallbackRightClickMonitor()
@@ -439,12 +443,14 @@ final class FullScreenArtworkWindowManager: ObservableObject {
         let previousFallbackState = isShowingSpotifyCanvasFallback
 
         guard let rawArtworkFileURL = persistedArtworkFileURL(for: artwork, fingerprint: artworkFingerprint) else { return }
-        let wallpaperURL = shouldUseStaticFallbackWallpaper
-            ? blurredWallpaperFileURL(for: artwork, fingerprint: artworkFingerprint, screen: screen) ?? rawArtworkFileURL
+        let expectCanvas = effectiveVideoURL != nil
+        let blurredFallbackURL = blurredWallpaperFileURL(for: artwork, fingerprint: artworkFingerprint, screen: screen) ?? rawArtworkFileURL
+        let wallpaperURL = (shouldUseStaticFallbackWallpaper || expectCanvas)
+            ? blurredFallbackURL
             : rawArtworkFileURL
         let wallpaperKey = wallpaperIdentityKey(
             fingerprint: artworkFingerprint,
-            usesFallback: shouldUseStaticFallbackWallpaper,
+            usesFallback: shouldUseStaticFallbackWallpaper || expectCanvas,
             screen: screen
         )
         let desiredLiveWallpaperFingerprint = effectiveVideoURL?.absoluteString
@@ -459,17 +465,26 @@ final class FullScreenArtworkWindowManager: ObservableObject {
         }
 
         if requiresWallpaperRefresh {
-            showWallpaperTransition(on: screen, imageURL: wallpaperURL)
+            if expectCanvas {
+                pendingFallbackStaticURL = blurredFallbackURL
+                pendingFallbackWallpaperKey = wallpaperKey
+                activeWallpaperKey = nil
+                activeLiveWallpaperFingerprint = nil
+            } else {
+                showWallpaperTransition(on: screen, imageURL: wallpaperURL)
 
-            guard applyArtworkToPlist(imageURL: wallpaperURL) else {
-                print("[FullScreenArtworkWindowManager] Failed to patch plist")
-                hideWallpaperTransition()
-                return
+                guard applyArtworkToPlist(imageURL: wallpaperURL) else {
+                    print("[FullScreenArtworkWindowManager] Failed to patch plist")
+                    hideWallpaperTransition()
+                    return
+                }
+
+                restartWallpaperAgent()
+                activeWallpaperKey = wallpaperKey
+                activeLiveWallpaperFingerprint = nil
+                pendingFallbackStaticURL = nil
+                pendingFallbackWallpaperKey = nil
             }
-
-            restartWallpaperAgent()
-            activeWallpaperKey = wallpaperKey
-            activeLiveWallpaperFingerprint = nil
         }
 
         isShowing = true
@@ -773,6 +788,27 @@ final class FullScreenArtworkWindowManager: ObservableObject {
         return finalBitmap.representation(using: .png, properties: [:])
     }
 
+    private func applyDeferredStaticFallback() {
+        guard let url = pendingFallbackStaticURL else { return }
+        let key = pendingFallbackWallpaperKey
+        pendingFallbackStaticURL = nil
+        pendingFallbackWallpaperKey = nil
+
+        if let screen = NSScreen.main {
+            showWallpaperTransition(on: screen, imageURL: url)
+        }
+        guard applyArtworkToPlist(imageURL: url) else {
+            print("[FullScreenArtworkWindowManager] Failed to apply deferred static fallback")
+            hideWallpaperTransition()
+            return
+        }
+        restartWallpaperAgent()
+        activeWallpaperKey = key
+        activeLiveWallpaperFingerprint = nil
+        hideVideoWindow()
+        scheduleWallpaperTransitionHide(after: .milliseconds(900))
+    }
+
     private func scheduleLiveWallpaperPreparation(for videoURL: URL?, artwork: NSImage, identifier: String) {
         liveWallpaperTask?.cancel()
         liveWallpaperTask = nil
@@ -837,10 +873,18 @@ final class FullScreenArtworkWindowManager: ObservableObject {
                 guard currentIdentifier == identifier else { return }
                 guard currentVideoURL?.absoluteString == nextFingerprint else { return }
                 guard !self.shouldUseSpotifyStaticFallbackWallpaper(videoURL: currentVideoURL) else { return }
-                guard prepared else { return }
-                guard self.applyAerialToPlist(assetID: assetID) else { return }
+                guard prepared else {
+                    self.applyDeferredStaticFallback()
+                    return
+                }
+                guard self.applyAerialToPlist(assetID: assetID) else {
+                    self.applyDeferredStaticFallback()
+                    return
+                }
 
                 self.activeLiveWallpaperFingerprint = nextFingerprint
+                self.pendingFallbackStaticURL = nil
+                self.pendingFallbackWallpaperKey = nil
                 self.restartWallpaperAgent()
                 self.scheduleHideVideoWindow(after: .milliseconds(950), expectedURL: videoURL)
                 print("[FullScreenArtworkWindowManager] Live wallpaper applied")
@@ -1549,13 +1593,13 @@ final class FullScreenArtworkWindowManager: ObservableObject {
         var allSpaces = (plist["AllSpacesAndDisplays"] as? [String: Any]) ?? [:]
         allSpaces["Desktop"] = desktopBlock
         allSpaces["Idle"] = idleBlock
-        allSpaces["Type"] = allSpaces["Type"] ?? "individual"
+        allSpaces["Type"] = "individual"
         plist["AllSpacesAndDisplays"] = allSpaces
 
         var systemDefault = (plist["SystemDefault"] as? [String: Any]) ?? [:]
         systemDefault["Desktop"] = desktopBlock
         systemDefault["Idle"] = idleBlock
-        systemDefault["Type"] = systemDefault["Type"] ?? "individual"
+        systemDefault["Type"] = "individual"
         plist["SystemDefault"] = systemDefault
 
         if var displays = plist["Displays"] as? [String: Any] {
@@ -1563,6 +1607,9 @@ final class FullScreenArtworkWindowManager: ObservableObject {
                 if var display = displays[key] as? [String: Any] {
                     display["Desktop"] = desktopBlock
                     display["Idle"] = idleBlock
+                    if display["Type"] != nil {
+                        display["Type"] = "individual"
+                    }
                     displays[key] = display
                 }
             }
@@ -1575,6 +1622,9 @@ final class FullScreenArtworkWindowManager: ObservableObject {
                     if var defaultEntry = space["Default"] as? [String: Any] {
                         defaultEntry["Desktop"] = desktopBlock
                         defaultEntry["Idle"] = idleBlock
+                        if defaultEntry["Type"] != nil {
+                            defaultEntry["Type"] = "individual"
+                        }
                         space["Default"] = defaultEntry
                     }
                     if var spaceDisplays = space["Displays"] as? [String: Any] {
@@ -1582,6 +1632,9 @@ final class FullScreenArtworkWindowManager: ObservableObject {
                             if var display = spaceDisplays[displayKey] as? [String: Any] {
                                 display["Desktop"] = desktopBlock
                                 display["Idle"] = idleBlock
+                                if display["Type"] != nil {
+                                    display["Type"] = "individual"
+                                }
                                 spaceDisplays[displayKey] = display
                             }
                         }
