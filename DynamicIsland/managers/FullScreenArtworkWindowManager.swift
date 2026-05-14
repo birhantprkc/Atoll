@@ -89,6 +89,14 @@ private final class LoopingVideoView: NSView {
         playerLayer?.removeFromSuperlayer()
         playerLayer = nil
     }
+
+    func pause() {
+        queuePlayer?.pause()
+    }
+
+    func resume() {
+        queuePlayer?.play()
+    }
 }
 
 private final class WallpaperTransitionImageView: NSView {
@@ -304,6 +312,9 @@ final class FullScreenArtworkWindowManager: ObservableObject {
     private var trackChangeCancellable: AnyCancellable?
     private var artworkCacheCancellable: AnyCancellable?
     private var videoArtworkCancellable: AnyCancellable?
+    private var playbackStateCancellable: AnyCancellable?
+    private var hasSuspendedWallpaperAgent = false
+    private var appTerminationObserver: NSObjectProtocol?
     private var clickWindow: ClickReceiverWindow?
     private var clickWindowDelegated = false
     private var videoWindow: NSWindow?
@@ -339,6 +350,8 @@ final class FullScreenArtworkWindowManager: ObservableObject {
         observeArtworkLayoutOverCanvasPreference()
         observeLyricsChanges()
         observeLyricsPreference()
+        observePlaybackStateChanges()
+        observeAppTermination()
     }
 
     func show(artwork: NSImage, videoURL: URL? = nil, allowLiveWallpaper: Bool = false) {
@@ -356,6 +369,7 @@ final class FullScreenArtworkWindowManager: ObservableObject {
 
     func hide() {
         guard isShowing else { return }
+        resumeWallpaperAgentIfNeeded()
         isShowing = false
         isLiveWallpaperAllowed = false
         activeLiveWallpaperFingerprint = nil
@@ -424,6 +438,89 @@ final class FullScreenArtworkWindowManager: ObservableObject {
                 guard let self, self.isShowing, self.isLiveWallpaperAllowed else { return }
                 self.refreshPresentationForCurrentTrack()
             }
+    }
+
+    private func observePlaybackStateChanges() {
+        playbackStateCancellable = MusicManager.shared.$isPlaying
+            .removeDuplicates()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] isPlaying in
+                self?.applyCanvasPlaybackState(isPlaying: isPlaying)
+            }
+    }
+
+    private static let wallpaperRenderProcessNames: [String] = [
+        "WallpaperAgent",
+        "WallpaperAerialsExtension",
+        "WallpaperVideoExtension",
+        "wallpaperexportd"
+    ]
+
+    private func applyCanvasPlaybackState(isPlaying: Bool) {
+        if let videoView, videoWindow != nil {
+            if isPlaying {
+                videoView.resume()
+            } else {
+                videoView.pause()
+            }
+        }
+
+        let canSuspend = isShowing && isLiveWallpaperAllowed && activeLiveWallpaperFingerprint != nil
+        print("[FullScreenArtworkWindowManager] playback state -> isPlaying=\(isPlaying) showing=\(isShowing) liveAllowed=\(isLiveWallpaperAllowed) fingerprint=\(activeLiveWallpaperFingerprint ?? "nil")")
+
+        if isPlaying {
+            resumeWallpaperAgentIfNeeded()
+        } else if canSuspend {
+            suspendWallpaperAgent()
+        }
+    }
+
+    private func suspendWallpaperAgent() {
+        guard !hasSuspendedWallpaperAgent else { return }
+        var anySucceeded = false
+        for name in Self.wallpaperRenderProcessNames {
+            if signalProcess(name: name, signalFlag: "-STOP") {
+                anySucceeded = true
+            }
+        }
+        hasSuspendedWallpaperAgent = anySucceeded
+        print("[FullScreenArtworkWindowManager] SIGSTOP wallpaper processes -> anySucceeded=\(anySucceeded)")
+    }
+
+    private func resumeWallpaperAgentIfNeeded() {
+        guard hasSuspendedWallpaperAgent else { return }
+        for name in Self.wallpaperRenderProcessNames {
+            _ = signalProcess(name: name, signalFlag: "-CONT")
+        }
+        hasSuspendedWallpaperAgent = false
+        print("[FullScreenArtworkWindowManager] SIGCONT wallpaper processes")
+    }
+
+    @discardableResult
+    private func signalProcess(name: String, signalFlag: String) -> Bool {
+        let task = Process()
+        task.executableURL = URL(fileURLWithPath: "/usr/bin/killall")
+        task.arguments = [signalFlag, name]
+        task.standardError = Pipe()
+        task.standardOutput = Pipe()
+        do {
+            try task.run()
+            task.waitUntilExit()
+            return task.terminationStatus == 0
+        } catch {
+            print("[FullScreenArtworkWindowManager] killall \(signalFlag) \(name) threw: \(error)")
+            return false
+        }
+    }
+
+    private func observeAppTermination() {
+        appTerminationObserver = NotificationCenter.default.addObserver(
+            forName: NSApplication.willTerminateNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.resumeWallpaperAgentIfNeeded()
+        }
     }
 
     private func applyPresentation(
@@ -1447,6 +1544,7 @@ final class FullScreenArtworkWindowManager: ObservableObject {
             activeVideoWindowURL = videoURL
         }
         window.orderFrontRegardless()
+        applyCanvasPlaybackState(isPlaying: MusicManager.shared.isPlaying)
     }
 
     private func scheduleHideVideoWindow(after delay: Duration, expectedURL: URL?) {
