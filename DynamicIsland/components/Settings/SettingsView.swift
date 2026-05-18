@@ -56,7 +56,6 @@ private enum SettingsTab: String, CaseIterable, Identifiable {
     case timer
     case calendar
     case hudAndOSD
-    case systemControls
     case battery
     case stats
     case clipboard
@@ -76,7 +75,7 @@ private enum SettingsTab: String, CaseIterable, Identifiable {
         switch self {
         case .general, .appearance:                                          return .core
         case .media, .liveActivities, .lockScreen, .devices:                 return .mediaAndDisplay
-        case .systemControls, .hudAndOSD, .battery:                          return .system
+        case .hudAndOSD, .battery:                                           return .system
         case .timer, .calendar, .notes:                                      return .productivity
         case .clipboard, .screenAssistant, .colorPicker, .shelf,
              .downloads, .shortcuts:                                         return .utilities
@@ -97,8 +96,7 @@ private enum SettingsTab: String, CaseIterable, Identifiable {
         case .extensions: return String(localized: "Extensions")
         case .timer: return String(localized: "Timer")
         case .calendar: return String(localized: "Calendar")
-        case .hudAndOSD: return String(localized: "Display Overlay")
-        case .systemControls: return String(localized: "Controls")
+        case .hudAndOSD: return String(localized: "Controls")
         case .battery: return String(localized: "Battery")
         case .stats: return String(localized: "Stats")
         case .clipboard: return String(localized: "Clipboard")
@@ -124,8 +122,7 @@ private enum SettingsTab: String, CaseIterable, Identifiable {
         case .extensions: return "puzzlepiece.extension"
         case .timer: return "timer"
         case .calendar: return "calendar"
-        case .hudAndOSD: return "rectangle.inset.filled.on.rectangle"
-        case .systemControls: return "dial.medium.fill"
+        case .hudAndOSD: return "dial.medium.fill"
         case .battery: return "battery.100.bolt"
         case .stats: return "chart.xyaxis.line"
         case .clipboard: return "clipboard"
@@ -151,8 +148,7 @@ private enum SettingsTab: String, CaseIterable, Identifiable {
         case .extensions: return Color(red: 0.557, green: 0.353, blue: 0.957)
         case .timer: return .red
         case .calendar: return .cyan
-        case .hudAndOSD: return .orange
-        case .systemControls: return .indigo
+        case .hudAndOSD: return .indigo
         case .battery: return Color(red: 0.202, green: 0.783, blue: 0.348, opacity: 1.000)
         case .stats: return .teal
         case .clipboard: return .mint
@@ -495,7 +491,6 @@ struct SettingsView: View {
             .lockScreen,
             .devices,
             // System
-            .systemControls,
             .hudAndOSD,
             .battery,
             // Productivity
@@ -632,10 +627,10 @@ struct SettingsView: View {
                                 }
 
                             VStack(alignment: .leading, spacing: 2) {
-                                Text(LocalizedStringKey(suggestion.title))
+                                Text(suggestion.title)
                                     .font(.system(size: 13, weight: .semibold))
                                     .foregroundStyle(Color.primary)
-                                Text(LocalizedStringKey(suggestion.tab.title))
+                                Text(suggestion.tab.title)
                                     .font(.system(size: 11))
                                     .foregroundStyle(Color.secondary)
                             }
@@ -750,12 +745,6 @@ struct SettingsView: View {
             SettingsSearchEntry(tab: .battery, title: "Full battery style", keywords: ["battery", "style", "compact", "standard"], highlightID: SettingsTab.battery.highlightID(for: "Full battery style")),
             SettingsSearchEntry(tab: .battery, title: "Full charge threshold", keywords: ["battery", "threshold", "full"], highlightID: SettingsTab.battery.highlightID(for: "Full charge threshold")),
 
-            // System Controls
-            SettingsSearchEntry(tab: .systemControls, title: "Step size", keywords: ["brightness", "volume", "step",], highlightID: SettingsTab.systemControls.highlightID(for: "Step size")),
-            SettingsSearchEntry(tab: .systemControls, title: "Third-party DDC app integration", keywords: ["ddc", "third party", "external", "display", "betterdisplay", "lunar"], highlightID: SettingsTab.systemControls.highlightID(for: "Third-party DDC app integration")),
-            SettingsSearchEntry(tab: .systemControls, title: "Third-party DDC provider", keywords: ["provider", "betterdisplay", "lunar", "integration", "refresh detection"], highlightID: SettingsTab.systemControls.highlightID(for: "Third-party DDC provider")),
-            SettingsSearchEntry(tab: .systemControls, title: "Enable external volume control listener", keywords: ["external volume", "ddc volume", "betterdisplay volume", "lunar volume", "disable native volume"], highlightID: SettingsTab.systemControls.highlightID(for: "Enable external volume control listener")),
-
             // HUDs
             SettingsSearchEntry(tab: .devices, title: "Show Bluetooth device connections", keywords: ["bluetooth", "hud"], highlightID: SettingsTab.devices.highlightID(for: "Show Bluetooth device connections")),
             SettingsSearchEntry(tab: .devices, title: "Use circular battery indicator", keywords: ["battery", "circular"], highlightID: SettingsTab.devices.highlightID(for: "Use circular battery indicator")),
@@ -778,6 +767,13 @@ struct SettingsView: View {
             SettingsSearchEntry(tab: .hudAndOSD, title: "Keyboard Backlight OSD", keywords: ["keyboard", "backlight", "osd"], highlightID: SettingsTab.hudAndOSD.highlightID(for: "Keyboard Backlight OSD")),
             SettingsSearchEntry(tab: .hudAndOSD, title: "Material", keywords: ["material", "frosted", "liquid", "glass", "solid", "osd"], highlightID: SettingsTab.hudAndOSD.highlightID(for: "Material")),
             SettingsSearchEntry(tab: .hudAndOSD, title: "Icon & Progress Color", keywords: ["color", "icon", "white", "black", "gray", "osd"], highlightID: SettingsTab.hudAndOSD.highlightID(for: "Icon & Progress Color")),
+            SettingsSearchEntry(tab: .hudAndOSD, title: "Volume step", keywords: ["volume", "step", "percent"], highlightID: SettingsTab.hudAndOSD.highlightID(for: "Volume step")),
+            SettingsSearchEntry(tab: .hudAndOSD, title: "Volume fine step", keywords: ["volume", "fine", "step", "percent"], highlightID: SettingsTab.hudAndOSD.highlightID(for: "Volume fine step")),
+            SettingsSearchEntry(tab: .hudAndOSD, title: "Brightness step", keywords: ["brightness", "step", "percent"], highlightID: SettingsTab.hudAndOSD.highlightID(for: "Brightness step")),
+            SettingsSearchEntry(tab: .hudAndOSD, title: "Brightness fine step", keywords: ["brightness", "fine", "step", "percent"], highlightID: SettingsTab.hudAndOSD.highlightID(for: "Brightness fine step")),
+            SettingsSearchEntry(tab: .hudAndOSD, title: "Third-party DDC app integration", keywords: ["ddc", "third party", "external", "display", "betterdisplay", "lunar"], highlightID: SettingsTab.hudAndOSD.highlightID(for: "Third-party DDC app integration")),
+            SettingsSearchEntry(tab: .hudAndOSD, title: "Third-party DDC provider", keywords: ["provider", "betterdisplay", "lunar", "integration", "refresh detection"], highlightID: SettingsTab.hudAndOSD.highlightID(for: "Third-party DDC provider")),
+            SettingsSearchEntry(tab: .hudAndOSD, title: "Enable external volume control listener", keywords: ["external volume", "ddc volume", "betterdisplay volume", "lunar volume", "disable native volume"], highlightID: SettingsTab.hudAndOSD.highlightID(for: "Enable external volume control listener")),
 
             // Media
             SettingsSearchEntry(tab: .media, title: "Music Source", keywords: ["media source", "controller"], highlightID: SettingsTab.media.highlightID(for: "Music Source")),
@@ -983,10 +979,6 @@ struct SettingsView: View {
         case .hudAndOSD:
             SettingsForm(tab: .hudAndOSD) {
                 HUDAndOSDSettingsView()
-            }
-        case .systemControls:
-            SettingsForm(tab: .systemControls) {
-                SystemControlsView()
             }
         case .battery:
             SettingsForm(tab: .battery) {
@@ -2204,22 +2196,25 @@ private struct HUDAndOSDSettingsView: View {
                     }
                 }
             }
+
+            // Third-party display integrations (shared across all HUD variants)
+            ExternalDisplayIntegrationsSection()
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .background(paneBackgroundColor)
+        .navigationTitle("Controls")
         .onAppear {
             if #unavailable(macOS 26.0), verticalHUDMaterial == .liquid {
                 verticalHUDMaterial = .frosted
                 verticalHUDLiquidGlassCustomizationMode = .standard
             }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .navigationTitle("Display Overlay")
     }
-
 }
 
 // MARK: - External Display Integrations Settings Section
 
-private struct SystemControlsView: View {
+private struct ExternalDisplayIntegrationsSection: View {
     @Default(.enableThirdPartyDDCIntegration) var enableThirdPartyDDCIntegration
     @Default(.thirdPartyDDCProvider) var thirdPartyDDCProvider
     @Default(.enableExternalVolumeControlListener) var enableExternalVolumeControlListener
@@ -2239,12 +2234,12 @@ private struct SystemControlsView: View {
         case .betterDisplay:
             if betterDisplayManager.isRunning { return "Running" }
             if betterDisplayManager.isDetected { return "Not running" }
-            return String(localized: "Not detected")
+            return "Not detected"
         case .lunar:
             if lunarManager.isConnected { return "Connected" }
             if lunarManager.isRunning { return "Running" }
             if lunarManager.isDetected { return "Not running" }
-            return String(localized: "Not detected")
+            return "Not detected"
         }
     }
 
@@ -2266,23 +2261,23 @@ private struct SystemControlsView: View {
         switch thirdPartyDDCProvider {
         case .betterDisplay:
             if !betterDisplayManager.isDetected {
-                return String(localized: "Install [BetterDisplay](https://betterdisplay.pro) to control external display brightness (and optional volume) through Atoll's HUD.")
+                return "Install [BetterDisplay](https://betterdisplay.pro) to control external display brightness (and optional volume) through Atoll's HUD."
             }
             if !betterDisplayManager.isRunning {
-                return String(localized: "BetterDisplay is installed but not currently running. Launch BetterDisplay to enable integration.")
+                return "BetterDisplay is installed but not currently running. Launch BetterDisplay to enable integration."
             }
-            return String(localized: "BetterDisplay OSD events will be routed through Atoll's active HUD style. Brightness is always routed; volume is routed when external volume control listener is enabled below. Make sure BetterDisplay's OSD integration is enabled in Settings › Application › Integration.")
+            return "BetterDisplay OSD events will be routed through Atoll's active HUD style. Brightness is always routed; volume is routed when external volume control listener is enabled below. Make sure BetterDisplay's OSD integration is enabled in Settings › Application › Integration."
         case .lunar:
             if !lunarManager.isDetected {
-                return String(localized: "Install [Lunar](https://lunar.fyi) to control external display brightness, contrast, and optional volume through Atoll's HUD via DDC.")
+                return "Install [Lunar](https://lunar.fyi) to control external display brightness, contrast, and optional volume through Atoll's HUD via DDC."
             }
             if !lunarManager.isRunning {
-                return String(localized: "Lunar is installed but not currently running. Launch Lunar to enable integration.")
+                return "Lunar is installed but not currently running. Launch Lunar to enable integration."
             }
             if lunarManager.isConnected {
-                return String(localized: "Connected to Lunar's DDC socket. Brightness and contrast adjustments are shown through Atoll's HUD; volume follows when external volume control listener is enabled below.")
+                return "Connected to Lunar's DDC socket. Brightness and contrast adjustments are shown through Atoll's HUD; volume follows when external volume control listener is enabled below."
             }
-            return String(localized: "Lunar is running but the socket connection is not yet established. It will connect automatically.")
+            return "Lunar is running but the socket connection is not yet established. It will connect automatically."
         }
     }
 
@@ -2327,6 +2322,7 @@ private struct SystemControlsView: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
+
                 Stepper(value: $brightnessStepPercent, in: 1...25) {
                     HStack {
                         Text("Brightness step")
@@ -2367,9 +2363,6 @@ private struct SystemControlsView: View {
             Section {
                 Toggle("Enable third-party DDC app integration", isOn: $enableThirdPartyDDCIntegration)
                     .settingsHighlight(id: highlightID("Third-party DDC app integration"))
-                    .onChange(of: enableThirdPartyDDCIntegration) { _, _ in
-                         enableExternalVolumeControlListener = false
-                     }
 
                 if enableThirdPartyDDCIntegration {
                     Picker("Provider", selection: $thirdPartyDDCProvider) {
@@ -2430,8 +2423,6 @@ private struct SystemControlsView: View {
                 }
             }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .navigationTitle("Controls")
     }
 }
 
@@ -2587,7 +2578,6 @@ struct HUD: View {
     @Default(.enableBrightnessHUD) var enableBrightnessHUD
     @Default(.enableKeyboardBacklightHUD) var enableKeyboardBacklightHUD
     @Default(.enableThirdPartyDDCIntegration) var enableThirdPartyDDCIntegration
-    @Default(.enableExternalVolumeControlListener) var enableExternalVolumeControlListener
     @Default(.systemHUDSensitivity) var systemHUDSensitivity
     @ObservedObject var coordinator = DynamicIslandViewCoordinator.shared
     @ObservedObject private var accessibilityPermission = AccessibilityPermissionStore.shared
@@ -2725,6 +2715,7 @@ struct HUD: View {
                 }
             }
         }
+        .navigationTitle("Controls")
         .onAppear {
             accessibilityPermission.refreshStatus()
         }
@@ -2757,7 +2748,7 @@ struct Media: View {
     @Default(.autoHideInactiveNotchMediaPlayer) private var autoHideInactiveNotchMediaPlayer
     @Default(.parallaxEffectIntensity) private var parallaxEffectIntensity
 
-
+    
     @ObservedObject private var musicManager = MusicManager.shared
 
     private var isAppleMusicActive: Bool {
@@ -2916,7 +2907,7 @@ struct Media: View {
                 }
                 .settingsHighlight(id: highlightID("Show live canvas in Dynamic Island"))
                 .help("Replaces the artwork tile with the live canvas when the current app provides one, and reuses that moving canvas for the surrounding lighting effect.")
-
+                
                 //Parallax Effect Intensity to control how much parallax is wanted
                 Slider(value: $parallaxEffectIntensity, in: 0...12, step: 1.0) {
                     HStack {
@@ -2927,7 +2918,7 @@ struct Media: View {
                     }
                 }
                 .settingsHighlight(id: highlightID("Enable album art parallax effect"))
-
+                
                 Picker("Sneak Peek Style", selection: $sneakPeekStyles){
                     ForEach(SneakPeekStyle.allCases) { style in
                         Text(style.rawValue).tag(style)
@@ -3125,14 +3116,14 @@ struct CalendarSettings: View {
 
         var title: String {
             switch self {
-            case .mins15: return String(localized: "15 mins")
-            case .mins30: return String(localized: "30 mins")
-            case .hour1: return String(localized: "1 hour")
-            case .hours3: return String(localized: "3 hours")
-            case .hours6: return String(localized: "6 hours")
-            case .hours12: return String(localized: "12 hours")
-            case .restOfDay: return String(localized: "Rest of the day")
-            case .allTime: return String(localized: "All time")
+            case .mins15: return "15 mins"
+            case .mins30: return "30 mins"
+            case .hour1: return "1 hour"
+            case .hours3: return "3 hours"
+            case .hours6: return "6 hours"
+            case .hours12: return "12 hours"
+            case .restOfDay: return "Rest of the day"
+            case .allTime: return "All time"
             }
         }
     }
@@ -3399,7 +3390,7 @@ struct CalendarSettings: View {
                     .disabled(!lockScreenShowCalendarEvent)
                     .settingsHighlight(id: highlightID("Show start time after event begins"))
                 }
-
+                
                 // MARK: - Third-party Calendar Integration
                 Section {
                     Defaults.Toggle(key: .enableThirdPartyCalendarApp) {
@@ -3411,7 +3402,7 @@ struct CalendarSettings: View {
                         }
                     }
                     .settingsHighlight(id: highlightID("Enable third-party calendar app launch"))
-
+                    
                     if enableThirdPartyCalendarApp {
                         Picker("Calendar App", selection: $selectedCalendarApp) {
                             ForEach(ThirdPartyCalendarApp.allCases) { app in
@@ -3427,7 +3418,7 @@ struct CalendarSettings: View {
                             }
                         }
                         .settingsHighlight(id: highlightID("Calendar App"))
-
+                        
                         if selectedCalendarApp == .fantastical {
                             Picker("Default View", selection: $fantasticalDefaultView) {
                                 ForEach(FantasticalViewStyle.allCases, id: \.self) { style in
@@ -3623,9 +3614,9 @@ private extension DevicesSettingsView {
         var title: String {
             switch self {
             case .symbol:
-                return String(localized: "Symbol")
+                return "Symbol"
             case .threeD:
-                return String(localized: "3D")
+                return "3D"
             }
         }
     }
@@ -3891,7 +3882,7 @@ struct Shelf: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
-
+            
             if quickShareProvider == "LocalSend" {
                 LocalSendSettingsSection(highlightID: highlightID)
             }
@@ -3909,10 +3900,10 @@ struct Shelf: View {
 
 private struct LocalSendSettingsSection: View {
     let highlightID: (String) -> String
-
+    
     @Default(.localSendDevicePickerGlassMode) private var glassMode
     @Default(.localSendDevicePickerLiquidGlassVariant) private var liquidGlassVariant
-
+    
     var body: some View {
         Section {
             Picker("Device Picker Style", selection: $glassMode) {
@@ -3921,7 +3912,7 @@ private struct LocalSendSettingsSection: View {
                 }
             }
             .pickerStyle(.menu)
-
+            
             if glassMode == .customLiquid {
                 Picker("Liquid Glass Variant", selection: $liquidGlassVariant) {
                     ForEach(LiquidGlassVariant.allCases) { variant in
@@ -4582,7 +4573,7 @@ struct Appearance: View {
                         .tag(MirrorShapeEnum.rectangle)
                 }
                 .settingsHighlight(id: highlightID("Mirror shape"))
-
+                
                 if webcamManager.cameraAvailable {
                     Picker("Mirror Camera", selection: $selectedCameraID) {
                         ForEach(webcamManager.availableCameras, id: \.uniqueID) { device in
@@ -4961,14 +4952,14 @@ struct LockScreenSettings: View {
 
         var title: String {
             switch self {
-            case .mins15: return String(localized: "15 mins")
-            case .mins30: return String(localized: "30 mins")
-            case .hour1: return String(localized: "1 hour")
-            case .hours3: return String(localized: "3 hours")
-            case .hours6: return String(localized: "6 hours")
-            case .hours12: return String(localized: "12 hours")
-            case .restOfDay: return String(localized: "Rest of the day")
-            case .allTime: return String(localized: "All time")
+            case .mins15: return "15 mins"
+            case .mins30: return "30 mins"
+            case .hour1: return "1 hour"
+            case .hours3: return "3 hours"
+            case .hours6: return "6 hours"
+            case .hours12: return "12 hours"
+            case .restOfDay: return "Rest of the day"
+            case .allTime: return "All time"
             }
         }
     }
@@ -4982,9 +4973,9 @@ struct LockScreenSettings: View {
 
         var title: String {
             switch self {
-            case .leading: return String(localized: "Left")
-            case .center: return String(localized: "Center")
-            case .trailing: return String(localized: "Right")
+            case .leading: return "Left"
+            case .center: return "Center"
+            case .trailing: return "Right"
             }
         }
     }
@@ -7057,11 +7048,11 @@ struct StatsSettings: View {
     private var formattedUpdateInterval: String {
         let seconds = Int(statsUpdateInterval.rounded())
         if seconds >= 60 {
-            return String(localized: "60 s (1 min)")
+            return "60 s (1 min)"
         } else if seconds == 1 {
-            return String(localized: "1 s")
+            return "1 s"
         } else {
-            return String(localized: "\(seconds) s")
+            return "\(seconds) s"
         }
     }
 
@@ -7453,16 +7444,16 @@ struct ClipboardSettings: View {
         let interval = Date().timeIntervalSince(date)
 
         if interval < 60 {
-            return String(localized: "Just now")
+            return "Just now"
         } else if interval < 3600 {
             let minutes = Int(interval / 60)
-            return String(localized: "\(minutes)m ago")
+            return "\(minutes)m ago"
         } else if interval < 86400 {
             let hours = Int(interval / 3600)
-            return String(localized: "\(hours)h ago")
+            return "\(hours)h ago"
         } else {
             let days = Int(interval / 86400)
-            return String(localized: "\(days)d ago")
+            return "\(days)d ago"
         }
     }
 }
@@ -7631,16 +7622,16 @@ struct ScreenAssistantSettings: View {
         let interval = Date().timeIntervalSince(date)
 
         if interval < 60 {
-            return String(localized: "Just now")
+            return "Just now"
         } else if interval < 3600 {
             let minutes = Int(interval / 60)
-            return String(localized: "\(minutes)m ago")
+            return "\(minutes)m ago"
         } else if interval < 86400 {
             let hours = Int(interval / 3600)
-            return String(localized: "\(hours)h ago")
+            return "\(hours)h ago"
         } else {
             let days = Int(interval / 86400)
-            return String(localized: "\(days)d ago")
+            return "\(days)d ago"
         }
     }
 }
@@ -7934,14 +7925,14 @@ struct CustomOSDSettings: View {
                                     previewType = .brightness
                                 }
                                 .buttonStyle(.bordered)
-
+                                
                                 Button("Backlight") {
                                     previewType = .backlight
                                 }
                                 .buttonStyle(.bordered)
                             }
                             .controlSize(.small)
-
+                            
                             Slider(value: $previewValue, in: 0...1)
                                 .frame(width: 160)
                         }
@@ -7957,6 +7948,7 @@ struct CustomOSDSettings: View {
                 }
             }
         }
+        .navigationTitle("Custom OSD")
         .onAppear {
             accessibilityPermission.refreshStatus()
             if #unavailable(macOS 26.0), osdMaterial == .liquid {
@@ -8004,21 +7996,21 @@ struct SettingsPermissionCallout: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Label(LocalizedStringKey(title), systemImage: icon)
+            Label(title, systemImage: icon)
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(iconColor)
 
-            Text(LocalizedStringKey(message))
+            Text(message)
                 .font(.caption)
                 .foregroundStyle(.secondary)
 
             HStack(spacing: 8) {
-                Button(LocalizedStringKey(requestButtonTitle)) {
+                Button(requestButtonTitle) {
                     requestAction()
                 }
                 .buttonStyle(.borderedProminent)
 
-                Button(LocalizedStringKey(openSettingsButtonTitle)) {
+                Button(openSettingsButtonTitle) {
                     openSettingsAction()
                 }
                 .buttonStyle(.bordered)
