@@ -961,9 +961,13 @@ struct ContentView: View {
                       } else if !coordinator.expandingView.show && vm.notchState == .closed && (!musicManager.isPlaying && musicManager.isPlayerIdle) && Defaults[.showNotHumanFace] && !vm.hideOnClosed  {
                       } else if !isCurrentScreenExpansionVisible && vm.notchState == .closed && (!musicManager.isPlaying && musicManager.isPlayerIdle) && Defaults[.showNotHumanFace] && !vm.hideOnClosed  {
                           DynamicIslandFaceAnimation().animation(.interactiveSpring, value: musicManager.isPlayerIdle)
-                      } else if vm.notchState == .open {
+                      } else if vm.notchState == .open && !enableMinimalisticUI {
                           DynamicIslandHeader()
                               .frame(height: max(24, vm.effectiveClosedNotchHeight))
+                       } else if vm.notchState == .open {
+                           Rectangle()
+                               .fill(.clear)
+                               .frame(height: max(24, vm.effectiveClosedNotchHeight))
                        } else {
                            Rectangle().fill(.clear).frame(width: vm.closedNotchSize.width - 20, height: vm.effectiveClosedNotchHeight)
                        }
