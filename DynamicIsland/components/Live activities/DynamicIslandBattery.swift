@@ -28,6 +28,7 @@ struct BatteryView: View {
     var isInLowPowerMode: Bool
     var batteryWidth: CGFloat = 26
     var isForNotification: Bool
+    var showPercentInside: Bool = false
 
     var animationStyle: DynamicIslandAnimations = DynamicIslandAnimations()
 
@@ -79,7 +80,31 @@ struct BatteryView: View {
                 )
                 .padding(.leading, 2)
 
-            if iconStatus != "" && (isForNotification || showPowerStatusIcons) {
+            if showPercentInside {
+                let showsStatusGlyph = iconStatus != "" && (isForNotification || showPowerStatusIcons)
+                let bodyHeight = (batteryWidth - 2.75) - 18
+                let glyphColor: Color = isCharging ? .white : .black
+                let statusSymbol: String? = {
+                    guard showsStatusGlyph else { return nil }
+                    if isCharging { return "bolt.fill" }
+                    if isPluggedIn { return "powerplug.fill" }
+                    return nil
+                }()
+                HStack(spacing: 0.5) {
+                    Text("\(Int(levelBattery))")
+                        .font(.system(size: batteryWidth * 0.42, weight: .heavy, design: .rounded))
+                        .foregroundStyle(glyphColor)
+                        .minimumScaleFactor(0.5)
+                        .lineLimit(1)
+                    if let statusSymbol {
+                        Image(systemName: statusSymbol)
+                            .font(.system(size: batteryWidth * 0.22, weight: .black))
+                            .foregroundStyle(glyphColor)
+                    }
+                }
+                .frame(width: batteryWidth - 7, height: bodyHeight, alignment: .center)
+                .padding(.leading, 2)
+            } else if iconStatus != "" && (isForNotification || showPowerStatusIcons) {
                 ZStack {
                     Image(iconStatus)
                         .resizable()
