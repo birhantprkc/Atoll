@@ -23,6 +23,7 @@
 import Foundation
 import OSLog
 import SwiftUI
+import Defaults
 
 enum LogCategory: String {
     case lifecycle = "🔄"
@@ -48,6 +49,15 @@ enum LogCategory: String {
         case .success: return "success"
         case .debug: return "debug"
         case .extensions: return "extensions"
+        }
+    }
+
+    var defaultLevel: LogLevel {
+        switch self {
+        case .error: return .error
+        case .warning: return .warning
+        case .success, .ui, .network, .lifecycle, .memory, .performance, .extensions: return .info
+        case .debug: return .debug
         }
     }
 }
@@ -77,6 +87,11 @@ struct Logger {
         function: String = #function,
         line: Int = #line
     ) {
+        let configuredLevel = Defaults[.logLevel]
+        if configuredLevel == .none || category.defaultLevel.rawValue > configuredLevel.rawValue {
+            return
+        }
+
         let fileName = (file as NSString).lastPathComponent
         let timestamp = dateFormatter.string(from: Date())
         let entry = "\(category.rawValue) [\(timestamp)] [\(fileName):\(line)] \(function) - \(message)"
