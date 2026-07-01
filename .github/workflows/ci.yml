@@ -46,5 +46,6 @@ jobs:
             CODE_SIGN_IDENTITY="-" \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=YES \
+            CODE_SIGN_ENTITLEMENTS="" \
             CODE_SIGN_INJECT_BASE_ENTITLEMENTS=YES
 
