@@ -306,6 +306,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 // (`.onDisappear` is unreliable for borderless panels).
                 viewModels[screen]?.onViewTeardown?()
                 viewModels[screen]?.onViewTeardown = nil
+                NotchSpaceManager.shared.notchSpace.windows.remove(window)
                 window.close()
             }
             windows.removeAll()
@@ -313,8 +314,29 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         } else if let window = window {
             vm.onViewTeardown?()
             vm.onViewTeardown = nil
+            NotchSpaceManager.shared.notchSpace.windows.remove(window)
             window.close()
             self.window = nil
+        }
+    }
+
+    /// Rebuilds the notch's CGSSpace membership from the current hide option and the
+    /// live windows. The space pins the notch above every space (fullscreen included)
+    /// and is used **only** for "Never hide"; the hide options keep the set empty so
+    /// FullscreenMediaDetector can hide the notch. Assigning the whole set lets the
+    /// CGSSpace diff additions/removals, so this is safe to call on any change.
+    @MainActor
+    private func syncNotchSpaceMembership() {
+        guard Defaults[.hideNotchOption] == .never else {
+            NotchSpaceManager.shared.notchSpace.windows = []
+            return
+        }
+        if Defaults[.showOnAllDisplays] {
+            NotchSpaceManager.shared.notchSpace.windows = Set(windows.values)
+        } else if let window = window {
+            NotchSpaceManager.shared.notchSpace.windows = [window]
+        } else {
+            NotchSpaceManager.shared.notchSpace.windows = []
         }
     }
 
@@ -346,6 +368,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         )
         
         window.orderFrontRegardless()
+        // Pin above every space (fullscreen included) only for "Never hide"; the
+        // hide options leave the window on the collectionBehavior path so
+        // FullscreenMediaDetector can hide it. See NotchSpaceManager.
+        if Defaults[.hideNotchOption] == .never {
+            NotchSpaceManager.shared.notchSpace.windows.insert(window)
+        }
         //SkyLightOperator.shared.delegateWindow(window)
         return window
     }
@@ -717,6 +745,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         Defaults.publisher(.enableScreenAssistant, options: []).sink { [weak self] _ in
             Task { @MainActor [weak self] in
                 self?.updateFeatureShortcutAvailability()
+            }
+        }.store(in: &cancellables)
+
+        // Pin/unpin the notch above all spaces when the hide option changes:
+        // "Never hide" joins the max-level CGSSpace, the hide options leave it.
+        Defaults.publisher(.hideNotchOption, options: []).sink { [weak self] _ in
+            Task { @MainActor [weak self] in
+                self?.syncNotchSpaceMembership()
             }
         }.store(in: &cancellables)
         
