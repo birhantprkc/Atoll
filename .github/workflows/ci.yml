@@ -43,29 +43,31 @@ jobs:
           sudo DevToolsSecurity -enable
           
           if [ -n "$CERTIFICATE_BASE64" ]; then
-            # Import certificate to build keychain
             CERTIFICATE_PATH=$RUNNER_TEMP/build_certificate.p12
-            KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
             echo -n "$CERTIFICATE_BASE64" | base64 --decode -o $CERTIFICATE_PATH
             
-            # Create, unlock, and set as default keychain
-            security create-keychain -p "" $KEYCHAIN_PATH
-            security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
-            security unlock-keychain -p "" $KEYCHAIN_PATH
-            security default-keychain -s $KEYCHAIN_PATH
-            security list-keychains -d user -s $KEYCHAIN_PATH
+            # Use the runner's default login keychain
+            KEYCHAIN_PATH=$HOME/Library/Keychains/login.keychain-db
             
-            # Import certificate
+            # Unlock the login keychain (GitHub Actions runners have an empty password by default)
+            security unlock-keychain -p "" $KEYCHAIN_PATH
+            
+            # Import certificate into login keychain
             security import $CERTIFICATE_PATH -P "$CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
             
             # CRITICAL: Allow codesign tool to access the private key without a UI prompt
             security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "" $KEYCHAIN_PATH
             
             # Dynamically extract Identity and Team ID from the certificate
-            IDENTITY=$(security find-identity -v -p codesigning $KEYCHAIN_PATH | head -n 1 | grep -o '".*"' | tr -d '"')
-            TEAM_ID=$(echo $IDENTITY | grep -o '([A-Z0-9]*)' | tr -d '()')
+            FULL_IDENTITY=$(security find-identity -v -p codesigning $KEYCHAIN_PATH | head -n 1 | grep -o '".*"' | tr -d '"')
+            TEAM_ID=$(echo $FULL_IDENTITY | grep -o '([A-Z0-9]*)' | tr -d '()')
             
-            echo "Extracted Identity: $IDENTITY"
+            # Extract just the prefix (e.g. "Apple Development" or "Developer ID Application")
+            # Xcode is much better at matching the broad type than the exact full string
+            IDENTITY_TYPE=$(echo "$FULL_IDENTITY" | cut -d ':' -f 1)
+            
+            echo "Extracted Full Identity: $FULL_IDENTITY"
+            echo "Extracted Identity Type: $IDENTITY_TYPE"
             echo "Extracted Team ID: $TEAM_ID"
             
             xcodebuild test \
@@ -73,9 +75,8 @@ jobs:
               -scheme DynamicIsland \
               -destination "platform=macOS" \
               -enableCodeCoverage YES \
-              OTHER_CODE_SIGN_FLAGS="--keychain $KEYCHAIN_PATH" \
               CODE_SIGN_STYLE=Manual \
-              CODE_SIGN_IDENTITY="$IDENTITY" \
+              CODE_SIGN_IDENTITY="$IDENTITY_TYPE" \
               DEVELOPMENT_TEAM="$TEAM_ID" \
               PROVISIONING_PROFILE_SPECIFIER="" \
               CODE_SIGN_INJECT_BASE_ENTITLEMENTS=YES || {
