@@ -29,7 +29,11 @@ jobs:
           xcode-version: latest-stable
 
       - name: Download Metal Toolchain
-        run: sudo xcodebuild -downloadComponent MetalToolchain || true
+        run: |
+          sudo xcodebuild -runFirstLaunch
+          for i in 1 2 3 4 5; do
+            sudo xcodebuild -downloadComponent MetalToolchain && break || sleep 10
+          done
 
       - name: Build and Test
         run: |
