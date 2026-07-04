@@ -60,11 +60,6 @@ actor AnimatedArtworkManager {
             return cachedVideoURL
         }
 
-        // New song — reset the token backoff so a fresh attempt is always made.
-        if key != cachedKey {
-            tokenFailureCount = 0
-            tokenFailureLastAttempt = nil
-        }
 
         cachedKey = key
 
