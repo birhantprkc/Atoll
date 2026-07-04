@@ -3588,6 +3588,12 @@
         }
       }
     },
+    "4" : {
+
+    },
+    "5" : {
+
+    },
     "5 colors" : {
       "comment" : "merge:ko:alt='5가지 색상'",
       "localizations" : {
@@ -3773,6 +3779,9 @@
           }
         }
       }
+    },
+    "6" : {
+
     },
     "7 items" : {
       "comment" : "merge:ko:alt='항목 7개'",
@@ -15618,6 +15627,9 @@
           }
         }
       }
+    },
+    "Color extraction" : {
+
     },
     "Color Formats" : {
       "localizations" : {
@@ -34086,6 +34098,9 @@
         }
       }
     },
+    "Legacy" : {
+
+    },
     "License key" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -51841,6 +51856,9 @@
         }
       }
     },
+    "Scrubbable real-time waveform" : {
+
+    },
     "Search clipboard..." : {
       "localizations" : {
         "fr" : {
@@ -65853,6 +65871,9 @@
       },
       "shouldTranslate" : false
     },
+    "Vibrant" : {
+
+    },
     "Video" : {
       "localizations" : {
         "ko" : {
@@ -66004,6 +66025,9 @@
           }
         }
       }
+    },
+    "Visualizer candles" : {
+
     },
     "Volume" : {
       "comment" : "A button that sets the preview to show a volume OSD.",

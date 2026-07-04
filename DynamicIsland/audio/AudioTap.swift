@@ -340,10 +340,9 @@ class AudioTap: NSObject {
         DispatchQueue.main.async { [weak self] in
             self?.updateTimer?.invalidate()
             self?.updateTimer = nil
+            // Reset display magnitudes safely on main thread
+            self?.displayMagnitudes = Array(repeating: 0, count: 6)
         }
-        
-        // Reset display magnitudes
-        displayMagnitudes = Array(repeating: 0, count: 6)
 
         print("🔴 [AudioTap] CoreAudio CATap capture stopped")
     }

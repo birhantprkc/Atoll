@@ -314,9 +314,13 @@ extension NSImage {
                 sBri = min(1.0, sBri * 1.10)
                 secondaryColor = NSColor(hue: sHue, saturation: sSat, brightness: sBri, alpha: 1.0)
             } else {
-                // Fallback to complementary if no other bucket is found
-                let sHue = fmod(pHue + 0.5, 1.0)
-                secondaryColor = NSColor(hue: sHue, saturation: pSat, brightness: pBri, alpha: 1.0)
+                // Fallback to complementary if no other bucket is found.
+                // If no primary bucket was found either (maxWeight <= 0),
+                // keep both colors gray instead of deriving a black color.
+                if maxWeight > 0 {
+                    let sHue = fmod(pHue + 0.5, 1.0)
+                    secondaryColor = NSColor(hue: sHue, saturation: pSat, brightness: pBri, alpha: 1.0)
+                }
             }
             
             DispatchQueue.main.async {
