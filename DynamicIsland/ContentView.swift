@@ -962,12 +962,8 @@ struct ContentView: View {
                       } else if !isCurrentScreenExpansionVisible && vm.notchState == .closed && (!musicManager.isPlaying && musicManager.isPlayerIdle) && Defaults[.showNotHumanFace] && !vm.hideOnClosed  {
                           DynamicIslandFaceAnimation().animation(.interactiveSpring, value: musicManager.isPlayerIdle)
                       } else if vm.notchState == .open {
-                          if Defaults[.enableMinimalisticUI] && isDynamicIslandMode {
-                              DynamicIslandHeader()
-                          } else {
-                              DynamicIslandHeader()
-                                  .frame(height: max(24, vm.effectiveClosedNotchHeight))
-                          }
+                          DynamicIslandHeader()
+                              .frame(height: (Defaults[.enableMinimalisticUI] && isDynamicIslandMode) ? nil : max(24, vm.effectiveClosedNotchHeight))
                        } else {
                            Rectangle().fill(.clear).frame(width: vm.closedNotchSize.width - 20, height: vm.effectiveClosedNotchHeight)
                        }

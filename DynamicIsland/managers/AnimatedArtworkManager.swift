@@ -60,14 +60,6 @@ actor AnimatedArtworkManager {
             return cachedVideoURL
         }
 
-        // New song — reset the token backoff so a fresh attempt is always made.
-        if key != cachedKey {
-            tokenFailureCount = 0
-            tokenFailureLastAttempt = nil
-        }
-
-        cachedKey = key
-
         // If MusicKit token has been consistently failing, honour the back-off
         // window before making another network request.
         if isWithinTokenBackoff() {
@@ -76,9 +68,11 @@ actor AnimatedArtworkManager {
         }
 
         guard await requestMusicAuthorization() else {
-            cachedVideoURL = nil
             return nil
         }
+
+        cachedKey = key
+        cachedVideoURL = nil
 
         guard let songID = await searchSongID(title: title, artist: artist) else {
             cachedVideoURL = nil
@@ -91,8 +85,7 @@ actor AnimatedArtworkManager {
         }
 
         // Success — clear any outstanding failure state.
-        tokenFailureCount = 0
-        tokenFailureLastAttempt = nil
+        resetTokenFailureState()
 
         cachedSongID = songID
         cachedVideoURL = videoURL
@@ -103,6 +96,10 @@ actor AnimatedArtworkManager {
         cachedKey = nil
         cachedSongID = nil
         cachedVideoURL = nil
+        resetTokenFailureState()
+    }
+
+    private func resetTokenFailureState() {
         tokenFailureCount = 0
         tokenFailureLastAttempt = nil
     }

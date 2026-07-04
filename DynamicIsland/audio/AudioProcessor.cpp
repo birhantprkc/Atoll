@@ -75,6 +75,7 @@ void AudioProcessor::process( const float* __restrict__ buffer,
 
 float AudioProcessor::getBand( int i ) const
 {
+    if ( __builtin_expect( i < 0 || i >= kBands, 0 ) ) return 0.0f;
     return bandParams[i].load( std::memory_order_relaxed );
 }
 

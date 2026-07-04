@@ -122,6 +122,7 @@ extension NSImage {
     }
     
     func prominentOpposingColors(completion: @escaping (NSColor, NSColor) -> Void) {
+        let isLegacyMode = Defaults[.colorExtractionMode] == .legacy
         DispatchQueue.global(qos: .userInitiated).async {
             // Step 1: Downsample the image
             let targetSize = CGSize(width: 64, height: 64)
@@ -159,7 +160,7 @@ extension NSImage {
             }
             let pointer = data.bindMemory(to: UInt32.self, capacity: totalPixels)
             
-            let isLegacy = Defaults[.colorExtractionMode] == .legacy
+            let isLegacy = isLegacyMode
             if isLegacy {
                 var totalRed: UInt64 = 0
                 var totalGreen: UInt64 = 0

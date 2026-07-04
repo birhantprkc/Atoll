@@ -40,7 +40,8 @@ struct RealTimeWaveformScrubberView: View {
     }
     
     private func startTimer() {
-        timer = Timer.scheduledTimer(withTimeInterval: 1.0 / 60.0, repeats: true) { _ in
+        timer?.invalidate()
+        let newTimer = Timer.scheduledTimer(withTimeInterval: 1.0 / 60.0, repeats: true) { _ in
             let tapMagnitudes = AudioTap.shared.getSmoothedMagnitudes()
             let barCount = Defaults[.visualizerBarCount]
             var newMags: [Float] = []
@@ -64,6 +65,8 @@ struct RealTimeWaveformScrubberView: View {
                 magnitudes = smoothedMags
             }
         }
+        RunLoop.main.add(newTimer, forMode: .common)
+        timer = newTimer
     }
     
     private func stopTimer() {

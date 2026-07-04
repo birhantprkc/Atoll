@@ -39,11 +39,16 @@
 }
 
 - (NSArray<NSNumber *> *)getSmoothedMagnitudes {
-    NSMutableArray<NSNumber *> *magnitudes = [NSMutableArray arrayWithCapacity:6];
-    for (int i = 0; i < 6; i++) {
+    int count = processor->getBandCount();
+    NSMutableArray<NSNumber *> *magnitudes = [NSMutableArray arrayWithCapacity:count];
+    for (int i = 0; i < count; i++) {
         [magnitudes addObject:@(processor->getBand(i))];
     }
     return magnitudes;
+}
+
+- (int)getBandCount {
+    return processor->getBandCount();
 }
 
 - (void)dealloc {

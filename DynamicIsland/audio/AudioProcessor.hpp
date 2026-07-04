@@ -57,6 +57,7 @@ class AudioProcessor {
 
     // Called by render thread — lock-free read
     float getBand( int i ) const;
+    int getBandCount() const { return kBands; }
 
    private:
     enum class FilterType { LowPass, BandPass, HighPass };

@@ -62,12 +62,6 @@ let audioIOProc: AudioDeviceIOProc = {
                 if absVal > maxVal { maxVal = absVal }
             }
             os_log(.debug, log: audioTapLog, "🔊 Audio callback fired %d times, buffer size: %d, max amplitude: %f", callbackCount, floatCount, maxVal)
-            
-            // Also log the current band values from the bridge
-            let mags = scanner.bridge.getSmoothedMagnitudes()
-            if mags.count >= 4 {
-                os_log(.debug, log: audioTapLog, "🎚️ Bridge magnitudes: [%f, %f, %f, %f]", mags[0].floatValue, mags[1].floatValue, mags[2].floatValue, mags[3].floatValue)
-            }
         }
     }
 
@@ -118,6 +112,7 @@ class AudioTap: NSObject {
     private var aggregateDeviceID: AudioObjectID = kAudioObjectUnknown
     private var ioProcID: AudioDeviceIOProcID? = nil
     private var captureIsRunning = false
+    private var updateTimer: Timer?
     
     // Serial queue to prevent race conditions
     private let audioQueue = DispatchQueue(label: "com.atoll.audiotap", qos: .userInitiated)
@@ -142,7 +137,7 @@ class AudioTap: NSObject {
         super.init()
     }
 
-    func getSmoothedMagnitudes() -> [Float] {
+    @objc private func updateSmoothedMagnitudes() {
         let nsMagnitudes = bridge.getSmoothedMagnitudes()
         let targetLevels = nsMagnitudes.map { $0.floatValue }
         
@@ -152,7 +147,9 @@ class AudioTap: NSObject {
             let difference = targetLevels[i] - displayMagnitudes[i]
             displayMagnitudes[i] += difference * smoothingFactor
         }
-        
+    }
+
+    func getSmoothedMagnitudes() -> [Float] {
         return displayMagnitudes
     }
 
@@ -262,6 +259,14 @@ class AudioTap: NSObject {
 
         captureIsRunning = true
         callbackCount = 0
+        
+        DispatchQueue.main.async { [weak self] in
+            self?.updateTimer?.invalidate()
+            let timer = Timer(timeInterval: 1.0 / 60.0, target: self as Any, selector: #selector(self?.updateSmoothedMagnitudes), userInfo: nil, repeats: true)
+            RunLoop.main.add(timer, forMode: .common)
+            self?.updateTimer = timer
+        }
+        
         print("🟢 [AudioTap] CoreAudio CATap flowing through Aggregate Device!")
     }
     
@@ -278,6 +283,11 @@ class AudioTap: NSObject {
         tapID = kAudioObjectUnknown
         aggregateDeviceID = kAudioObjectUnknown
         ioProcID = nil
+        
+        DispatchQueue.main.async { [weak self] in
+            self?.updateTimer?.invalidate()
+            self?.updateTimer = nil
+        }
     }
 
     func restartCapture() {
@@ -326,6 +336,11 @@ class AudioTap: NSObject {
         aggregateDeviceID = kAudioObjectUnknown
         ioProcID = nil
         captureIsRunning = false
+        
+        DispatchQueue.main.async { [weak self] in
+            self?.updateTimer?.invalidate()
+            self?.updateTimer = nil
+        }
         
         // Reset display magnitudes
         displayMagnitudes = Array(repeating: 0, count: 6)
