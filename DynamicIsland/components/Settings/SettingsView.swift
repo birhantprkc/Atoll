@@ -2947,7 +2947,7 @@ struct Media: View {
                 
                 Picker("Sneak Peek Style", selection: $sneakPeekStyles){
                     ForEach(SneakPeekStyle.allCases) { style in
-                        Text(style.LocalizedName).tag(style)
+                        Text(style.localizedName).tag(style)
                     }
                 }
                 .disabled(!enableSneakPeek)
