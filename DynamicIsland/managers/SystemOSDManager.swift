@@ -138,6 +138,33 @@ class SystemOSDManager {
         }
     }
 
+    /// Synchronously resumes OSDUIHelper for app termination.
+    ///
+    /// `enableSystemHUD()` restarts the helper on a detached background `Task`,
+    /// which never runs to completion when the process is already terminating —
+    /// so a SIGSTOP-frozen OSDUIHelper stays frozen after Atoll quits, breaking
+    /// every native OSD Atoll does not replace (keyboard backlight,
+    /// external-display brightness, …) and leaving a stuck HUD on screen. This
+    /// sends SIGCONT inline and blocks until it lands, guaranteeing the helper
+    /// is resumed before Atoll exits. Idempotent; safe to call from a
+    /// termination handler.
+    public static func resumeOSDUIHelperForTermination() {
+        suppressionState.withLock { $0.active = false }
+        // Cancel the watcher first so it cannot re-SIGSTOP the helper we resume.
+        stopSuppressionWatcher()
+
+        let resume = Process()
+        resume.executableURL = URL(fileURLWithPath: "/usr/bin/killall")
+        resume.arguments = ["-CONT", "OSDUIHelper"]
+        resume.standardError = Pipe() // silence "no such process" stderr
+        do {
+            try resume.run()
+            resume.waitUntilExit()
+        } catch {
+            NSLog("Failed to SIGCONT OSDUIHelper on termination: \(error)")
+        }
+    }
+
     /// Disables the system HUD by stopping OSDUIHelper, and starts a
     /// background watcher that re-suspends any future incarnation launchd
     /// spawns (macOS auto-exits OSDUIHelper on idle).

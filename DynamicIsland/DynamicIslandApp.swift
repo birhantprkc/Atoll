@@ -244,6 +244,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             deliverImmediately: true
         )
 
+        // Guarantee the native OSD is usable after we exit: if we were
+        // suppressing it, OSDUIHelper is SIGSTOP-frozen and the async restore in
+        // enableSystemHUD() would not finish before the process dies. Resume it
+        // synchronously here so it is never left frozen. (See issue #568.)
+        SystemOSDManager.resumeOSDUIHelperForTermination()
+
         // Cancel any pending window size updates
         windowSizeUpdateWorkItem?.cancel()
         NotificationCenter.default.removeObserver(self)
