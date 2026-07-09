@@ -138,6 +138,41 @@ class SystemOSDManager {
         }
     }
 
+    /// Synchronously resumes OSDUIHelper for app termination.
+    ///
+    /// `enableSystemHUD()` restarts the helper on a detached background `Task`,
+    /// which never runs to completion when the process is already terminating —
+    /// so a SIGSTOP-frozen OSDUIHelper stays frozen after Atoll quits, breaking
+    /// every native OSD Atoll does not replace (keyboard backlight,
+    /// external-display brightness, …) and leaving a stuck HUD on screen. This
+    /// sends SIGCONT inline and blocks until it lands, guaranteeing the helper
+    /// is resumed before Atoll exits. Idempotent; safe to call from a
+    /// termination handler.
+    public static func resumeOSDUIHelperForTermination() {
+        suppressionState.withLock { $0.active = false }
+
+        // Cancel the watcher and wait for it to fully exit before resuming. A
+        // bare cancel is cooperative, so an in-flight suspendOSDUIHelper() could
+        // otherwise land its SIGSTOP after our SIGCONT and re-freeze the helper.
+        // Bridge the async drain to this synchronous path with a bounded wait.
+        if let watcher = stopSuppressionWatcher() {
+            let drained = DispatchSemaphore(value: 0)
+            Task { await watcher.value; drained.signal() }
+            _ = drained.wait(timeout: .now() + 1.0)
+        }
+
+        let resume = Process()
+        resume.executableURL = URL(fileURLWithPath: "/usr/bin/killall")
+        resume.arguments = ["-CONT", "OSDUIHelper"]
+        resume.standardError = Pipe() // silence "no such process" stderr
+        do {
+            try resume.run()
+            resume.waitUntilExit()
+        } catch {
+            NSLog("Failed to SIGCONT OSDUIHelper on termination: \(error)")
+        }
+    }
+
     /// Disables the system HUD by stopping OSDUIHelper, and starts a
     /// background watcher that re-suspends any future incarnation launchd
     /// spawns (macOS auto-exits OSDUIHelper on idle).
@@ -270,7 +305,10 @@ class SystemOSDManager {
         previous?.cancel()
     }
 
-    private static func stopSuppressionWatcher() {
+    /// Cancels the suppression watcher. Returns the cancelled task so callers
+    /// that must not race it (e.g. termination) can wait for it to fully exit.
+    @discardableResult
+    private static func stopSuppressionWatcher() -> Task<Void, Never>? {
         let previous = suppressionState.withLock { state -> Task<Void, Never>? in
             let prior = state.task
             state.task = nil
@@ -278,6 +316,7 @@ class SystemOSDManager {
             return prior
         }
         previous?.cancel()
+        return previous
     }
 
     /// Returns the newest OSDUIHelper PID, or nil if none.
