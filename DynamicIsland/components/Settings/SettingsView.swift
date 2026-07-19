@@ -3558,6 +3558,7 @@ struct CalendarSettings: View {
 
 struct About: View {
     @State private var showBuildNumber: Bool = false
+    @Default(.updateChannel) var updateChannel
     let updaterController: SPUStandardUpdaterController
     @Environment(\.openWindow) var openWindow
     var body: some View {
@@ -3573,6 +3574,17 @@ struct About: View {
                     HStack {
                         Text("Version")
                         Spacer()
+
+                        // Channel badge
+                        Text(UpdateChannel.buildChannel.displayName)
+                            .font(.caption2)
+                            .fontWeight(.semibold)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Color(UpdateChannel.buildChannel.badgeColor).opacity(0.2))
+                            .foregroundStyle(Color(UpdateChannel.buildChannel.badgeColor))
+                            .clipShape(Capsule())
+
                         if showBuildNumber {
                             Text("(\(Bundle.main.buildVersionNumber ?? ""))")
                                 .foregroundStyle(.secondary)
@@ -3590,6 +3602,32 @@ struct About: View {
                 }
 
                 UpdaterSettingsView(updater: updaterController.updater)
+
+                Section {
+                    Picker("Update channel", selection: $updateChannel) {
+                        ForEach(UpdateChannel.availableChannels) { channel in
+                            HStack {
+                                Image(systemName: channel.badgeIcon)
+                                    .foregroundStyle(Color(channel.badgeColor))
+                                    .frame(width: 16)
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(channel.displayName)
+                                    Text(channel.description)
+                                        .font(.caption2)
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
+                            .tag(channel)
+                        }
+                    }
+                    .pickerStyle(.radioGroup)
+
+                    Text("Current build: \(UpdateChannel.buildChannel.displayName)")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                } header: {
+                    Text("Update channel")
+                }
 
                 HStack(spacing: 30) {
                     Spacer(minLength: 0)

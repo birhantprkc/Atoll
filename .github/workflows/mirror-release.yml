@@ -6,6 +6,9 @@ on:
       - main
       - master
       - dev
+      - nightly
+      - alpha
+      - beta
   release:
     types: [published]
 
@@ -87,6 +90,12 @@ jobs:
         run: |
           TAG="${{ github.event.release.tag_name }}"
 
+          # Determine if this is a pre-release
+          PRERELEASE_FLAG=""
+          if [ "${{ github.event.release.prerelease }}" = "true" ]; then
+            PRERELEASE_FLAG="--prerelease"
+          fi
+
           if gh release view "$TAG" \
               --repo Atoll-Labs/Atoll >/dev/null 2>&1; then
 
@@ -97,7 +106,8 @@ jobs:
             gh release create "$TAG" \
               --repo Atoll-Labs/Atoll \
               --title "${{ github.event.release.name }}" \
-              --notes-file release_notes.md
+              --notes-file release_notes.md \
+              $PRERELEASE_FLAG
 
           fi
 
