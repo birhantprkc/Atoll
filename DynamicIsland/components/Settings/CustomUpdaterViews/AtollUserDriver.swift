@@ -26,7 +26,7 @@ import SwiftUI
 /// This driver handles all update lifecycle events: discovery, download progress,
 /// extraction, installation, errors, and the "no update available" state.
 @MainActor
-class AtollUserDriver: NSObject, SPUUserDriver {
+class AtollUserDriver: NSObject, @preconcurrency SPUUserDriver {
     
     // MARK: - Window Management
     

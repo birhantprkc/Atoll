@@ -25,6 +25,7 @@ enum UpdateChannel: String, CaseIterable, Identifiable, Codable, Defaults.Serial
     case beta
     case alpha
     case nightly
+    case dev
 
     var id: String { rawValue }
 
@@ -34,6 +35,7 @@ enum UpdateChannel: String, CaseIterable, Identifiable, Codable, Defaults.Serial
         case .beta:    return "Beta"
         case .alpha:   return "Alpha"
         case .nightly: return "Nightly"
+        case .dev:     return "Dev"
         }
     }
 
@@ -43,6 +45,7 @@ enum UpdateChannel: String, CaseIterable, Identifiable, Codable, Defaults.Serial
         case .beta:    return "Pre-release builds, mostly stable"
         case .alpha:   return "Early testing builds, may have issues"
         case .nightly: return "Bleeding edge, built daily from dev"
+        case .dev:     return "Local development build from Xcode"
         }
     }
 
@@ -53,6 +56,7 @@ enum UpdateChannel: String, CaseIterable, Identifiable, Codable, Defaults.Serial
         case .beta:    return URL(string: "\(base)/appcast-beta.xml")!
         case .alpha:   return URL(string: "\(base)/appcast-alpha.xml")!
         case .nightly: return URL(string: "\(base)/appcast-nightly.xml")!
+        case .dev:     return URL(string: "\(base)/appcast-nightly.xml")!
         }
     }
 
@@ -63,6 +67,7 @@ enum UpdateChannel: String, CaseIterable, Identifiable, Codable, Defaults.Serial
         case .beta:    return .systemBlue
         case .alpha:   return .systemOrange
         case .nightly: return .systemPurple
+        case .dev:     return .systemYellow
         }
     }
 
@@ -73,12 +78,17 @@ enum UpdateChannel: String, CaseIterable, Identifiable, Codable, Defaults.Serial
         case .beta:    return "testtube.2"
         case .alpha:   return "flask.fill"
         case .nightly: return "moon.stars.fill"
+        case .dev:     return "hammer.fill"
         }
     }
 
-    /// The channel this build was compiled for (set via -D flags at build time).
+    /// The channel this build was compiled for.
+    /// Debug builds (run from Xcode) are always identified as `.dev`.
+    /// Release builds use the `-D` compiler flags set by CI.
     static var buildChannel: UpdateChannel {
-        #if NIGHTLY
+        #if DEBUG
+        return .dev
+        #elseif NIGHTLY
         return .nightly
         #elseif ALPHA
         return .alpha
@@ -89,8 +99,9 @@ enum UpdateChannel: String, CaseIterable, Identifiable, Codable, Defaults.Serial
         #endif
     }
 
-    /// All channels available for the user to select.
+    /// Channels available for the user to select in Settings.
+    /// Dev is excluded since it's only a build-time indicator, not a selectable feed.
     static var availableChannels: [UpdateChannel] {
-        return UpdateChannel.allCases
+        return UpdateChannel.allCases.filter { $0 != .dev }
     }
 }

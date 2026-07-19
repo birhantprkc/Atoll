@@ -318,12 +318,15 @@ jobs:
           DMG_NAME="${{ steps.version.outputs.dmg_name }}"
           APP_PATH="build/export/${APP_NAME}.app"
 
+          DMG_ARGS="--volname $APP_NAME --window-size 600 400 --icon ${APP_NAME}.app 150 200 --app-drop-link 450 200"
+
+          # Use background image if available
+          if [ -f ".github/assets/background.with-arrow.png" ]; then
+            DMG_ARGS="$DMG_ARGS --background .github/assets/background.with-arrow.png"
+          fi
+
           create-dmg \
-            --volname "$APP_NAME" \
-            --background ".github/assets/background.with-arrow.png" \
-            --window-size 600 400 \
-            --icon "${APP_NAME}.app" 150 200 \
-            --app-drop-link 450 200 \
+            $DMG_ARGS \
             "build/${DMG_NAME}" \
             "$APP_PATH"
 
