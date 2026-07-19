@@ -71,7 +71,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # Check if a conflict PR already exists
-          EXISTING=$(gh pr list --head dev --base nightly --state open --json number --jq '.[0].number' || echo "")
+          EXISTING=$(gh pr list --head dev --base nightly --state open --json number --jq '.[0].number // empty' || echo "")
 
           if [ -n "$EXISTING" ]; then
             echo "⚠️ Conflict PR #$EXISTING already exists, updating comment"

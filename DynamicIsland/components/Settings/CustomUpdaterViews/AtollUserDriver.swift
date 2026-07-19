@@ -123,6 +123,7 @@ class AtollUserDriver: NSObject, @preconcurrency SPUUserDriver {
     func showUpdateInstalledAndRelaunched(_ relaunched: Bool, acknowledgement: @escaping () -> Void) {
         updateState.phase = .installed
         updateState.acknowledgeAction = acknowledgement
+        acknowledgement()
         dismissWindow()
     }
     
@@ -145,7 +146,8 @@ class AtollUserDriver: NSObject, @preconcurrency SPUUserDriver {
         
         let window = NSWindow(contentViewController: hostingController)
         window.title = "Atoll Update"
-        window.styleMask = [.titled, .closable, .fullSizeContentView]
+        window.styleMask = [.titled, .fullSizeContentView]
+        window.isReleasedWhenClosed = false
         window.titlebarAppearsTransparent = true
         window.titleVisibility = .hidden
         window.isMovableByWindowBackground = true

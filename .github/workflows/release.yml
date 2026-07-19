@@ -20,6 +20,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: release-${{ github.ref_name }}
+  cancel-in-progress: false
+
 env:
   PROJECT: DynamicIsland.xcodeproj
   SCHEME: DynamicIsland
@@ -78,8 +82,8 @@ jobs:
 
           case "$CHANNEL" in
             nightly)
-              VERSION="${BASE_VERSION}-nightly.${DATE_STAMP}"
-              BUILD_NUMBER="${DATE_STAMP}001"
+              VERSION="${BASE_VERSION}-nightly.${DATE_STAMP}.${{ github.run_number }}"
+              BUILD_NUMBER="${DATE_STAMP}${{ github.run_number }}"
               PRERELEASE="true"
               ;;
             alpha)
@@ -522,6 +526,11 @@ jobs:
           SIGNATURE=""
           if [ -f "build/appcast-staging/appcast.xml" ]; then
             SIGNATURE=$(grep -o 'sparkle:edSignature="[^"]*"' "build/appcast-staging/appcast.xml" | head -1 | sed 's/sparkle:edSignature="//;s/"//' || true)
+          fi
+
+          if [ -z "$SIGNATURE" ]; then
+            echo "::error::Sparkle signature extraction failed. The appcast cannot be updated with an unsigned DMG."
+            exit 1
           fi
 
           # Build the download URL (GitHub Release asset)
